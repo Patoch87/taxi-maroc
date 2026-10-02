@@ -33,11 +33,11 @@ class Api {
   }) async {
     if (isDemo) return Demo.estimatePetitTaxi(depart: depart, destination: destination, seul: seul, premium: premium);
     return await _post('/fares/petit-taxi', {
-        'depart': depart,
-        'destination': destination,
-        'mode': seul ? 'seul' : 'partage',
-        'categorie': premium ? 'premium' : 'standard',
-      }) as Map<String, dynamic>;
+      'depart': depart,
+      'destination': destination,
+      'mode': seul ? 'seul' : 'partage',
+      'categorie': premium ? 'premium' : 'standard',
+    }) as Map<String, dynamic>;
   }
 
   Future<List<dynamic>> findTaxis({
@@ -48,12 +48,12 @@ class Api {
   }) async {
     if (isDemo) return Demo.findTaxis(premium: premium);
     return await _post('/rides/match', {
-        'depart': depart,
-        'destination': destination,
-        'mode': seul ? 'seul' : 'partage',
-        'passagers': 1,
-        if (premium) 'categorie': 'premium',
-      }) as List<dynamic>;
+      'depart': depart,
+      'destination': destination,
+      'mode': seul ? 'seul' : 'partage',
+      'passagers': 1,
+      if (premium) 'categorie': 'premium',
+    }) as List<dynamic>;
   }
 
   Future<void> complain({String? taxiId, required String motif, String? message}) async {

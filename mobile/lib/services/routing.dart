@@ -22,8 +22,8 @@ Future<List<LatLng>> fetchRoute(LatLng from, LatLng to) async {
 /// Points régulièrement espacés entre deux positions.
 List<LatLng> interpolate(LatLng a, LatLng b, int steps) => List.generate(
     steps + 1,
-    (i) => LatLng(a.latitude + (b.latitude - a.latitude) * i / steps,
-        a.longitude + (b.longitude - a.longitude) * i / steps));
+    (i) => LatLng(
+        a.latitude + (b.latitude - a.latitude) * i / steps, a.longitude + (b.longitude - a.longitude) * i / steps));
 
 /// Longueur d'un itinéraire en mètres.
 double routeLengthM(List<LatLng> route) {

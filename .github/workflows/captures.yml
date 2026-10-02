@@ -1,0 +1,52 @@
+name: Captures
+
+# Captures d'écran de l'application avec la vraie carte, publiées sur la branche « captures ».
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/captures/**', '.github/workflows/captures.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  captures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+      - name: Version web de l'application
+        working-directory: mobile
+        run: |
+          flutter create --platforms web .
+          flutter pub get
+          flutter build web
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Navigateur et polices (arabe, émojis des drapeaux)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-color-emoji fonts-noto-core fonts-noto-extra
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Captures
+        run: |
+          (cd mobile/build/web && python3 -m http.server 8765 &)
+          sleep 2
+          mkdir -p captures
+          node .github/captures/capture.js http://localhost:8765/ captures
+      - name: Publier sur la branche captures
+        run: |
+          cd captures
+          git init -q -b captures
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Captures du commit $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" captures

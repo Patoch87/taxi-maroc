@@ -1,77 +1,238 @@
-/// Textes de l'application en arabe, français et anglais.
-/// La darija et l'amazigh viendront ensuite.
+/// Textes de l'application en français, arabe, darija marocaine et anglais.
 class S {
   S(this.lang);
   final String lang;
 
-  static const supported = ['fr', 'ar', 'en'];
+  /// fr : français, ar : arabe, dr : darija marocaine (écrite en arabe), en : anglais.
+  static const supported = ['fr', 'ar', 'dr', 'en'];
+  static const names = {'fr': 'Français', 'ar': 'العربية', 'dr': 'الدارجة', 'en': 'English'};
 
-  static const Map<String, Map<String, String>> _t = {
-    'appTitle': {'fr': 'Taxi Maroc', 'ar': 'طاكسي المغرب', 'en': 'Taxi Morocco'},
-    'iAmPassenger': {'fr': 'Je suis passager', 'ar': 'أنا راكب', 'en': 'I am a passenger'},
-    'iAmDriver': {'fr': 'Je suis chauffeur', 'ar': 'أنا سائق', 'en': 'I am a driver'},
-    'voiceMode': {'fr': 'Commande vocale', 'ar': 'الطلب بالصوت', 'en': 'Voice ordering'},
-    'destination': {'fr': 'Destination finale', 'ar': 'الوجهة النهائية', 'en': 'Final destination'},
-    'petitTaxi': {'fr': 'Petit taxi', 'ar': 'طاكسي صغير', 'en': 'Petit taxi (city)'},
-    'grandTaxi': {'fr': 'Grand taxi', 'ar': 'طاكسي كبير', 'en': 'Grand taxi (intercity)'},
-    'alone': {'fr': 'Seul (supplément)', 'ar': 'وحدي (مع زيادة)', 'en': 'Alone (surcharge)'},
-    'shared': {'fr': 'Partagé', 'ar': 'مشترك', 'en': 'Shared'},
-    'premium': {'fr': 'Taxi premium', 'ar': 'طاكسي ممتاز', 'en': 'Premium taxi'},
-    'estimate': {'fr': 'Voir le prix', 'ar': 'عرض الثمن', 'en': 'See the price'},
-    'findTaxi': {'fr': 'Trouver un taxi sur ma route', 'ar': 'ابحث عن طاكسي في طريقي', 'en': 'Find a taxi on my way'},
-    'priceInfo': {
-      'fr': 'Prix estimé selon le tarif officiel. Ne payez pas plus.',
-      'ar': 'الثمن التقديري حسب التعريفة الرسمية. لا تدفع أكثر.',
-      'en': 'Estimated price based on the official fare. Do not pay more.'
-    },
-    'noTaxi': {'fr': 'Aucun taxi sur votre route pour le moment.', 'ar': 'لا يوجد طاكسي في طريقك حاليا.', 'en': 'No taxi on your route right now.'},
-    'taxiFound': {'fr': 'Taxi trouvé, il arrive', 'ar': 'تم العثور على طاكسي، إنه قادم', 'en': 'Taxi found, on its way'},
-    'complain': {'fr': 'Signaler un problème', 'ar': 'الإبلاغ عن مشكلة', 'en': 'Report a problem'},
-    'send': {'fr': 'Envoyer', 'ar': 'إرسال', 'en': 'Send'},
-    'complaintSent': {'fr': 'Plainte enregistrée', 'ar': 'تم تسجيل الشكاية', 'en': 'Complaint recorded'},
-    'available': {'fr': 'Disponible', 'ar': 'متاح', 'en': 'Available'},
-    'busy': {'fr': 'Occupé', 'ar': 'مشغول', 'en': 'Busy'},
-    'sos': {'fr': 'SOS urgence', 'ar': 'نجدة', 'en': 'SOS emergency'},
-    'speakNow': {'fr': 'Dites votre destination', 'ar': 'قل وجهتك', 'en': 'Say your destination'},
-    'whereTo': {'fr': "Où allez-vous ?", 'ar': "إلى أين تذهب؟", 'en': "Where to?"},
-    'searchPlace': {'fr': "Rechercher une destination", 'ar': "ابحث عن وجهة", 'en': "Search a destination"},
-    'chooseRide': {'fr': "Choisissez votre taxi", 'ar': "اختر الطاكسي", 'en': "Choose your taxi"},
-    'sharedDesc': {'fr': "Avec d'autres passagers sur la route", 'ar': "مع ركاب آخرين في نفس الطريق", 'en': "With other riders on the way"},
-    'aloneTitle': {'fr': "Petit taxi seul", 'ar': "طاكسي صغير وحدي", 'en': "Petit taxi, private"},
-    'aloneDesc': {'fr': "Le taxi rien que pour vous", 'ar': "الطاكسي لك وحدك", 'en': "The taxi just for you"},
-    'premiumDesc': {'fr': "Véhicule récent et climatisé", 'ar': "سيارة حديثة ومكيفة", 'en': "Recent, air-conditioned car"},
-    'grandSeat': {'fr': "Grand taxi, 1 place", 'ar': "طاكسي كبير، مقعد واحد", 'en': "Grand taxi, 1 seat"},
-    'grandWhole': {'fr': "Grand taxi entier", 'ar': "طاكسي كبير كامل", 'en': "Whole grand taxi"},
-    'grandDesc': {'fr': "Départ dès que le taxi est plein", 'ar': "الانطلاق عند امتلاء الطاكسي", 'en': "Leaves when full"},
-    'confirm': {'fr': "Commander", 'ar': "اطلب", 'en': "Request"},
-    'searching': {'fr': "Recherche d'un taxi sur votre route…", 'ar': "البحث عن طاكسي في طريقك…", 'en': "Finding a taxi on your route…"},
-    'cancel': {'fr': "Annuler", 'ar': "إلغاء", 'en': "Cancel"},
-    'arrivingIn': {'fr': "Votre taxi arrive dans", 'ar': "الطاكسي سيصل خلال", 'en': "Your taxi arrives in"},
-    'arrived': {'fr': "Votre taxi est arrivé", 'ar': "وصل الطاكسي", 'en': "Your taxi has arrived"},
-    'startTrip': {'fr': "Commencer la course", 'ar': "ابدأ الرحلة", 'en': "Start trip"},
-    'onTrip': {'fr': "En route vers", 'ar': "في الطريق إلى", 'en': "On the way to"},
-    'tripDone': {'fr': "Vous êtes arrivé", 'ar': "لقد وصلت", 'en': "You have arrived"},
-    'pay': {'fr': "À payer au chauffeur", 'ar': "المبلغ للسائق", 'en': "Pay the driver"},
-    'rate': {'fr': "Notez votre chauffeur", 'ar': "قيم السائق", 'en': "Rate your driver"},
-    'done': {'fr': "Terminer", 'ar': "إنهاء", 'en': "Done"},
-    'minutes': {'fr': "min", 'ar': "د", 'en': "min"},
-    'officialPrice': {'fr': "Prix officiel estimé, ne payez pas plus", 'ar': "ثمن رسمي تقديري، لا تدفع أكثر", 'en': "Estimated official fare, don't pay more"},
-    'driverMode': {'fr': "Mode chauffeur", 'ar': "وضع السائق", 'en': "Driver mode"},
-    'language': {'fr': "Langue", 'ar': "اللغة", 'en': "Language"},
-    'goOnline': {'fr': "Passer en ligne", 'ar': "ابدأ العمل", 'en': "Go online"},
-    'goOffline': {'fr': "Passer hors ligne", 'ar': "توقف عن العمل", 'en': "Go offline"},
-    'offlineHint': {'fr': "Vous êtes hors ligne", 'ar': "أنت غير متصل", 'en': "You are offline"},
-    'onlineHint': {'fr': "En ligne : passagers sur votre route", 'ar': "متصل: ركاب في طريقك", 'en': "Online: riders on your route"},
-    'newRequest': {'fr': "Passager sur votre route", 'ar': "راكب في طريقك", 'en': "Rider on your route"},
-    'accept': {'fr': "Accepter", 'ar': "قبول", 'en': "Accept"},
-    'decline': {'fr': "Refuser", 'ar': "رفض", 'en': "Decline"},
-    'pickupAhead': {'fr': "à récupérer devant vous", 'ar': "في انتظارك أمامك", 'en': "to pick up ahead"},
-    'pickedUp': {'fr': "Passager à bord", 'ar': "الراكب على متن الطاكسي", 'en': "Rider on board"},
-    'dropOff': {'fr': "Déposer le passager", 'ar': "إنزال الراكب", 'en': "Drop off rider"},
-    'seats': {'fr': "places", 'ar': "مقاعد", 'en': "seats"},
-    'demoBanner': {'fr': "Démo : taxis fictifs", 'ar': "تجريبي: طاكسيات وهمية", 'en': "Demo: simulated taxis"},
-    'error': {'fr': 'Erreur de connexion', 'ar': 'خطأ في الاتصال', 'en': 'Connection error'},
+  static const _i = {'fr': 0, 'ar': 1, 'dr': 2, 'en': 3};
+
+  /// Langues écrites de droite à gauche.
+  bool get rtl => lang == 'ar' || lang == 'dr';
+
+  /// Langue de la reconnaissance et de la synthèse vocales.
+  String get speechLocale => switch (lang) { 'ar' || 'dr' => 'ar-MA', 'en' => 'en-US', _ => 'fr-FR' };
+
+  static const Map<String, List<String>> _t = {
+    // Général
+    'appTitle': ['Taxi Maroc', 'طاكسي المغرب', 'طاكسي المغرب', 'Taxi Morocco'],
+    'demoBanner': [
+      'Démo : taxis fictifs',
+      'تجريبي: طاكسيات وهمية',
+      'تجريبي: طاكسيات ماشي حقيقيين',
+      'Demo: simulated taxis'
+    ],
+    'error': ['Erreur de connexion', 'خطأ في الاتصال', 'كاين مشكل فالكونيكسيون', 'Connection error'],
+    'cancel': ['Annuler', 'إلغاء', 'لغي', 'Cancel'],
+    'done': ['Terminer', 'إنهاء', 'سالينا', 'Done'],
+    'send': ['Envoyer', 'إرسال', 'صيفط', 'Send'],
+    'close': ['Fermer', 'إغلاق', 'سد', 'Close'],
+    'minutes': ['min', 'د', 'دقيقة', 'min'],
+    'language': ['Langue', 'اللغة', 'اللغة', 'Language'],
+    'hello': ['Salam 👋', 'السلام عليكم 👋', 'السلام 👋', 'Salam 👋'],
+
+    // Recherche et commande
+    'whereTo': ['Où allez-vous ?', 'إلى أين تذهب؟', 'فين غادي؟', 'Where to?'],
+    'searchPlace': ['Rechercher une destination', 'ابحث عن وجهة', 'قلب على البلاصة', 'Search a destination'],
+    'home': ['Maison', 'المنزل', 'الدار', 'Home'],
+    'work': ['Travail', 'العمل', 'الخدمة', 'Work'],
+    'recent': ['Récents', 'الأخيرة', 'اللي مشيتي ليهم', 'Recent'],
+    'now': ['Maintenant', 'الآن', 'دابا', 'Now'],
+    'later': ['Plus tard', 'لاحقا', 'من بعد', 'Later'],
+    'scheduledFor': ['Prévu à', 'مبرمج على', 'مبرمج مع', 'Scheduled for'],
+    'speakNow': ['Dites votre destination', 'قل وجهتك', 'قول فين بغيتي تمشي', 'Say your destination'],
+    'listening': ['Je vous écoute…', 'أستمع إليك…', 'كنسمع ليك…', 'Listening…'],
+    'youSaid': ['Vous avez dit', 'قلت', 'قلتي', 'You said'],
+    'searchingFor': ['Je cherche', 'أبحث عن', 'كنقلب على', 'Searching for'],
+    'notUnderstood': [
+      'Je n\'ai pas compris, réessayez',
+      'لم أفهم، أعد المحاولة',
+      'ما فهمتش، عاود',
+      'I didn\'t understand, try again'
+    ],
+    'micDenied': ['Micro non disponible', 'الميكروفون غير متاح', 'الميكرو ماخدامش', 'Microphone unavailable'],
+
+    // Choix du taxi
+    'chooseRide': ['Choisissez votre taxi', 'اختر الطاكسي', 'ختار الطاكسي', 'Choose your taxi'],
+    'petitTaxi': ['Petit taxi', 'طاكسي صغير', 'طاكسي صغير', 'Petit taxi'],
+    'grandTaxi': ['Grand taxi', 'طاكسي كبير', 'طاكسي كبير', 'Grand taxi'],
+    'sharedDesc': [
+      'Partagé avec des passagers sur votre route',
+      'مشترك مع ركاب في طريقك',
+      'مشارك مع ناس فطريقك',
+      'Shared with riders on your route'
+    ],
+    'aloneTitle': ['Petit taxi seul', 'طاكسي صغير لوحدك', 'طاكسي صغير بوحدك', 'Petit taxi, private'],
+    'aloneDesc': ['Le taxi rien que pour vous', 'الطاكسي لك وحدك', 'الطاكسي ديالك بوحدك', 'The taxi just for you'],
+    'premium': ['Taxi premium', 'طاكسي ممتاز', 'طاكسي بريميوم', 'Premium taxi'],
+    'premiumDesc': [
+      'Véhicule récent et climatisé',
+      'سيارة حديثة ومكيفة',
+      'طوموبيل جديدة وفيها الكليماتيزور',
+      'Recent, air-conditioned car'
+    ],
+    'grandSeat': ['Grand taxi, 1 place', 'طاكسي كبير، مقعد واحد', 'طاكسي كبير، بلاصة وحدة', 'Grand taxi, 1 seat'],
+    'grandWhole': ['Grand taxi entier', 'طاكسي كبير كامل', 'طاكسي كبير كامل', 'Whole grand taxi'],
+    'grandDesc': [
+      'Départ dès que le taxi est plein',
+      'الانطلاق عند امتلاء الطاكسي',
+      'كيمشي ملي يعمر',
+      'Leaves when full'
+    ],
+    'officialPrice': [
+      'Prix officiel estimé, ne payez pas plus',
+      'ثمن رسمي تقديري، لا تدفع أكثر',
+      'الثمن الرسمي، ما تخلصش كثر',
+      'Estimated official fare, don\'t pay more'
+    ],
+    'cash': ['Espèces', 'نقدا', 'كاش', 'Cash'],
+    'card': ['Carte bancaire', 'بطاقة بنكية', 'لاكارط', 'Card'],
+    'confirm': ['Commander', 'اطلب', 'طلب', 'Request'],
+    'arrivalAt': ['Arrivée vers', 'الوصول حوالي', 'غادي توصل مع', 'Arrival around'],
+
+    // Recherche de chauffeur (premier qui accepte)
+    'searching': [
+      'Recherche d\'un taxi sur votre route…',
+      'البحث عن طاكسي في طريقك…',
+      'كنقلبو على طاكسي فطريقك…',
+      'Finding a taxi on your route…'
+    ],
+    'sentTo': ['Demande envoyée à', 'تم إرسال الطلب إلى', 'الطلب تصيفط ل', 'Request sent to'],
+    'drivers': ['chauffeurs sur votre route', 'سائقين في طريقك', 'شيفورات فطريقك', 'drivers on your route'],
+    'firstWins': [
+      'Le premier qui accepte prend la course, les autres sont bloqués',
+      'أول سائق يقبل يأخذ الرحلة والباقي يتوقف',
+      'اللي قبل اللول هو اللي غادي يجي، والباقين يتبلوكاو',
+      'The first to accept gets the ride, the others are blocked'
+    ],
+    'acceptedFirst': ['a accepté en premier', 'قبل أولا', 'قبل هو اللول', 'accepted first'],
+    'declined': ['a refusé', 'رفض', 'رفض', 'declined'],
+    'blocked': ['bloqué', 'محظور', 'تبلوكا', 'blocked'],
+    'noTaxi': [
+      'Aucun taxi sur votre route pour le moment.',
+      'لا يوجد طاكسي في طريقك حاليا.',
+      'ما كاين حتى طاكسي فطريقك دابا.',
+      'No taxi on your route right now.'
+    ],
+
+    // Course
+    'arrivingIn': ['Votre taxi arrive dans', 'الطاكسي سيصل خلال', 'الطاكسي غادي يوصل فـ', 'Your taxi arrives in'],
+    'arrived': ['Votre taxi est arrivé', 'وصل الطاكسي', 'الطاكسي وصل', 'Your taxi has arrived'],
+    'startTrip': ['Je suis dans le taxi', 'أنا في الطاكسي', 'راني فالطاكسي', 'I\'m in the taxi'],
+    'onTrip': ['En route vers', 'في الطريق إلى', 'فالطريق ل', 'On the way to'],
+    'remaining': ['restantes', 'متبقية', 'باقيين', 'left'],
+    'speaks': ['Parle', 'يتحدث', 'كيهضر', 'Speaks'],
+    'ridesCount': ['courses', 'رحلة', 'كورصة', 'rides'],
+    'call': ['Appeler', 'اتصال', 'عيط', 'Call'],
+    'message': ['Message', 'رسالة', 'ميساج', 'Message'],
+    'share': ['Partager', 'مشاركة', 'بارطاجي', 'Share'],
+    'safety': ['Sécurité', 'الأمان', 'الأمان', 'Safety'],
+    'shareText': [
+      'Je suis en taxi avec Taxi Maroc',
+      'أنا في طاكسي مع طاكسي المغرب',
+      'راني فطاكسي مع طاكسي المغرب',
+      'I\'m in a taxi with Taxi Morocco'
+    ],
+    'myPosition': ['Ma position', 'موقعي', 'فين أنا', 'My location'],
+
+    // Sécurité et réclamations
+    'sos': ['SOS urgence', 'نجدة', 'عتقوني', 'SOS emergency'],
+    'sosDesc': [
+      'Alerte vos proches et la plateforme avec votre position',
+      'تنبيه أقاربك والمنصة بموقعك',
+      'كيعلم العائلة ديالك والمنصة فين نتا',
+      'Alerts your contacts and the platform with your location'
+    ],
+    'police': ['Police (19)', 'الشرطة (19)', 'البوليس (19)', 'Police (19)'],
+    'gendarmerie': ['Gendarmerie (177)', 'الدرك (177)', 'الجدارمية (177)', 'Gendarmerie (177)'],
+    'ambulance': ['Protection civile (15)', 'الوقاية المدنية (15)', 'لابروطيكسيون (15)', 'Civil protection (15)'],
+    'shareTrip': ['Partager ma course en direct', 'مشاركة رحلتي مباشرة', 'بارطاجي الكورصة ديالي', 'Share my trip live'],
+    'complain': ['Signaler un problème', 'الإبلاغ عن مشكلة', 'بلغ على شي مشكل', 'Report a problem'],
+    'complaintSent': ['Réclamation enregistrée', 'تم تسجيل الشكاية', 'الشكاية تسجلات', 'Complaint recorded'],
+    'sosSent': [
+      'Alerte envoyée avec votre position',
+      'تم إرسال التنبيه مع موقعك',
+      'التنبيه تصيفط مع البلاصة ديالك',
+      'Alert sent with your location'
+    ],
+    'motifRefus': ['Refus de course', 'رفض الرحلة', 'رفض يديني', 'Ride refused'],
+    'motifPrix': ['Prix abusif', 'ثمن مبالغ فيه', 'طلب بزاف ديال الفلوس', 'Overcharging'],
+    'motifConduite': ['Conduite dangereuse', 'سياقة خطيرة', 'كيسوق بالخطر', 'Dangerous driving'],
+    'motifComportement': ['Comportement', 'السلوك', 'السلوك', 'Behaviour'],
+    'motifObjet': ['Objet oublié', 'غرض منسي', 'نسيت شي حاجة', 'Lost item'],
+    'motifAutre': ['Autre', 'أخرى', 'حاجة أخرى', 'Other'],
+    'describe': [
+      'Décrivez le problème (facultatif)',
+      'صف المشكلة (اختياري)',
+      'شرح المشكل (إلا بغيتي)',
+      'Describe the problem (optional)'
+    ],
+
+    // Messages rapides
+    'quickHere': ['Je suis devant', 'أنا في الأمام', 'راني قدام', 'I\'m in front'],
+    'quickComing': ['J\'arrive dans 2 minutes', 'سأصل بعد دقيقتين', 'جاي فجوج دقايق', 'Coming in 2 minutes'],
+    'quickWait': ['Attendez-moi s\'il vous plaît', 'انتظرني من فضلك', 'تسناني عافاك', 'Please wait for me'],
+    'quickLuggage': ['J\'ai des bagages', 'لدي أمتعة', 'عندي الباليزات', 'I have luggage'],
+    'translatedFor': ['Traduit pour le chauffeur', 'مترجم للسائق', 'مترجم للشيفور', 'Translated for the driver'],
+
+    // Fin de course
+    'tripDone': ['Vous êtes arrivé 🎉', 'لقد وصلت 🎉', 'وصلتي 🎉', 'You have arrived 🎉'],
+    'pay': ['À payer au chauffeur', 'المبلغ للسائق', 'خلص الشيفور', 'Pay the driver'],
+    'tip': ['Pourboire', 'إكرامية', 'البوربوار', 'Tip'],
+    'rate': ['Notez votre chauffeur', 'قيم السائق', 'عطي نقطة للشيفور', 'Rate your driver'],
+    'history': ['Mes courses', 'رحلاتي', 'الكورصات ديالي', 'My rides'],
+    'noHistory': ['Aucune course pour le moment', 'لا توجد رحلات بعد', 'ما زال ما درتي حتى كورصة', 'No rides yet'],
+
+    'driverReplyOk': ['D\'accord, j\'arrive', 'حسنا، أنا قادم', 'واخا، جاي', 'OK, on my way'],
+    'fastForward': ['Accélérer (démo)', 'تسريع (تجريبي)', 'زربها (تجريبي)', 'Fast-forward (demo)'],
+    'tripBooked': ['Course réservée pour', 'تم حجز الرحلة على', 'الكورصة تريزيرفات مع', 'Ride booked for'],
+    'payment': ['Paiement', 'الدفع', 'الخلاص', 'Payment'],
+    'driverInfo': ['Votre chauffeur', 'السائق الخاص بك', 'الشيفور ديالك', 'Your driver'],
+    'emergencyNumbers': ['Numéros d\'urgence', 'أرقام الطوارئ', 'نمر الطوارئ', 'Emergency numbers'],
+    'planned': ['Prévue', 'مبرمجة', 'مبرمجة', 'Scheduled'],
+    'completed': ['Terminée', 'منتهية', 'سالات', 'Completed'],
+
+    // Chauffeur
+    'driverMode': ['Mode chauffeur', 'وضع السائق', 'وضع الشيفور', 'Driver mode'],
+    'online': ['En ligne', 'متصل', 'خدام', 'Online'],
+    'offline': ['Hors ligne', 'غير متصل', 'ماشي خدام', 'Offline'],
+    'goOnline': ['Passer en ligne', 'ابدأ العمل', 'بدا الخدمة', 'Go online'],
+    'chooseTaxiType': ['Votre taxi', 'الطاكسي الخاص بك', 'الطاكسي ديالك', 'Your taxi'],
+    'seats': ['places', 'مقاعد', 'بلايص', 'seats'],
+    'seat': ['place', 'مقعد', 'بلاصة', 'seat'],
+    'onBoard': ['Passagers à bord', 'الركاب على متن الطاكسي', 'الناس اللي راكبين', 'Riders on board'],
+    'taxiFull': ['Taxi complet', 'الطاكسي ممتلئ', 'الطاكسي عامر', 'Taxi full'],
+    'newRequest': ['Passager sur votre route', 'راكب في طريقك', 'كليان فطريقك', 'Rider on your route'],
+    'pickupAhead': ['à récupérer devant vous', 'في انتظارك أمامك', 'كيتسناك قدامك', 'to pick up ahead'],
+    'accept': ['Accepter', 'قبول', 'قبل', 'Accept'],
+    'decline': ['Refuser', 'رفض', 'رفض', 'Decline'],
+    'takenByOther': [
+      'Course prise par un autre chauffeur',
+      'أخذ سائق آخر الرحلة',
+      'شيفور آخر داها',
+      'Ride taken by another driver'
+    ],
+    'nextStops': ['Prochains arrêts', 'المحطات القادمة', 'الوقفات الجاية', 'Next stops'],
+    'noStops': [
+      'Roulez, les passagers sur votre route vont apparaître',
+      'واصل، سيظهر الركاب في طريقك',
+      'زيد، الناس اللي فطريقك غادي يبانو',
+      'Keep driving, riders on your route will appear'
+    ],
+    'pickUp': ['Prendre', 'إركاب', 'ركب', 'Pick up'],
+    'dropAt': ['Déposer', 'إنزال', 'نزل', 'Drop off'],
+    'riderPickedUp': ['Passager pris en charge', 'تم إركاب الراكب', 'الكليان طلع', 'Rider picked up'],
+    'riderDropped': ['Passager déposé', 'تم إنزال الراكب', 'الكليان نزل', 'Rider dropped off'],
+    'earned': ['gagnés', 'مكسب', 'ربحتي', 'earned'],
+    'passengersShort': ['passagers', 'ركاب', 'كليان', 'riders'],
+    'ridesShort': ['courses', 'رحلات', 'كورصات', 'rides'],
   };
 
-  String t(String key) => _t[key]?[lang] ?? _t[key]?['fr'] ?? key;
+  String t(String key) {
+    final row = _t[key];
+    if (row == null) return key;
+    return row[_i[lang] ?? 0];
+  }
 }

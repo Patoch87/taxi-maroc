@@ -29,8 +29,9 @@ class TaxiMarocApp extends StatelessWidget {
       builder: (context, lang, _) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: s.t('appTitle'),
-        locale: Locale(lang),
-        supportedLocales: S.supported.map(Locale.new),
+        // La darija utilise les traductions système de l'arabe (et l'écriture de droite à gauche).
+        locale: Locale(lang == 'dr' ? 'ar' : lang),
+        supportedLocales: const [Locale('fr'), Locale('ar'), Locale('en')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: buildTheme(),
         // La clé force la reconstruction de l'accueil quand la langue change.

@@ -32,8 +32,14 @@ const casablancaPlaces = [
   Place('Aéroport Mohammed V', 33.3675, -7.5898, ['aéroport', 'aeroport', 'airport', 'مطار'], subtitle: 'Nouaceur'),
   Place('Mohammedia', 33.6866, -7.3830, ['mohammedia', 'المحمدية'], subtitle: 'Grand taxi', ligne: 'casa-mohammedia'),
   Place('Berrechid', 33.2655, -7.5876, ['berrechid', 'برشيد'], subtitle: 'Grand taxi', ligne: 'casa-berrechid'),
-  Place('El Jadida', 33.2316, -8.5007, ['el jadida', 'jadida', 'الجديدة'], subtitle: 'Grand taxi', ligne: 'casa-eljadida'),
+  Place('El Jadida', 33.2316, -8.5007, ['el jadida', 'jadida', 'الجديدة'],
+      subtitle: 'Grand taxi', ligne: 'casa-eljadida'),
 ];
+
+/// Adresses enregistrées de la démo.
+const homePlace = Place('Maison', 33.5891, -7.6326, ['maison', 'dar', 'الدار', 'home'], subtitle: 'Quartier Gauthier');
+const workPlace =
+    Place('Travail', 33.5617, -7.6587, ['travail', 'khedma', 'الخدمة', 'work'], subtitle: 'Casablanca Finance City');
 
 /// Trouve un lieu à partir d'un texte tapé ou dicté.
 Place? findPlace(String text) {
@@ -50,7 +56,6 @@ Place? findPlace(String text) {
 List<Place> searchPlaces(String text) {
   final q = text.trim().toLowerCase();
   if (q.isEmpty) return casablancaPlaces;
-  return casablancaPlaces
-      .where((p) => p.name.toLowerCase().contains(q) || p.aliases.any((a) => a.toLowerCase().contains(q)))
-      .toList();
+  bool hit(String a) => a.toLowerCase().contains(q) || (q.length > 3 && q.contains(a.toLowerCase()));
+  return casablancaPlaces.where((p) => hit(p.name) || p.aliases.any(hit)).toList();
 }

@@ -11,6 +11,9 @@ TileLayer baseTiles() => TileLayer(
       urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
       subdomains: const ['a', 'b', 'c', 'd'],
       retinaMode: true,
+      // Si une tuile CARTO ne se charge pas, on la reprend chez OpenStreetMap.
+      fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      evictErrorTileStrategy: EvictErrorTileStrategy.notVisibleRespectMargin,
       userAgentPackageName: 'ma.taxi.taxi_maroc',
     );
 
@@ -130,7 +133,13 @@ class BottomPanel extends StatelessWidget {
                     decoration: BoxDecoration(color: AppColors.line, borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
-                AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
+                // Le panneau ne dépasse pas 70 % de l'écran ; au-delà, son contenu défile.
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * .7),
+                  child: SingleChildScrollView(
+                    child: AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
+                  ),
+                ),
               ],
             ),
           ),

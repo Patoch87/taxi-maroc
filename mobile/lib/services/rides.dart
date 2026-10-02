@@ -37,21 +37,49 @@ List<RideOption> rideOptions({required Place destination, required double routeM
   if (destination.intercity) {
     final prix = grandTaxiPrixPlace[destination.ligne]!;
     return [
-      RideOption(id: 'grand', title: s.t('grandSeat'), description: s.t('grandDesc'),
-          kind: TaxiKind.grand, priceMad: prix, seats: 1),
-      RideOption(id: 'grand-entier', title: s.t('grandWhole'), description: s.t('aloneDesc'),
-          kind: TaxiKind.grand, priceMad: prix * 6, seats: 6, seul: true),
+      RideOption(
+          id: 'grand',
+          title: s.t('grandSeat'),
+          description: s.t('grandDesc'),
+          kind: TaxiKind.grand,
+          priceMad: prix,
+          seats: 1),
+      RideOption(
+          id: 'grand-entier',
+          title: s.t('grandWhole'),
+          description: s.t('aloneDesc'),
+          kind: TaxiKind.grand,
+          priceMad: prix * 6,
+          seats: 6,
+          seul: true),
     ];
   }
   double price(bool seul, bool premium) =>
       Demo.petitTaxiPrice(routeKm: routeM / 1000, seul: seul, premium: premium, date: date);
   return [
-    RideOption(id: 'partage', title: s.t('petitTaxi'), description: s.t('sharedDesc'),
-        kind: TaxiKind.petit, priceMad: price(false, false), seats: 3),
-    RideOption(id: 'seul', title: s.t('aloneTitle'), description: s.t('aloneDesc'),
-        kind: TaxiKind.petit, priceMad: price(true, false), seats: 3, seul: true),
-    RideOption(id: 'premium', title: s.t('premium'), description: s.t('premiumDesc'),
-        kind: TaxiKind.premium, priceMad: price(true, true), seats: 3, seul: true),
+    RideOption(
+        id: 'partage',
+        title: s.t('petitTaxi'),
+        description: s.t('sharedDesc'),
+        kind: TaxiKind.petit,
+        priceMad: price(false, false),
+        seats: 3),
+    RideOption(
+        id: 'seul',
+        title: s.t('aloneTitle'),
+        description: s.t('aloneDesc'),
+        kind: TaxiKind.petit,
+        priceMad: price(true, false),
+        seats: 3,
+        seul: true),
+    RideOption(
+        id: 'premium',
+        title: s.t('premium'),
+        description: s.t('premiumDesc'),
+        kind: TaxiKind.premium,
+        priceMad: price(true, true),
+        seats: 3,
+        seul: true),
   ];
 }
 
@@ -74,21 +102,57 @@ Color taxiColor(TaxiKind k) => switch (k) {
       TaxiKind.grand => AppColors.grandTaxi,
     };
 
+/// Langue parlée par un chauffeur, avec son petit drapeau.
+class DriverLanguage {
+  const DriverLanguage(this.flag, this.name);
+  final String flag;
+  final String name;
+}
+
+const darija = DriverLanguage('🇲🇦', 'Darija');
+const arabe = DriverLanguage('🇲🇦', 'العربية');
+const tamazight = DriverLanguage('ⵣ', 'Tamazight');
+const francais = DriverLanguage('🇫🇷', 'Français');
+const anglais = DriverLanguage('🇬🇧', 'English');
+const espagnol = DriverLanguage('🇪🇸', 'Español');
+
 /// Chauffeur fictif pour la démo.
 class DemoDriver {
-  DemoDriver(this.name, this.taxiNumber, this.plate, this.rating, this.car);
+  DemoDriver(this.name, this.taxiNumber, this.plate, this.rating, this.car, this.languages, this.rides);
   final String name;
   final String taxiNumber;
   final String plate;
   final double rating;
   final String car;
+  final List<DriverLanguage> languages;
+  final int rides;
+
+  /// Avatar illustré (pas de vraie photo dans la démo) ; les vrais chauffeurs auront leur photo vérifiée.
+  String get photoUrl =>
+      'https://api.dicebear.com/9.x/avataaars/png?size=160&backgroundColor=e8e2d0&seed=${Uri.encodeComponent(name)}';
 
   static DemoDriver random(TaxiKind kind, Random rnd) {
-    const names = ['Youssef B.', 'Abdelkader M.', 'Hicham E.', 'Rachid T.', 'Said A.', 'Mustapha K.'];
+    const names = [
+      'Youssef B.',
+      'Abdelkader M.',
+      'Hicham E.',
+      'Rachid T.',
+      'Said A.',
+      'Mustapha K.',
+      'Khadija L.',
+      'Nabil O.'
+    ];
+    const langSets = [
+      [darija, francais],
+      [darija, francais, anglais],
+      [darija, tamazight, francais],
+      [darija, arabe, espagnol],
+      [darija, francais, anglais, espagnol],
+    ];
     final car = switch (kind) {
-      TaxiKind.petit => 'Dacia Logan rouge',
+      TaxiKind.petit => 'Dacia Logan',
       TaxiKind.premium => 'Toyota Corolla Hybride',
-      TaxiKind.grand => 'Dacia Lodgy blanche',
+      TaxiKind.grand => 'Dacia Lodgy',
     };
     return DemoDriver(
       names[rnd.nextInt(names.length)],
@@ -96,9 +160,35 @@ class DemoDriver {
       '${10000 + rnd.nextInt(89999)} | أ | 6',
       4.5 + rnd.nextInt(5) / 10,
       car,
+      langSets[rnd.nextInt(langSets.length)],
+      200 + rnd.nextInt(4000),
     );
   }
 }
+
+/// Course enregistrée dans l'historique.
+class TripRecord {
+  TripRecord(
+      {required this.destination,
+      required this.option,
+      required this.price,
+      required this.date,
+      this.driver,
+      this.scheduled = false,
+      this.tip = 0,
+      this.rating = 0});
+  final String destination;
+  final String option;
+  final double price;
+  final DateTime date;
+  final DemoDriver? driver;
+  final bool scheduled;
+  double tip;
+  int rating;
+}
+
+/// Historique des courses de la session.
+final tripHistory = <TripRecord>[];
 
 /// Taxis fictifs autour d'un point, pour animer la carte en mode démo.
 List<LatLng> ambientTaxis(LatLng center, Random rnd, {int count = 7}) => List.generate(count, (_) {
