@@ -47,7 +47,7 @@ Sans `API_URL`, l'application tourne en **mode démo** : prix calculés sur le t
 
 ## Tester sur un téléphone Android (Samsung)
 
-À chaque envoi sur `main`, GitHub Actions fabrique le fichier **taxi-maroc.apk** (onglet *Actions*, dernière exécution de *CI*, section *Artifacts*). Le télécharger sur le téléphone, le décompresser, l'ouvrir et autoriser l'installation d'applications inconnues.
+À chaque envoi sur `main`, GitHub Actions fabrique le fichier **taxi-maroc.apk** et le publie ici : https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc.apk. Ouvrir ce lien sur le téléphone, ouvrir le fichier téléchargé et autoriser l'installation d'applications inconnues.
 
 ## Prochaines étapes
 
