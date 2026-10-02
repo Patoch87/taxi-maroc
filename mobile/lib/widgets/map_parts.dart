@@ -5,15 +5,11 @@ import 'package:latlong2/latlong.dart';
 import '../services/rides.dart';
 import '../theme.dart';
 
-/// Fond de carte clair (CARTO Voyager, données OpenStreetMap).
-/// Pour la mise en production : prendre un fournisseur de tuiles avec contrat (CARTO, Mapbox, Google).
+/// Fond de carte OpenStreetMap (gratuit, sans clé). Les tuiles CARTO demandent désormais une clé.
+/// Pour la mise en production : prendre un fournisseur de tuiles avec contrat (Mapbox, MapTiler, Google).
 TileLayer baseTiles() => TileLayer(
-      urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      subdomains: const ['a', 'b', 'c', 'd'],
-      retinaMode: true,
-      // Si une tuile CARTO ne se charge pas, on la reprend chez OpenStreetMap.
-      fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      evictErrorTileStrategy: EvictErrorTileStrategy.notVisibleRespectMargin,
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      maxNativeZoom: 19,
       userAgentPackageName: 'ma.taxi.taxi_maroc',
     );
 
@@ -22,7 +18,7 @@ Widget mapAttribution() => const Align(
       alignment: Alignment.topRight,
       child: Padding(
         padding: EdgeInsets.only(top: 4, right: 6),
-        child: Text('© OpenStreetMap © CARTO', style: TextStyle(fontSize: 9, color: Colors.black54)),
+        child: Text('© OpenStreetMap', style: TextStyle(fontSize: 9, color: Colors.black54)),
       ),
     );
 

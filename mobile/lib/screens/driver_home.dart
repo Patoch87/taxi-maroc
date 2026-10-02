@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -81,7 +82,10 @@ class _DriverHomeState extends State<DriverHome> {
     if (_route.length < 2) return 0;
     final a = _route[min(_pos, _route.length - 2)];
     final b = _route[min(_pos + 3, _route.length - 1)];
-    return const Distance().bearing(a, b) * pi / 180;
+    // Angle mesuré à l'écran (projection de la carte) : 0 = vers le haut, sens des aiguilles d'une montre.
+    if (!_mapReady) return const Distance().bearing(a, b) * pi / 180;
+    final pa = _map.camera.projectAtZoom(a), pb = _map.camera.projectAtZoom(b);
+    return atan2(pb.dx - pa.dx, -(pb.dy - pa.dy));
   }
 
   /// Le taxi est placé dans le haut de l'écran pour rester visible au-dessus des panneaux.
@@ -285,7 +289,7 @@ class _DriverHomeState extends State<DriverHome> {
               ),
               child: Transform.rotate(
                 angle: _bearing(),
-                child: const Icon(Icons.navigation, color: Colors.white, size: 26),
+                child: const CustomPaint(painter: _ArrowPainter()),
               ),
             ),
           ),
@@ -665,4 +669,24 @@ class _DriverHomeState extends State<DriverHome> {
       ]),
     );
   }
+}
+
+/// Flèche de navigation dessinée pointe vers le haut ; elle est tournée dans le sens de la route.
+class _ArrowPainter extends CustomPainter {
+  const _ArrowPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final path = ui.Path()
+      ..moveTo(w * .5, h * .2)
+      ..lineTo(w * .76, h * .78)
+      ..lineTo(w * .5, h * .64)
+      ..lineTo(w * .24, h * .78)
+      ..close();
+    canvas.drawPath(path, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

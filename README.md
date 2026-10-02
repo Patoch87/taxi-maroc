@@ -24,7 +24,7 @@ Le plan produit complet est dans le dossier du projet : `plan/plan-application-t
 - Compte à rebours en temps réel, partage de la course et de la position, sécurité (SOS, 19 / 177 / 15, réclamation) depuis l'écran de commande, photo du chauffeur avec les drapeaux des langues qu'il parle, messages rapides traduits en darija, adresses Maison et Travail, réservation à l'avance, espèces ou carte, pourboire, historique.
 - Français, arabe, **darija** et anglais ; **commande vocale** dans la recherche de destination (la destination est répétée à voix haute avant la recherche).
 - Captures d'écran automatiques avec la vraie carte : branche `captures` (workflow *Captures*).
-- La carte utilise des services gratuits réservés aux tests (tuiles CARTO, itinéraires OSRM) : à remplacer par un fournisseur sous contrat (Google Maps, Mapbox) avant le lancement.
+- La carte utilise des services gratuits réservés aux tests (tuiles OpenStreetMap, itinéraires OSRM) : à remplacer par un fournisseur sous contrat (Google Maps, Mapbox, MapTiler) avant le lancement.
 
 Les tarifs dans `backend/src/domain/tariffs.ts` sont **indicatifs** et doivent être confirmés avec le tarif officiel de la wilaya de Casablanca.
 
