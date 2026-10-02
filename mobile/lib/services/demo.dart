@@ -19,6 +19,16 @@ class Demo {
 
   static double _round(double v) => (v * 100).round() / 100;
 
+  /// Prix du petit taxi pour une distance réelle par la route.
+  static double petitTaxiPrice({required double routeKm, required bool seul, required bool premium, DateTime? date}) {
+    var total = max(priseEnCharge + routeKm * parKm, minimum);
+    final h = (date ?? DateTime.now()).hour;
+    if (h >= 20 || h < 6) total *= 1.5;
+    if (seul) total *= 1.3;
+    if (premium) total *= 1.5;
+    return _round(total);
+  }
+
   static Map<String, dynamic> estimatePetitTaxi({
     required Map<String, double> depart,
     required Map<String, double> destination,
@@ -27,12 +37,8 @@ class Demo {
     DateTime? date,
   }) {
     final km = _distanceKm(depart, destination) * facteurRoute;
-    var total = max(priseEnCharge + km * parKm, minimum);
-    final h = (date ?? DateTime.now()).hour;
-    if (h >= 20 || h < 6) total *= 1.5;
-    if (seul) total *= 1.3;
-    if (premium) total *= 1.5;
-    return {'montantMad': _round(total), 'details': <dynamic>[]};
+    final total = petitTaxiPrice(routeKm: km, seul: seul, premium: premium, date: date);
+    return {'montantMad': total, 'details': <dynamic>[]};
   }
 
   /// Taxis fictifs qui passent sur la route du passager.

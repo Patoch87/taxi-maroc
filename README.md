@@ -18,7 +18,10 @@ Le plan produit complet est dans le dossier du projet : `plan/plan-application-t
 - **Prix affiché à l'avance** (`backend/src/domain/fare.ts`) : compteur estimé, minimum, majoration de nuit +50 %, supplément seul, coefficient premium ; grand taxi au prix fixe par place.
 - **Plaintes** : refus, prix abusif, conduite dangereuse, comportement, objet oublié.
 - **Taxis premium** : filtre par catégorie.
-- **Application mobile** : accueil en français, arabe et anglais ; écran passager ; écran chauffeur à gros boutons ; écran de plainte ; **commande vocale** pour les aveugles (dire sa destination, réponse à voix haute).
+- **Application mobile façon Uber** : carte plein écran de Casablanca (OpenStreetMap / CARTO), recherche de destination, choix du taxi avec prix affiché (petit taxi partagé, seul, premium, grand taxi par place ou entier), suivi du taxi qui arrive, fiche chauffeur (nom, plaque, numéro de taxi, note), SOS, plainte, reçu et note de fin de course.
+- **Mode chauffeur** : carte avec sa route, passagers sur sa route proposés devant lui, accepter ou refuser en un geste, gains du jour et places occupées.
+- Français, arabe et anglais ; **commande vocale** pour les aveugles (dire sa destination, réponse à voix haute).
+- La carte utilise des services gratuits réservés aux tests (tuiles CARTO, itinéraires OSRM) : à remplacer par un fournisseur sous contrat (Google Maps, Mapbox) avant le lancement.
 
 Les tarifs dans `backend/src/domain/tariffs.ts` sont **indicatifs** et doivent être confirmés avec le tarif officiel de la wilaya de Casablanca.
 
