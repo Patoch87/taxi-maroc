@@ -5,6 +5,7 @@ import 'l10n/strings.dart';
 import 'screens/driver_screen.dart';
 import 'screens/passenger_screen.dart';
 import 'screens/voice_screen.dart';
+import 'services/api.dart';
 
 /// Langue choisie par l'utilisateur (fr, ar, en).
 final langNotifier = ValueNotifier<String>('fr');
@@ -59,6 +60,11 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isDemo)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 24),
+                child: Text('Mode démo : taxis fictifs, sans serveur', textAlign: TextAlign.center),
+              ),
             _BigButton(icon: Icons.person, label: s.t('iAmPassenger'), onTap: () => open(const PassengerScreen())),
             const SizedBox(height: 16),
             _BigButton(icon: Icons.local_taxi, label: s.t('iAmDriver'), onTap: () => open(const DriverScreen())),

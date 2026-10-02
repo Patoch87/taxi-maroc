@@ -39,8 +39,15 @@ Principales routes : `POST /fares/petit-taxi`, `POST /fares/grand-taxi`, `PUT /t
 cd mobile
 flutter pub get
 flutter test
-flutter run --dart-define=API_URL=http://10.0.2.2:3000   # émulateur Android
+flutter run                                              # mode démo, sans serveur
+flutter run --dart-define=API_URL=http://10.0.2.2:3000   # avec le serveur (émulateur Android)
 ```
+
+Sans `API_URL`, l'application tourne en **mode démo** : prix calculés sur le téléphone et taxis fictifs.
+
+## Tester sur un téléphone Android (Samsung)
+
+À chaque envoi sur `main`, GitHub Actions fabrique le fichier **taxi-maroc.apk** (onglet *Actions*, dernière exécution de *CI*, section *Artifacts*). Le télécharger sur le téléphone, le décompresser, l'ouvrir et autoriser l'installation d'applications inconnues.
 
 ## Prochaines étapes
 
