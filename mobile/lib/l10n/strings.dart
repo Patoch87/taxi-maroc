@@ -194,6 +194,135 @@ class S {
     'planned': ['Prévue', 'مبرمجة', 'مبرمجة', 'Scheduled'],
     'completed': ['Terminée', 'منتهية', 'سالات', 'Completed'],
 
+    // Réservation à l'avance
+    'today': ['Aujourd\'hui', 'اليوم', 'اليوم', 'Today'],
+    'tomorrow': ['Demain', 'غدا', 'غدا', 'Tomorrow'],
+    'tooSoon': [
+      'Départ au moins 15 minutes après maintenant',
+      'الانطلاق بعد 15 دقيقة على الأقل',
+      'خاص يكون الخروج من بعد 15 دقيقة على الأقل',
+      'Departure at least 15 minutes from now'
+    ],
+    'pickupAt': ['Prise en charge à', 'موعد الركوب', 'غادي يدّيك مع', 'Pickup at'],
+
+    // Commander pour quelqu'un d'autre
+    'forMe': ['Pour moi', 'لي', 'ليا أنا', 'For me'],
+    'forSomeoneElse': ['Pour quelqu\'un d\'autre', 'لشخص آخر', 'لشي واحد آخر', 'For someone else'],
+    'whoRides': ['Qui prend le taxi ?', 'من سيركب الطاكسي؟', 'شكون غادي يركب؟', 'Who is riding?'],
+    'passengerName': ['Nom du passager', 'اسم الراكب', 'سمية الكليان', 'Passenger name'],
+    'phone': ['Téléphone', 'الهاتف', 'التيليفون', 'Phone'],
+    'fromContacts': ['Mes contacts', 'جهات اتصالي', 'الكونطاكتات ديالي', 'My contacts'],
+    'validate': ['Valider', 'تأكيد', 'أكد', 'Confirm'],
+    'passenger': ['Passager', 'الراكب', 'الكليان', 'Passenger'],
+    'sendToPassenger': ['Envoyer les infos à', 'إرسال المعلومات إلى', 'صيفط المعلومات ل', 'Send the details to'],
+    'passengerInformed': [
+      'Infos du trajet envoyées à',
+      'تم إرسال معلومات الرحلة إلى',
+      'المعلومات ديال الكورصة تصيفطو ل',
+      'Trip details sent to'
+    ],
+    'helloName': ['Bonjour', 'مرحبا', 'السلام', 'Hello'],
+    'bookedForYou': [
+      'un taxi a été commandé pour vous avec Taxi Maroc.',
+      'تم طلب طاكسي لك عبر طاكسي المغرب.',
+      'طلبنا ليك طاكسي مع طاكسي المغرب.',
+      'a taxi has been booked for you with Taxi Morocco.'
+    ],
+    'pickupPoint': ['Lieu de prise en charge', 'مكان الركوب', 'البلاصة فين غادي تركب', 'Pickup point'],
+    'bookedBy': ['Commandé par', 'طلبه', 'طلبو', 'Booked by'],
+    'forPerson': ['pour', 'لـ', 'ل', 'for'],
+
+    // Contacts de confiance
+    'trustedContacts': ['Contacts de confiance', 'جهات الاتصال الموثوقة', 'الناس اللي كتيق فيهم', 'Trusted contacts'],
+    'trustedDesc': [
+      'Jusqu\'à 5 proches à appeler en un geste et à prévenir de vos trajets',
+      'حتى 5 أقارب للاتصال بهم بلمسة وإعلامهم برحلاتك',
+      'حتى 5 ديال الناس تعيط ليهم بضغطة وتعلمهم بالكورصات ديالك',
+      'Up to 5 people to call in one tap and keep posted on your trips'
+    ],
+    'addContact': ['Ajouter un contact', 'إضافة جهة اتصال', 'زيد كونطاكت', 'Add a contact'],
+    'name': ['Nom', 'الاسم', 'السمية', 'Name'],
+    'manage': ['Gérer', 'إدارة', 'سيّر', 'Manage'],
+    'add': ['Ajouter', 'إضافة', 'زيد', 'Add'],
+    'remove': ['Supprimer', 'حذف', 'مسح', 'Remove'],
+    'noContacts': [
+      'Aucun contact pour le moment',
+      'لا توجد جهات اتصال بعد',
+      'ما زال ما زدتي حتى واحد',
+      'No contacts yet'
+    ],
+    'maxContacts': [
+      '5 contacts au maximum',
+      '5 جهات اتصال كحد أقصى',
+      '5 كونطاكتات هوما الماكسيموم',
+      '5 contacts maximum'
+    ],
+    'autoShare': [
+      'Partager automatiquement chaque trajet',
+      'مشاركة كل رحلة تلقائيا',
+      'بارطاجي كل كورصة أوطوماتيكيا',
+      'Share every trip automatically'
+    ],
+    'autoAlways': ['Toujours', 'دائما', 'ديما', 'Always'],
+    'autoNight': [
+      'La nuit seulement (21 h - 6 h)',
+      'في الليل فقط (21:00 - 6:00)',
+      'غير فالليل (21 - 6)',
+      'Only at night (9 pm - 6 am)'
+    ],
+    'autoNever': ['Jamais', 'أبدا', 'عمرني', 'Never'],
+    'sharedWith': ['Trajet partagé avec', 'تمت مشاركة الرحلة مع', 'الكورصة تبارطاجات مع', 'Trip shared with'],
+    'contactsShort': ['contacts', 'جهات اتصال', 'كونطاكتات', 'contacts'],
+
+    // Mode senior
+    'seniorMode': ['Mode senior', 'وضع كبار السن', 'وضع الشيوخ', 'Senior mode'],
+    'seniorModeDesc': [
+      'Écran très simple, gros boutons et gros texte',
+      'شاشة بسيطة جدا بأزرار ونص كبير',
+      'شاشة ساهلة بزاف، بوطونات وكتابة كبار',
+      'Very simple screen, big buttons and big text'
+    ],
+    'normalMode': ['Revenir au mode normal', 'العودة إلى الوضع العادي', 'رجع للوضع العادي', 'Back to normal mode'],
+    'seniorOrder': ['Commander un taxi', 'طلب طاكسي', 'طلب طاكسي', 'Book a taxi'],
+    'seniorHome': ['Rentrer à la maison', 'العودة إلى المنزل', 'نرجع للدار', 'Go home'],
+    'seniorCall': ['Appeler un proche', 'الاتصال بقريب', 'عيط لشي واحد من العائلة', 'Call a loved one'],
+    'seniorNoContact': [
+      'Ajoutez d\'abord un contact de confiance',
+      'أضف أولا جهة اتصال موثوقة',
+      'زيد اللول شي واحد كتيق فيه',
+      'First add a trusted contact'
+    ],
+    'goTo': ['Aller à', 'الذهاب إلى', 'نمشي ل', 'Go to'],
+    'sayDestination': ['Dire ma destination', 'قل وجهتك', 'قول فين غادي', 'Say my destination'],
+    'typeDestination': ['Ou écrivez ici', 'أو اكتب هنا', 'ولا كتب هنا', 'Or type here'],
+    'plate': ['Plaque', 'اللوحة', 'لاماتريكيلا', 'Plate'],
+
+    // Accessibilité
+    'accessibility': ['Accessibilité', 'إمكانية الوصول', 'السهولة', 'Accessibility'],
+    'lowVision': ['Je suis malvoyant(e)', 'أنا ضعيف البصر', 'ما كنشوفش مزيان', 'I am visually impaired'],
+    'lowVisionDesc': [
+      'Le chauffeur est prévenu que vous êtes malvoyant',
+      'يتم إخبار السائق بأنك ضعيف البصر',
+      'الشيفور كيتعلم بلي ما كتشوفش مزيان',
+      'The driver is told you are visually impaired'
+    ],
+    'lowVisionBadge': ['Passager malvoyant', 'راكب ضعيف البصر', 'كليان ما كيشوفش مزيان', 'Visually impaired rider'],
+    'lowVisionHint': [
+      'Présentez-vous et guidez-le jusqu\'à la portière',
+      'عرّف بنفسك وساعده حتى باب السيارة',
+      'عرف براسك وعاونو حتى للباب',
+      'Introduce yourself and guide them to the door'
+    ],
+    'lowVisionShort': ['Malvoyant', 'ضعيف البصر', 'ما كنشوفش مزيان', 'Low vision'],
+    'voiceAnnounce': ['Annonces vocales', 'الإعلانات الصوتية', 'الإعلانات بالصوت', 'Voice announcements'],
+    'taxiFound': ['Taxi trouvé', 'تم العثور على طاكسي', 'لقينا طاكسي', 'Taxi found'],
+    'minutesLong': ['minutes', 'دقائق', 'دقايق', 'minutes'],
+    'minuteOne': ['1 minute', 'دقيقة واحدة', 'دقيقة وحدة', '1 minute'],
+    'colorRed': ['rouge', 'أحمر', 'حمر', 'red'],
+    'colorBlack': ['noire', 'سوداء', 'كحلة', 'black'],
+    'colorBeige': ['beige', 'بيج', 'بيج', 'beige'],
+    'demoShort': ['Démo', 'تجريبي', 'تجريبي', 'Demo'],
+
     // Chauffeur
     'driverMode': ['Mode chauffeur', 'وضع السائق', 'وضع الشيفور', 'Driver mode'],
     'online': ['En ligne', 'متصل', 'خدام', 'Online'],
@@ -229,6 +358,9 @@ class S {
     'passengersShort': ['passagers', 'ركاب', 'كليان', 'riders'],
     'ridesShort': ['courses', 'رحلات', 'كورصات', 'rides'],
   };
+
+  /// Clés et traductions (pour vérifier dans les tests que chaque texte existe dans les 4 langues).
+  static Map<String, List<String>> get table => _t;
 
   String t(String key) {
     final row = _t[key];

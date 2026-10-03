@@ -4,12 +4,15 @@ import '../main.dart';
 import '../services/places.dart';
 import '../services/voice.dart';
 import '../theme.dart';
+import '../widgets/app_logo.dart';
 
 /// Recherche de destination plein écran, avec la commande vocale.
 /// La destination dictée est d'abord répétée à voix haute, puis écrite dans la recherche.
+/// En mode senior : très gros texte, gros bouton « Dire ma destination » et grandes lignes de résultats.
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, this.startWithVoice = false});
+  const SearchScreen({super.key, this.startWithVoice = false, this.senior = false});
   final bool startWithVoice;
+  final bool senior;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -80,58 +83,100 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final results = searchPlaces(_ctrl.text);
+    final big = widget.senior;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        title: Text(s.t('whereTo'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        toolbarHeight: big ? 72 : null,
+        iconTheme: IconThemeData(size: big ? 32 : 24),
+        flexibleSpace: const Zellige(opacity: .06),
+        title: Text(s.t('whereTo'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: big ? 28 : null)),
       ),
       body: Column(
         children: [
+          if (big)
+            // Gros bouton micro : la façon la plus simple de dire où aller.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Semantics(
+                button: true,
+                label: s.t('sayDestination'),
+                excludeSemantics: true,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _listening ? AppColors.taxiRed : AppColors.moroccoGreen,
+                    minimumSize: const Size.fromHeight(88),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    textStyle: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                  ),
+                  onPressed: _listen,
+                  icon: Icon(_listening ? Icons.graphic_eq : Icons.mic, size: 40),
+                  label: Text(s.t('sayDestination')),
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: TextField(
-              controller: _ctrl,
-              autofocus: !widget.startWithVoice,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: s.t('searchPlace'),
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: ScaleTransition(
-                    scale: Tween(begin: 1.0, end: 1.15).animate(_pulse),
-                    child: IconButton.filled(
-                      tooltip: s.t('speakNow'),
-                      style: IconButton.styleFrom(
-                        backgroundColor: _listening ? AppColors.taxiRed : AppColors.ink,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _listen,
-                      icon: Icon(_listening ? Icons.graphic_eq : Icons.mic),
-                    ),
+            child: Semantics(
+              textField: true,
+              label: s.t('searchPlace'),
+              child: TextField(
+                controller: _ctrl,
+                autofocus: !widget.startWithVoice && !big,
+                onChanged: (_) => setState(() {}),
+                style: TextStyle(fontSize: big ? 26 : 16, fontWeight: big ? FontWeight.w700 : null),
+                decoration: InputDecoration(
+                  hintText: big ? s.t('typeDestination') : s.t('searchPlace'),
+                  hintStyle: TextStyle(fontSize: big ? 24 : 16, color: AppColors.muted),
+                  contentPadding: big ? const EdgeInsets.symmetric(horizontal: 18, vertical: 22) : null,
+                  prefixIcon: Icon(Icons.search, size: big ? 32 : 24),
+                  suffixIcon: big
+                      ? null
+                      : Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: ScaleTransition(
+                            scale: Tween(begin: 1.0, end: 1.15).animate(_pulse),
+                            child: IconButton.filled(
+                              tooltip: s.t('speakNow'),
+                              style: IconButton.styleFrom(
+                                backgroundColor: _listening ? AppColors.taxiRed : AppColors.moroccoGreen,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: _listen,
+                              icon: Icon(_listening ? Icons.graphic_eq : Icons.mic),
+                            ),
+                          ),
+                        ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(big ? 20 : 14),
+                    borderSide: BorderSide(color: AppColors.line, width: big ? 2 : 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(big ? 20 : 14),
+                    borderSide: BorderSide(color: AppColors.line, width: big ? 2 : 1),
                   ),
                 ),
-                filled: true,
-                fillColor: const Color(0xFFF3F3F3),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
               ),
             ),
           ),
           if (_voiceStatus != null)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFF7F3E8), borderRadius: BorderRadius.circular(12)),
-              child: Row(children: [
-                Icon(_listening ? Icons.hearing : Icons.record_voice_over, color: AppColors.taxiRed),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(_listening && _heard.isNotEmpty ? '« $_heard »' : _voiceStatus!,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-              ]),
+            Semantics(
+              liveRegion: true,
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.sandDeep, borderRadius: BorderRadius.circular(12)),
+                child: Row(children: [
+                  Icon(_listening ? Icons.hearing : Icons.record_voice_over, color: AppColors.taxiRed),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(_listening && _heard.isNotEmpty ? '« $_heard »' : _voiceStatus!,
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: big ? 22 : 14)),
+                  ),
+                ]),
+              ),
             ),
           Expanded(
             child: ListView(
@@ -150,14 +195,24 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _tile(Place p, IconData icon, String title) => ListTile(
+  Widget _tile(Place p, IconData icon, String title) {
+    final big = widget.senior;
+    return Semantics(
+      button: true,
+      label: '$title, ${p.subtitle}',
+      excludeSemantics: true,
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: big ? 8 : 0),
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFFF3F3F3),
-          foregroundColor: AppColors.ink,
-          child: Icon(icon),
+          radius: big ? 28 : 20,
+          backgroundColor: AppColors.greenSoft,
+          foregroundColor: AppColors.moroccoGreen,
+          child: Icon(icon, size: big ? 30 : 24),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(p.subtitle, style: const TextStyle(color: AppColors.muted)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: big ? 26 : 16)),
+        subtitle: Text(p.subtitle, style: TextStyle(color: AppColors.muted, fontSize: big ? 20 : 14)),
         onTap: () => Navigator.pop(context, p),
-      );
+      ),
+    );
+  }
 }

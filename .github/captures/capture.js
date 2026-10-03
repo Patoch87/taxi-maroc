@@ -58,6 +58,87 @@ const { chromium } = require('playwright');
   await tap('Accepter');
   await shot('8-chauffeur-passager-a-bord', 12000);
 
+  // Nouveautés : chaque partie est indépendante, un échec n'empêche pas les autres captures.
+  const step = async (name, fn) => {
+    try {
+      await fn();
+    } catch (e) {
+      console.error('capture ratée :', name, e.message);
+    }
+  };
+  // Saisie dans un champ de texte Flutter repéré par son libellé.
+  const typeInto = async (label, text) => {
+    const input = page.locator(`input[aria-label*="${label}"], textarea[aria-label*="${label}"]`).first();
+    if (await input.count()) {
+      await input.click({ timeout: 5000 });
+    } else {
+      await tap(label);
+    }
+    await page.waitForTimeout(400);
+    await page.keyboard.type(text, { delay: 40 });
+    await page.waitForTimeout(400);
+  };
+
+  // Commander pour quelqu'un d'autre
+  await step('pour-un-proche', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3000);
+    await tap('Qui prend le taxi');
+    await page.waitForTimeout(1200);
+    await tap("Pour quelqu'un d'autre");
+    await page.waitForTimeout(800);
+    await typeInto('Nom du passager', 'Fatima');
+    await typeInto('Téléphone', '0611223344');
+    await shot('9-commande-pour-un-proche-saisie', 800);
+    await tap('Valider');
+    await shot('10-commande-pour-un-proche', 1500);
+  });
+
+  // Réserver pour plus tard : date (demain si possible) puis heure
+  await step('plus-tard', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3000);
+    await tap('Maintenant');
+    await page.waitForTimeout(1500);
+    const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    try {
+      await target(tomorrow).click({ timeout: 3000 });
+    } catch (_) {}
+    await shot('11-reservation-date', 800);
+    await tap('OK');
+    await page.waitForTimeout(1500);
+    await tap('OK');
+    await shot('12-reservation-plus-tard', 1500);
+  });
+
+  // Contacts de confiance
+  await step('contacts', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Contacts de confiance');
+    await page.waitForTimeout(1500);
+    await typeInto('Nom', 'Fatima');
+    await typeInto('Téléphone', '0611223344');
+    await tap('Ajouter');
+    await page.waitForTimeout(800);
+    await typeInto('Nom', 'Youssef');
+    await typeInto('Téléphone', '0622334455');
+    await tap('Ajouter');
+    await shot('13-contacts-de-confiance', 1200);
+  });
+
+  // Mode senior
+  await step('senior', async () => {
+    await open();
+    await tap('Mode senior');
+    await shot('14-mode-senior', 1500);
+    await tap('Rentrer à la maison');
+    await shot('15-mode-senior-course', 12000);
+  });
+
   await browser.close();
 })().catch((e) => {
   console.error(e);

@@ -39,9 +39,13 @@ class DriverPhoto extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.line),
           ),
-          child: Text(
-            driver.languages.map((l) => l.flag).join(' '),
-            style: const TextStyle(fontSize: 13),
+          constraints: BoxConstraints(maxWidth: size + 12),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              driver.languages.map((l) => l.flag).join(' '),
+              style: const TextStyle(fontSize: 13),
+            ),
           ),
         ),
       ]);
@@ -49,8 +53,14 @@ class DriverPhoto extends StatelessWidget {
 
 /// Fiche du chauffeur affichée pendant la course.
 class DriverCard extends StatelessWidget {
-  const DriverCard({super.key, required this.driver});
+  const DriverCard({super.key, required this.driver, this.passengerName, this.lowVision = false});
   final DemoDriver driver;
+
+  /// Course commandée pour quelqu'un d'autre : le nom du passager, comme le voit le chauffeur.
+  final String? passengerName;
+
+  /// Le chauffeur est prévenu que le passager est malvoyant.
+  final bool lowVision;
 
   @override
   Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -58,26 +68,40 @@ class DriverCard extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Flexible(
-                child: Text(driver.name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800), overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 6),
-              const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF5B301)),
-              Text(driver.rating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w700)),
-            ]),
-            Text('${driver.rides} ${s.t('ridesCount')} · ${driver.car}',
-                style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+            Text(driver.name,
+                maxLines: 1,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                overflow: TextOverflow.ellipsis),
+            Text.rich(
+              TextSpan(children: [
+                const WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Icon(Icons.star_rounded, size: 16, color: AppColors.gold),
+                ),
+                TextSpan(
+                    text: ' ${driver.rating.toStringAsFixed(1)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                TextSpan(text: ' · ${driver.rides} ${s.t('ridesCount')} · ${driver.car}'),
+              ]),
+              style: const TextStyle(color: AppColors.muted, fontSize: 13),
+            ),
             const SizedBox(height: 6),
             Wrap(spacing: 4, runSpacing: 4, children: [
               for (final l in driver.languages)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFF3F3F3), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                   child: Text('${l.flag} ${l.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
             ]),
+            if (passengerName != null || lowVision) ...[
+              const SizedBox(height: 6),
+              Wrap(spacing: 4, runSpacing: 4, children: [
+                if (passengerName != null)
+                  _badge(Icons.person, '${s.t('passenger')} : $passengerName', AppColors.moroccoGreen),
+                if (lowVision) _badge(Icons.visibility_off, s.t('lowVisionBadge'), AppColors.ink),
+              ]),
+            ],
           ]),
         ),
         const SizedBox(width: 8),
@@ -89,10 +113,39 @@ class DriverCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: AppColors.ink, width: 1.5),
             ),
-            child: Text(driver.plate, style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: .5)),
+            constraints: const BoxConstraints(maxWidth: 120),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(driver.plate,
+                  textDirection: TextDirection.ltr,
+                  style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: .5)),
+            ),
           ),
           const SizedBox(height: 4),
-          Text(driver.taxiNumber, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 120),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(driver.taxiNumber, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            ),
+          ),
         ]),
       ]);
+
+  Widget _badge(IconData icon, String text, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(text,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          ),
+        ]),
+      );
 }

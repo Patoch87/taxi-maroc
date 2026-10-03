@@ -40,8 +40,6 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
           title: Text(s.t('complain'), style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
         body: ListView(
@@ -72,7 +70,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
               decoration: InputDecoration(
                 hintText: s.t('describe'),
                 filled: true,
-                fillColor: const Color(0xFFF3F3F3),
+                fillColor: Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
               ),
             ),

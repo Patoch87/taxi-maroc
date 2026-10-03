@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../services/rides.dart';
+import '../services/schedule.dart';
 import '../theme.dart';
 
 /// Historique des courses (terminées et prévues).
@@ -11,8 +12,6 @@ class HistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
           title: Text(s.t('history'), style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
         body: tripHistory.isEmpty
@@ -23,18 +22,20 @@ class HistoryScreen extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (_, i) {
                   final t = tripHistory[i];
-                  final date =
-                      '${t.date.day.toString().padLeft(2, '0')}/${t.date.month.toString().padLeft(2, '0')} · ${t.date.hour.toString().padLeft(2, '0')}:${t.date.minute.toString().padLeft(2, '0')}';
+                  final date = t.scheduled
+                      ? scheduleLabel(t.date, lang: s.lang)
+                      : '${t.date.day.toString().padLeft(2, '0')}/${t.date.month.toString().padLeft(2, '0')} · ${hhmm(t.date)}';
                   return Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.line, width: 1.5),
                     ),
                     child: Row(children: [
                       CircleAvatar(
-                        backgroundColor: t.scheduled ? const Color(0xFFFFF4D6) : const Color(0xFFE8F3EC),
-                        foregroundColor: t.scheduled ? const Color(0xFFB07D00) : AppColors.moroccoGreen,
+                        backgroundColor: t.scheduled ? AppColors.sandDeep : AppColors.greenSoft,
+                        foregroundColor: t.scheduled ? AppColors.taxiRed : AppColors.moroccoGreen,
                         child: Icon(t.scheduled ? Icons.schedule : Icons.check),
                       ),
                       const SizedBox(width: 12),
@@ -42,6 +43,10 @@ class HistoryScreen extends StatelessWidget {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(t.destination, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                           Text('$date · ${t.option}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                          if (t.passengerName != null)
+                            Text('${s.t('passenger')} : ${t.passengerName}',
+                                style: const TextStyle(
+                                    color: AppColors.moroccoGreen, fontSize: 13, fontWeight: FontWeight.w600)),
                           if (t.driver != null)
                             Text(
                                 '${t.driver!.name} · ${t.driver!.taxiNumber}${t.rating > 0 ? ' · ${'★' * t.rating}' : ''}',

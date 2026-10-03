@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../services/rides.dart';
 import '../theme.dart';
+import 'app_logo.dart';
 
 /// Fond de carte OpenStreetMap (gratuit, sans clé). Les tuiles CARTO demandent désormais une clé.
 /// Pour la mise en production : prendre un fournisseur de tuiles avec contrat (Mapbox, MapTiler, Google).
@@ -80,7 +81,7 @@ Marker stopMarker(LatLng p, {required bool destination}) => Marker(
       ),
     );
 
-Polyline routeLine(List<LatLng> pts, {Color color = AppColors.ink}) =>
+Polyline routeLine(List<LatLng> pts, {Color color = AppColors.moroccoGreen}) =>
     Polyline(points: pts, strokeWidth: 5, color: color, borderColor: Colors.white, borderStrokeWidth: 1.5);
 
 /// Bouton rond flottant au-dessus de la carte.
@@ -96,11 +97,11 @@ class MapCircleButton extends StatelessWidget {
         shape: const CircleBorder(),
         elevation: 4,
         shadowColor: Colors.black26,
-        child: IconButton(icon: Icon(icon), onPressed: onTap, tooltip: tooltip),
+        child: IconButton(icon: Icon(icon, color: AppColors.ink), onPressed: onTap, tooltip: tooltip),
       );
 }
 
-/// Panneau blanc arrondi en bas de l'écran.
+/// Panneau couleur sable arrondi en bas de l'écran, avec un liseré de zellige en haut.
 class BottomPanel extends StatelessWidget {
   const BottomPanel({super.key, required this.child});
   final Widget child;
@@ -108,37 +109,48 @@ class BottomPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         width: double.infinity,
+        clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          color: AppColors.sand,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 16)],
         ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 14),
-                    decoration: BoxDecoration(color: AppColors.line, borderRadius: BorderRadius.circular(2)),
+        child: Stack(children: [
+          // Motif de zellige très discret derrière la poignée.
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 30,
+            child: Zellige(opacity: .12, cell: 22),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 14),
+                      decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(3)),
+                    ),
                   ),
-                ),
-                // Le panneau ne dépasse pas 70 % de l'écran ; au-delà, son contenu défile.
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * .7),
-                  child: SingleChildScrollView(
-                    child: AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
+                  // Le panneau ne dépasse pas 70 % de l'écran ; au-delà, son contenu défile.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * .7),
+                    child: SingleChildScrollView(
+                      child: AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+        ]),
       );
 }

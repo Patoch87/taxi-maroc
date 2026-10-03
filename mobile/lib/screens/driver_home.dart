@@ -13,15 +13,22 @@ import '../services/location.dart';
 import '../services/places.dart';
 import '../services/rides.dart';
 import '../services/routing.dart';
+import '../services/settings.dart';
 import '../theme.dart';
 import '../widgets/map_parts.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
 class _Request {
-  _Request(this.rider, this.destination, this.rating, {this.takenAfter});
+  _Request(this.rider, this.destination, this.rating, {this.takenAfter, this.lowVision = false, this.bookedBy});
   final ShiftRider rider;
   final String destination;
   final double rating;
+
+  /// Passager malvoyant : le chauffeur se présente et le guide jusqu'à la portière.
+  final bool lowVision;
+
+  /// Course commandée par quelqu'un d'autre pour ce passager.
+  final String? bookedBy;
   final DateTime shownAt = DateTime.now();
 
   /// La même demande est envoyée à plusieurs chauffeurs : si un autre accepte avant,
@@ -59,6 +66,7 @@ class _DriverHomeState extends State<DriverHome> {
   Timer? _tick;
   _Request? _request;
   DateTime _lastRequest = DateTime.now();
+  int _requestCount = 0;
 
   @override
   void initState() {
@@ -206,11 +214,16 @@ class _DriverHomeState extends State<DriverHome> {
     final fare =
         _kind == TaxiKind.grand ? 12.0 * seats : Demo.petitTaxiPrice(routeKm: km, seul: false, premium: false) * seats;
     _lastRequest = DateTime.now();
+    final first = _requestCount++ == 0;
+    final name = names[_rnd.nextInt(names.length)];
     _request = _Request(
-      ShiftRider(name: names[_rnd.nextInt(names.length)], pickupIdx: pickup, dropIdx: drop, fare: fare, seats: seats),
+      ShiftRider(name: name, pickupIdx: pickup, dropIdx: drop, fare: fare, seats: seats),
       _nearestPlaceName(_route[drop]),
       4.5 + _rnd.nextInt(5) / 10,
-      takenAfter: _rnd.nextInt(4) == 0 ? Duration(milliseconds: 4000 + _rnd.nextInt(6000)) : null,
+      takenAfter: !first && _rnd.nextInt(4) == 0 ? Duration(milliseconds: 4000 + _rnd.nextInt(6000)) : null,
+      // Démo : si le passager de l'application s'est déclaré malvoyant, la première demande l'est aussi.
+      lowVision: (first && settings.lowVision) || _rnd.nextInt(5) == 0,
+      bookedBy: _rnd.nextInt(4) == 0 ? names.where((n) => n != name).elementAt(_rnd.nextInt(names.length - 1)) : null,
     );
   }
 
@@ -553,6 +566,32 @@ class _DriverHomeState extends State<DriverHome> {
               ),
               Text(dh(r.rider.fare), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
             ]),
+            if (r.bookedBy != null) ...[
+              const SizedBox(height: 6),
+              Text('${s.t('bookedBy')} ${r.bookedBy} ${s.t('forPerson')} ${r.rider.name}',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
+            if (r.lowVision) ...[
+              const SizedBox(height: 10),
+              Semantics(
+                container: true,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(12)),
+                  child: Row(children: [
+                    const Icon(Icons.visibility_off, color: Colors.white),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(s.t('lowVisionBadge'),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                        Text(s.t('lowVisionHint'), style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      ]),
+                    ),
+                  ]),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             _infoLine(Icons.person_pin_circle, AppColors.moroccoGreen,
                 '${distanceText(_metersTo(r.rider.pickupIdx))} ${s.t('pickupAhead')}'),

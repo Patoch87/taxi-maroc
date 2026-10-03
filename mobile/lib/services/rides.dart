@@ -102,6 +102,14 @@ Color taxiColor(TaxiKind k) => switch (k) {
       TaxiKind.grand => AppColors.grandTaxi,
     };
 
+/// Couleur de la voiture, annoncée à voix haute (clé de traduction) : petits taxis rouges à Casablanca,
+/// taxis premium noirs, grands taxis beiges.
+String carColorKey(TaxiKind k) => switch (k) {
+      TaxiKind.petit => 'colorRed',
+      TaxiKind.premium => 'colorBlack',
+      TaxiKind.grand => 'colorBeige',
+    };
+
 /// Langue parlée par un chauffeur, avec son petit drapeau.
 class DriverLanguage {
   const DriverLanguage(this.flag, this.name);
@@ -157,7 +165,8 @@ class DemoDriver {
     return DemoDriver(
       names[rnd.nextInt(names.length)],
       'Taxi n° ${1000 + rnd.nextInt(9000)}',
-      '${10000 + rnd.nextInt(89999)} | أ | 6',
+      // Marque de gauche à droite après la lettre arabe : la plaque se lit « 12345 | أ | 6 » dans toutes les langues.
+      '${10000 + rnd.nextInt(89999)} | أ\u200E | 6',
       4.5 + rnd.nextInt(5) / 10,
       car,
       langSets[rnd.nextInt(langSets.length)],
@@ -176,13 +185,17 @@ class TripRecord {
       this.driver,
       this.scheduled = false,
       this.tip = 0,
-      this.rating = 0});
+      this.rating = 0,
+      this.passengerName});
   final String destination;
   final String option;
   final double price;
   final DateTime date;
   final DemoDriver? driver;
   final bool scheduled;
+
+  /// Course commandée pour quelqu'un d'autre : nom du passager.
+  final String? passengerName;
   double tip;
   int rating;
 }
