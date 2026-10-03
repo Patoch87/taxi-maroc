@@ -8,7 +8,8 @@ import '../theme.dart';
 import 'demo.dart';
 import 'places.dart';
 
-enum TaxiKind { petit, premium, grand }
+/// Petit taxi, taxi premium, grand taxi, petit taxi électrique.
+enum TaxiKind { petit, premium, grand, electrique }
 
 /// Une option de course proposée au passager, avec son prix affiché à l'avance.
 class RideOption {
@@ -21,6 +22,9 @@ class RideOption {
     required this.seats,
     this.seul = false,
   });
+
+  /// Taxi électrique : même prix officiel que le petit taxi.
+  bool get electric => kind == TaxiKind.electrique;
   final String id;
   final String title;
   final String description;
@@ -65,6 +69,13 @@ List<RideOption> rideOptions({required Place destination, required double routeM
         priceMad: price(false, false),
         seats: 3),
     RideOption(
+        id: 'electrique',
+        title: s.t('electricTaxi'),
+        description: s.t('electricDesc'),
+        kind: TaxiKind.electrique,
+        priceMad: price(false, false),
+        seats: 3),
+    RideOption(
         id: 'seul',
         title: s.t('aloneTitle'),
         description: s.t('aloneDesc'),
@@ -100,6 +111,7 @@ Color taxiColor(TaxiKind k) => switch (k) {
       TaxiKind.petit => AppColors.taxiRed,
       TaxiKind.premium => AppColors.ink,
       TaxiKind.grand => AppColors.grandTaxi,
+      TaxiKind.electrique => AppColors.moroccoGreen,
     };
 
 /// Couleur de la voiture, annoncée à voix haute (clé de traduction) : petits taxis rouges à Casablanca,
@@ -108,6 +120,7 @@ String carColorKey(TaxiKind k) => switch (k) {
       TaxiKind.petit => 'colorRed',
       TaxiKind.premium => 'colorBlack',
       TaxiKind.grand => 'colorBeige',
+      TaxiKind.electrique => 'colorGreen',
     };
 
 /// Langue parlée par un chauffeur, avec son petit drapeau.
@@ -161,6 +174,7 @@ class DemoDriver {
       TaxiKind.petit => 'Dacia Logan',
       TaxiKind.premium => 'Toyota Corolla Hybride',
       TaxiKind.grand => 'Dacia Lodgy',
+      TaxiKind.electrique => 'Dacia Spring électrique',
     };
     return DemoDriver(
       names[rnd.nextInt(names.length)],

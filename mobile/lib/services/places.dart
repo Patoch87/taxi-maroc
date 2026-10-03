@@ -59,3 +59,11 @@ List<Place> searchPlaces(String text) {
   bool hit(String a) => a.toLowerCase().contains(q) || (q.length > 3 && q.contains(a.toLowerCase()));
   return casablancaPlaces.where((p) => hit(p.name) || p.aliases.any(hit)).toList();
 }
+
+/// Bornes de recharge pour les taxis électriques (données de démo).
+const chargingStations = [
+  Place('Borne Anfa', 33.5935, -7.6455, ['anfa'], subtitle: 'Boulevard d\'Anfa'),
+  Place('Borne Maârif', 33.5845, -7.6360, ['maarif'], subtitle: 'Rue Abou Bakr El Kadiri'),
+  Place('Borne Sidi Maârouf', 33.5340, -7.6430, ['sidi maarouf'], subtitle: 'Technopark'),
+  Place('Borne Aïn Sebaâ', 33.6050, -7.5330, ['ain sebaa'], subtitle: 'Route de Rabat'),
+];

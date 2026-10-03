@@ -134,6 +134,38 @@ const { chromium } = require('playwright');
     await shot('13-contacts-de-confiance', 1200);
   });
 
+  // Offre contextuelle (exemple de démo) et taxi électrique
+  await step('offre', async () => {
+    await open();
+    await tap('Rechercher une destination');
+    await page.waitForTimeout(1500);
+    await page.keyboard.type('mall', { delay: 60 });
+    await page.waitForTimeout(800);
+    await tap('Morocco Mall');
+    await page.waitForTimeout(3500);
+    await tap('Petit taxi seul');
+    await shot('16-offre-exemple-publicitaire', 1200);
+    await tap('Électrique');
+    await shot('17-option-electrique', 1200);
+  });
+
+  // Chauffeur de taxi électrique : batterie et bornes de recharge
+  await step('bornes', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Mode chauffeur');
+    await page.waitForTimeout(2500);
+    await tap('Électrique');
+    await page.waitForTimeout(500);
+    await tap('Passer en ligne');
+    await page.waitForTimeout(3000);
+    await tap('Bornes de recharge');
+    await shot('18-chauffeur-bornes-de-recharge', 1500);
+    await tap('Y aller');
+    await shot('19-chauffeur-vers-la-borne', 5000);
+  });
+
   // Mode senior
   await step('senior', async () => {
     await open();

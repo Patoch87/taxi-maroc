@@ -26,9 +26,10 @@ void main() {
 
   test('options de course : petit taxi en ville, grand taxi hors de la ville', () {
     final ville = rideOptions(destination: casablancaPlaces.first, routeM: 4000, date: DateTime(2026, 10, 2, 12));
-    expect(ville.map((o) => o.id), ['partage', 'seul', 'premium']);
+    expect(ville.map((o) => o.id), ['partage', 'electrique', 'seul', 'premium']);
     expect(ville[0].priceMad, 16); // 2 + 4 km x 3,5
-    expect(ville[1].priceMad, 20.8); // + 30 % seul
+    expect(ville[1].priceMad, 16); // électrique : même prix officiel
+    expect(ville[2].priceMad, 20.8); // + 30 % seul
 
     final mohammedia = casablancaPlaces.firstWhere((p) => p.name == 'Mohammedia');
     final grand = rideOptions(destination: mohammedia, routeM: 25000);

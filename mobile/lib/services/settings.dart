@@ -17,6 +17,8 @@ class AppSettings extends ChangeNotifier {
   bool _senior = false;
   bool _lowVision = false;
   bool _voiceAnnounce = true;
+  bool _offers = true;
+  bool _tourist = false;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
 
@@ -31,6 +33,14 @@ class AppSettings extends ChangeNotifier {
   /// Annonces vocales : taxi accepté, minutes restantes, arrivée.
   bool get voiceAnnounce => _voiceAnnounce;
   set voiceAnnounce(bool v) => _set(() => _voiceAnnounce = v);
+
+  /// Offres selon la destination et les trajets passés (activé dans la démo).
+  bool get offers => _offers;
+  set offers(bool v) => _set(() => _offers = v);
+
+  /// Touriste : restaurants proposés près de la destination (aussi quand l'application est en anglais).
+  bool get tourist => _tourist;
+  set tourist(bool v) => _set(() => _tourist = v);
 
   AutoShare get autoShare => _autoShare;
   set autoShare(AutoShare v) => _set(() => _autoShare = v);
@@ -61,6 +71,8 @@ class AppSettings extends ChangeNotifier {
         _senior = false;
         _lowVision = false;
         _voiceAnnounce = true;
+        _offers = true;
+        _tourist = false;
         _autoShare = AutoShare.night;
         _contacts.clear();
       });

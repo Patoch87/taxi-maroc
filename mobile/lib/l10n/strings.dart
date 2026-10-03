@@ -323,6 +323,96 @@ class S {
     'colorBeige': ['beige', 'بيج', 'بيج', 'beige'],
     'demoShort': ['Démo', 'تجريبي', 'تجريبي', 'Demo'],
 
+    // Offres contextuelles (exemples de démo)
+    'promoLabel': [
+      'Exemple publicitaire (démo)',
+      'مثال إشهاري (تجريبي)',
+      'مثال ديال الإشهار (تجريبي)',
+      'Ad example (demo)'
+    ],
+    'offersSetting': [
+      'Offres personnalisées selon mes trajets',
+      'عروض مخصصة حسب رحلاتي',
+      'عروض على حساب الكورصات ديالي',
+      'Offers based on my trips'
+    ],
+    'offersWhy': [
+      'Basé sur votre destination et vos trajets, jamais sur vos données personnelles',
+      'حسب وجهتك ورحلاتك، وليس أبدا حسب بياناتك الشخصية',
+      'على حساب فين غادي والكورصات ديالك، عمرو ما على المعلومات الشخصية ديالك',
+      'Based on your destination and trips, never on your personal data'
+    ],
+    'seeOffer': ['Voir une offre', 'عرض متاح', 'شوف واحد العرض', 'See an offer'],
+    'promoZara': [
+      '-15 % chez Zara au Morocco Mall',
+      '-15٪ في زارا بموروكو مول',
+      '-15٪ عند زارا فموروكو مول',
+      '15% off at Zara, Morocco Mall'
+    ],
+    'promoZaraDetail': [
+      'Montrez ce trajet en caisse, valable aujourd\'hui',
+      'أظهر هذه الرحلة عند الأداء، صالح اليوم',
+      'وري هاد الكورصة فالكيس، صالح اليوم',
+      'Show this trip at checkout, valid today'
+    ],
+    'promoKool': [
+      'Koolsmoothie : un smoothie offert pour un acheté',
+      'كولسموذي: عصير مجاني عند شراء واحد',
+      'كولسموذي: شري واحد وخود واحد فابور',
+      'Koolsmoothie: buy one smoothie, get one free'
+    ],
+    'promoKoolDetail': [
+      'Près de votre destination, jusqu\'à 20 h',
+      'قرب وجهتك، حتى الساعة 20',
+      'قريب من فين غادي، حتى ل 8 دالليل',
+      'Near your destination, until 8 pm'
+    ],
+    'promoCafe': [
+      'Café de la Gare : café offert avec un croissant',
+      'مقهى المحطة: قهوة مجانية مع كرواسون',
+      'قهوة لاكار: قهوة فابور مع كرواصة',
+      'Café de la Gare: free coffee with a croissant'
+    ],
+    'promoCafeDetail': [
+      'Avant 11 h, sur présentation du trajet',
+      'قبل الساعة 11، بتقديم الرحلة',
+      'قبل 11، وري الكورصة',
+      'Before 11 am, show your trip'
+    ],
+
+    // Touristes : restaurants
+    'touristMode': ['Je suis touriste', 'أنا سائح', 'أنا سائح', 'I am a tourist'],
+    'touristDesc': [
+      'Restaurants proposés près de votre destination',
+      'مطاعم مقترحة قرب وجهتك',
+      'ريسطورات قراب من فين غادي',
+      'Restaurant ideas near your destination'
+    ],
+    'restaurantsNear': ['Restaurants près de', 'مطاعم قرب', 'ريسطورات قراب من', 'Restaurants near'],
+    'goByTaxi': ['Y aller en taxi', 'الذهاب بالطاكسي', 'سير ليه بالطاكسي', 'Take a taxi there'],
+    'newDestination': ['Nouvelle destination', 'وجهة جديدة', 'بلاصة جديدة', 'New destination'],
+    'cuisineMoroccan': ['Marocaine', 'مغربي', 'مغربية', 'Moroccan'],
+    'cuisineSeafood': ['Poisson et fruits de mer', 'سمك ومأكولات بحرية', 'الحوت', 'Fish & seafood'],
+    'cuisineCafe': ['Café, pâtisserie', 'مقهى وحلويات', 'قهوة وحلويات', 'Café & pastries'],
+    'cuisineJapanese': ['Japonaise', 'ياباني', 'يابانية', 'Japanese'],
+    'cuisineGrill': ['Grillades', 'مشاوي', 'الشوا', 'Grill'],
+    'cuisineItalian': ['Italienne', 'إيطالي', 'طاليانية', 'Italian'],
+
+    // Taxis électriques
+    'electricTaxi': ['Électrique', 'كهربائي', 'طاكسي كهربائي', 'Electric'],
+    'electricDesc': [
+      '0 essence, 0 CO₂ en route',
+      '0 بنزين، 0 ثاني أكسيد الكربون',
+      '0 ليصانص، 0 CO₂ فالطريق',
+      '0 fuel, 0 CO₂ on the road'
+    ],
+    'colorGreen': ['verte', 'خضراء', 'خضرا', 'green'],
+    'battery': ['Batterie', 'البطارية', 'الباطري', 'Battery'],
+    'chargers': ['Bornes de recharge', 'محطات الشحن', 'بلايص الشارج', 'Charging stations'],
+    'goThere': ['Y aller', 'اذهب', 'سير', 'Go there'],
+    'charged': ['Batterie rechargée', 'تم شحن البطارية', 'الباطري تشارجات', 'Battery charged'],
+    'lowBattery': ['Batterie faible', 'البطارية ضعيفة', 'الباطري قربات تسالي', 'Low battery'],
+
     // Chauffeur
     'driverMode': ['Mode chauffeur', 'وضع السائق', 'وضع الشيفور', 'Driver mode'],
     'online': ['En ligne', 'متصل', 'خدام', 'Online'],

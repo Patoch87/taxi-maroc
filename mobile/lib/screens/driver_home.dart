@@ -68,6 +68,12 @@ class _DriverHomeState extends State<DriverHome> {
   DateTime _lastRequest = DateTime.now();
   int _requestCount = 0;
 
+  // Taxi électrique : niveau de batterie et bornes de recharge.
+  double _battery = .62;
+  bool _showChargers = false;
+  Place? _chargingTarget;
+  bool get _electric => _kind == TaxiKind.electrique;
+
   @override
   void initState() {
     super.initState();
@@ -159,6 +165,8 @@ class _DriverHomeState extends State<DriverHome> {
       moved = true;
     }
     if (moved) {
+      // Démo : une Dacia Spring consomme environ 1 % tous les 2 km.
+      if (_electric) _battery = max(.05, _battery - _metersPerTick / 200000);
       final events = _shift.advance(_pos);
       for (final r in events.pickedUp) {
         _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
@@ -190,13 +198,18 @@ class _DriverHomeState extends State<DriverHome> {
 
     // Fin de la route : nouvelle direction si plus personne à déposer.
     if (_pos >= _route.length - 1 && _shift.riders.isEmpty) {
+      if (_chargingTarget != null) {
+        _chargingTarget = null;
+        _battery = 1;
+        _toast(Icons.battery_charging_full, s.t('charged'));
+      }
       _newRoute();
     }
     setState(() {});
   }
 
   void _maybeNewRequest() {
-    if (_request != null || _shift.isFull) return;
+    if (_request != null || _shift.isFull || _chargingTarget != null) return;
     if (DateTime.now().difference(_lastRequest).inSeconds < 7) return;
     final remaining = _route.length - 1 - _pos;
     if (remaining < 20) return;
@@ -246,6 +259,115 @@ class _DriverHomeState extends State<DriverHome> {
 
   void _decline() => setState(() => _request = null);
 
+  // ---------------------------------------------------------------- Recharge
+
+  /// Bornes les plus proches, avec leur distance à vol d'oiseau.
+  List<(Place, double)> get _chargersByDistance {
+    const d = Distance();
+    return [for (final c in chargingStations) (c, d(_taxi, LatLng(c.lat, c.lng)))]
+      ..sort((a, b) => a.$2.compareTo(b.$2));
+  }
+
+  /// Route vers une borne. Possible seulement sans passager à bord ni promis (leurs arrêts sont sur la route actuelle).
+  Future<void> _goCharge(Place st) async {
+    if (_shift.riders.isNotEmpty) return;
+    var route = await fetchRoute(_taxi, LatLng(st.lat, st.lng));
+    if (route.length < 20) route = interpolate(_taxi, LatLng(st.lat, st.lng), 80);
+    if (!mounted) return;
+    setState(() {
+      _request = null;
+      _chargingTarget = st;
+      _heading = st;
+      _route = route;
+      _pos = 0;
+      _carry = 0;
+      _follow = true;
+    });
+  }
+
+  Future<void> _openChargers() {
+    setState(() => _showChargers = true);
+    final busy = _shift.riders.isNotEmpty;
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.sand,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              const Icon(Icons.ev_station, color: AppColors.moroccoGreen),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(s.t('chargers'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            for (final (st, m) in _chargersByDistance)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 8, 8),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                child: Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(st.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                      Text('${st.subtitle} · ${distanceText(m)}', style: const TextStyle(color: AppColors.muted)),
+                    ]),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                    onPressed: busy
+                        ? null
+                        : () {
+                            Navigator.pop(ctx);
+                            _goCharge(st);
+                          },
+                    child: Text(s.t('goThere')),
+                  ),
+                ]),
+              ),
+          ]),
+        ),
+      ),
+    ).whenComplete(() {
+      if (mounted) setState(() => _showChargers = false);
+    });
+  }
+
+  Widget _batteryRow() {
+    final pct = (_battery * 100).round();
+    final low = _battery < .2;
+    final color = low ? AppColors.taxiRed : AppColors.moroccoGreen;
+    return Row(children: [
+      Icon(
+          _chargingTarget != null
+              ? Icons.battery_charging_full
+              : low
+                  ? Icons.battery_alert
+                  : Icons.battery_5_bar,
+          color: color),
+      const SizedBox(width: 6),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${s.t('battery')} $pct %', style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+          if (low) Text(s.t('lowBattery'), style: const TextStyle(color: AppColors.taxiRed, fontSize: 12)),
+        ]),
+      ),
+      const SizedBox(width: 8),
+      Flexible(
+          child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40), foregroundColor: AppColors.moroccoGreen),
+        onPressed: _openChargers,
+        icon: const Icon(Icons.ev_station, size: 18),
+        label: Text(s.t('chargers'), overflow: TextOverflow.ellipsis),
+      )),
+    ]);
+  }
+
   void _toast(IconData icon, String text) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -289,6 +411,22 @@ class _DriverHomeState extends State<DriverHome> {
           for (final r in _shift.riders) stopMarker(_route[min(r.dropIdx, _route.length - 1)], destination: true),
           for (final r in pending) _riderPin(_route[r.pickupIdx], r.name, AppColors.moroccoGreen),
           if (req != null) _riderPin(_route[req.pickupIdx], req.name, const Color(0xFFF5B301)),
+          if (_showChargers || _chargingTarget != null)
+            for (final c in chargingStations)
+              Marker(
+                point: LatLng(c.lat, c.lng),
+                width: 40,
+                height: 40,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.moroccoGreen,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                  ),
+                  child: const Icon(Icons.ev_station, color: Colors.white, size: 20),
+                ),
+              ),
           Marker(
             point: _taxi,
             width: 52,
@@ -643,8 +781,11 @@ class _DriverHomeState extends State<DriverHome> {
         Text(s.t('chooseTaxiType'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         Row(children: [
-          for (final k in [TaxiKind.petit, TaxiKind.grand]) ...[
+          for (final k in [TaxiKind.petit, TaxiKind.electrique, TaxiKind.grand]) ...[
             Expanded(
+                child: Semantics(
+              button: true,
+              selected: _kind == k,
               child: GestureDetector(
                 onTap: () => setState(() => _kind = k),
                 child: AnimatedContainer(
@@ -659,18 +800,25 @@ class _DriverHomeState extends State<DriverHome> {
                       width: 52,
                       height: 38,
                       decoration: BoxDecoration(color: taxiColor(k), borderRadius: BorderRadius.circular(10)),
-                      child: Icon(Icons.local_taxi, color: k == TaxiKind.grand ? AppColors.ink : Colors.white),
+                      child: Icon(k == TaxiKind.electrique ? Icons.electric_car : Icons.local_taxi,
+                          color: k == TaxiKind.grand ? AppColors.ink : Colors.white),
                     ),
                     const SizedBox(height: 8),
-                    Text(k == TaxiKind.grand ? s.t('grandTaxi') : s.t('petitTaxi'),
+                    Text(
+                        switch (k) {
+                          TaxiKind.grand => s.t('grandTaxi'),
+                          TaxiKind.electrique => s.t('electricTaxi'),
+                          _ => s.t('petitTaxi'),
+                        },
+                        textAlign: TextAlign.center,
                         style: const TextStyle(fontWeight: FontWeight.w700)),
                     Text('${k == TaxiKind.grand ? 6 : 3} ${s.t('seats')}',
                         style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                   ]),
                 ),
               ),
-            ),
-            if (k == TaxiKind.petit) const SizedBox(width: 10),
+            )),
+            if (k != TaxiKind.grand) const SizedBox(width: 8),
           ],
         ]),
         const SizedBox(height: 14),
@@ -684,6 +832,7 @@ class _DriverHomeState extends State<DriverHome> {
       ]);
 
   Widget _onlinePanel() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (_electric) ...[_batteryRow(), const Divider(height: 20, color: AppColors.line)],
         _seatCounter(),
         const Divider(height: 26, color: AppColors.line),
         _stops(),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Étoile à huit branches (khatam) : deux carrés superposés, l'un tourné de 45°.
+/// Étoile à huit branches (khatam) du zellige : deux carrés superposés, l'un tourné de 45°.
 Path khatamPath(Offset c, double r) {
   final path = Path();
   for (final start in [pi / 4, 0.0]) {
@@ -20,7 +20,8 @@ Path khatamPath(Offset c, double r) {
   return path;
 }
 
-/// Logo de Taxi Maroc : étoile khatam verte, liseré sable, enseigne de taxi rouge marquée d'un « T ».
+/// Logo de Taxi Maroc « Bab, la porte » : arc de porte rouge, route qui s'enfonce vers l'horizon,
+/// petit losange vert au sommet. Dessiné sur une grille de 100 x 100.
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 40});
   final double size;
@@ -36,56 +37,58 @@ class AppLogo extends StatelessWidget {
 class AppLogoPainter extends CustomPainter {
   const AppLogoPainter();
 
+  static const sandLight = Color(0xFFF3EAD7);
+  static const road = Color(0xFF0F2A1E);
+
   @override
   void paint(Canvas canvas, Size size) {
-    final s = size.shortestSide;
-    final c = Offset(size.width / 2, size.height / 2);
-    final r = s / 2;
-    final fill = Paint()..isAntiAlias = true;
+    final k = size.shortestSide / 100;
+    canvas.save();
+    canvas.translate((size.width - 100 * k) / 2, (size.height - 100 * k) / 2);
+    canvas.scale(k);
+    final paint = Paint()..isAntiAlias = true;
 
-    // Étoile verte, puis étoile intérieure sable et filet vert : le motif du zellige.
-    canvas.drawPath(khatamPath(c, r), fill..color = AppColors.moroccoGreen);
-    canvas.drawPath(khatamPath(c, r * .78), fill..color = AppColors.sand);
+    // Arc extérieur rouge : M22 94 V52 C22 22 36 10 50 10 C64 10 78 22 78 52 V94 Z
     canvas.drawPath(
-        khatamPath(c, r * .68),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = max(1, s * .03)
-          ..color = AppColors.moroccoGreen);
-
-    // Enseigne lumineuse du toit d'un petit taxi : trapèze rouge arrondi.
-    final w = s * .5, h = s * .32;
-    final top = c.dy - h / 2;
-    final sign = Path()
-      ..moveTo(c.dx - w * .36, top)
-      ..lineTo(c.dx + w * .36, top)
-      ..lineTo(c.dx + w / 2, top + h)
-      ..lineTo(c.dx - w / 2, top + h)
-      ..close();
+        Path()
+          ..moveTo(22, 94)
+          ..lineTo(22, 52)
+          ..cubicTo(22, 22, 36, 10, 50, 10)
+          ..cubicTo(64, 10, 78, 22, 78, 52)
+          ..lineTo(78, 94)
+          ..close(),
+        paint..color = AppColors.taxiRed);
+    // Arc intérieur sable : M31 94 V54 C31 31 40 21 50 21 C60 21 69 31 69 54 V94 Z
     canvas.drawPath(
-        sign,
-        Paint()
-          ..color = AppColors.taxiRed
-          ..style = PaintingStyle.fill
-          ..strokeJoin = StrokeJoin.round);
+        Path()
+          ..moveTo(31, 94)
+          ..lineTo(31, 54)
+          ..cubicTo(31, 31, 40, 21, 50, 21)
+          ..cubicTo(60, 21, 69, 31, 69, 54)
+          ..lineTo(69, 94)
+          ..close(),
+        paint..color = sandLight);
+    // Route : M44 94 L48.5 40 H51.5 L56 94 Z
     canvas.drawPath(
-        sign,
-        Paint()
-          ..color = AppColors.taxiRed
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = s * .05
-          ..strokeJoin = StrokeJoin.round);
-
-    // « T » blanc
-    final white = Paint()..color = Colors.white;
-    final bar = s * .055;
-    canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(c.dx, top + h * .26), width: w * .48, height: bar),
-            Radius.circular(bar / 2)),
-        white);
-    canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(c.dx - bar / 2, top + h * .2, bar, h * .64), Radius.circular(bar / 2)),
-        white);
+        Path()
+          ..moveTo(44, 94)
+          ..lineTo(48.5, 40)
+          ..lineTo(51.5, 40)
+          ..lineTo(56, 94)
+          ..close(),
+        paint..color = road);
+    // Trois tirets au milieu de la route, de plus en plus fins vers l'horizon.
+    paint.color = sandLight;
+    canvas.drawRect(const Rect.fromLTRB(49.3, 78, 50.7, 86), paint);
+    canvas.drawRect(const Rect.fromLTRB(49.45, 63, 50.55, 70), paint);
+    canvas.drawRect(const Rect.fromLTRB(49.6, 50, 50.4, 56), paint);
+    // Losange vert au sommet : carré de 12 tourné de 45° centré en (50, 8).
+    canvas.save();
+    canvas.translate(50, 8);
+    canvas.rotate(pi / 4);
+    canvas.drawRect(const Rect.fromLTRB(-6, -6, 6, 6), paint..color = AppColors.moroccoGreen);
+    canvas.restore();
+    canvas.restore();
   }
 
   @override

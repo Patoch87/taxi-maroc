@@ -11,16 +11,19 @@ import '../l10n/strings.dart';
 import '../main.dart';
 import '../services/location.dart';
 import '../services/places.dart';
+import '../services/promos.dart';
 import '../services/rides.dart';
 import '../services/routing.dart';
 import '../services/schedule.dart';
 import '../services/settings.dart';
+import '../services/tourism.dart';
 import '../services/trip_share.dart';
 import '../services/voice.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/driver_card.dart';
 import '../widgets/map_parts.dart';
+import '../widgets/promo_card.dart';
 import '../widgets/senior.dart';
 import '../widgets/sheets.dart';
 import 'driver_home.dart';
@@ -96,6 +99,9 @@ class _RiderHomeState extends State<RiderHome> {
   Voice? _voiceEngine;
   Voice get _voice => _voiceEngine ??= Voice();
   int _lastAnnouncedMin = -1;
+
+  /// Mode senior : l'offre ne s'affiche que si le passager la demande.
+  bool _seniorPromoOpen = false;
 
   @override
   void initState() {
@@ -433,6 +439,61 @@ class _RiderHomeState extends State<RiderHome> {
     _share();
   }
 
+  // ---------------------------------------------------------------- Offres et restaurants
+
+  /// Offre selon la destination, l'heure, le type de course et les trajets passés (si le passager l'accepte).
+  Promo? get _promo => settings.offers && _dest != null && _selected != null
+      ? pickPromo(destination: _dest!, option: _selected!, history: tripHistory)
+      : null;
+
+  List<Widget> _promoBlock() {
+    final p = _promo;
+    return p == null ? const [] : [const SizedBox(height: 10), PromoCard(promo: p)];
+  }
+
+  /// Touristes (ou application en anglais) : 3 restaurants près de la destination.
+  bool get _showRestaurants => (settings.tourist || s.lang == 'en') && _dest != null && !_dest!.intercity;
+
+  List<Widget> _restaurantBlock() => _showRestaurants
+      ? [
+          const SizedBox(height: 12),
+          RestaurantSuggestions(
+            destinationName: _dest!.name,
+            items: restaurantsNear(_dest!),
+            onGo: (r) => _retarget(r.place),
+          ),
+        ]
+      : const [];
+
+  /// Change la destination : avant la prise en charge, pendant le trajet, ou pour une nouvelle course.
+  Future<void> _retarget(Place p) async {
+    if (_step == RiderStep.done) {
+      _finish();
+      await _chooseDestination(p);
+      return;
+    }
+    final from = _step == RiderStep.onTrip ? (_taxiPos ?? _me) : _me;
+    final route = await fetchRoute(from, LatLng(p.lat, p.lng));
+    if (!mounted) return;
+    final routeM = routeLengthM(route);
+    final options = rideOptions(destination: p, routeM: routeM);
+    setState(() {
+      _dest = p;
+      _route = route;
+      _routeM = routeM;
+      _options = options;
+      _selected = options.firstWhere((o) => o.id == _selected?.id, orElse: () => options.first);
+    });
+    if (_step == RiderStep.onTrip) {
+      _startLeg(route, Duration(seconds: (routeM / _cityMps).round()), RiderStep.onTrip,
+          onEnd: () => setState(() => _step = RiderStep.done));
+      _fit(route);
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${s.t('newDestination')} : ${p.name}')));
+    }
+  }
+
   // ---------------------------------------------------------------- Mode senior
 
   Future<void> _seniorGoHome() async {
@@ -497,6 +558,7 @@ class _RiderHomeState extends State<RiderHome> {
       _scheduledAt = null;
       _forOther = null;
       _lastAnnouncedMin = -1;
+      _seniorPromoOpen = false;
     });
     if (_mapReady) _map.move(_me, 15);
   }
@@ -696,6 +758,7 @@ class _RiderHomeState extends State<RiderHome> {
               child: Text(s.t('officialPrice'), style: const TextStyle(fontSize: 12, color: AppColors.moroccoGreen)),
             ),
           ]),
+          ..._promoBlock(),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             _pill(
@@ -847,10 +910,23 @@ class _RiderHomeState extends State<RiderHome> {
                           overflow: TextOverflow.ellipsis),
                     ),
                     const SizedBox(width: 6),
+                    if (o.electric) ...[
+                      // Badge feuille verte
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(6)),
+                        child: const Icon(Icons.eco, size: 14, color: AppColors.moroccoGreen),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
                     const Icon(Icons.person, size: 14, color: AppColors.muted),
                     Text('${o.seats}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
                   ]),
-                  Text(o.description, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                  Text(o.description,
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: o.electric ? AppColors.moroccoGreen : AppColors.muted,
+                          fontWeight: o.electric ? FontWeight.w600 : null)),
                 ]),
               ),
               Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
@@ -901,6 +977,7 @@ class _RiderHomeState extends State<RiderHome> {
           const SizedBox(width: 6),
           Expanded(child: Text(s.t('firstWins'), style: const TextStyle(fontSize: 12, color: AppColors.muted))),
         ]),
+        ..._promoBlock(),
         const SizedBox(height: 10),
         OutlinedButton(onPressed: _reset, child: Text(s.t('cancel'))),
       ],
@@ -1010,6 +1087,9 @@ class _RiderHomeState extends State<RiderHome> {
               ),
             ),
           ]),
+        // En attendant le taxi : une offre (jamais pendant la course ni dans la sécurité).
+        if (_step == RiderStep.arriving) ..._promoBlock(),
+        ..._restaurantBlock(),
       ],
     );
   }
@@ -1093,6 +1173,8 @@ class _RiderHomeState extends State<RiderHome> {
                 ),
             ],
           ),
+          ..._restaurantBlock(),
+          const SizedBox(height: 8),
           FilledButton(onPressed: _finish, child: Text(s.t('done'))),
           TextButton(
             onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
@@ -1174,6 +1256,21 @@ class _RiderHomeState extends State<RiderHome> {
               onChanged: (v) => settings.voiceAnnounce = v,
             ),
             const Divider(color: AppColors.line),
+            SwitchListTile(
+              secondary: const Icon(Icons.local_offer_outlined),
+              title: Text(s.t('offersSetting')),
+              subtitle: Text(s.t('offersWhy'), style: const TextStyle(color: AppColors.muted)),
+              value: settings.offers,
+              onChanged: (v) => settings.offers = v,
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.luggage_outlined),
+              title: Text(s.t('touristMode')),
+              subtitle: Text(s.t('touristDesc'), style: const TextStyle(color: AppColors.muted)),
+              value: settings.tourist,
+              onChanged: (v) => settings.tourist = v,
+            ),
+            const Divider(color: AppColors.line),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
               child: Text(s.t('language'), style: const TextStyle(color: AppColors.muted)),
@@ -1248,6 +1345,19 @@ class _RiderHomeState extends State<RiderHome> {
             onTap: _request,
           ),
           SeniorTextButton(label: s.t('cancel'), onTap: _reset),
+          // Mode senior : pas de publicité, sauf si le passager la demande.
+          if (_promo != null) ...[
+            const SizedBox(height: 14),
+            if (_seniorPromoOpen)
+              PromoCard(promo: _promo!, big: true)
+            else
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: AppColors.muted, minimumSize: const Size.fromHeight(56)),
+                onPressed: () => setState(() => _seniorPromoOpen = true),
+                icon: const Icon(Icons.local_offer_outlined, size: 26),
+                label: Text(s.t('seeOffer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+              ),
+          ],
         ]);
       case RiderStep.dispatching:
         final accepted = _candidates.where((c) => c.answer == _Answer.accepted).firstOrNull;
