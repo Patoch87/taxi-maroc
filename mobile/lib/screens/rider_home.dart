@@ -757,11 +757,7 @@ class _RiderHomeState extends State<RiderHome> {
                 excludeSemantics: true,
                 child: FilledButton(
                   onPressed: _request,
-                  child: Text(
-                      _scheduledAt == null
-                          ? '${s.t('confirm')} · ${dh(_selected!.priceMad)}'
-                          : '${s.t('confirm')} · ${scheduleLabel(_scheduledAt!, lang: s.lang)}',
-                      overflow: TextOverflow.ellipsis),
+                  child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}', overflow: TextOverflow.ellipsis),
                 ),
               ),
             ),

@@ -102,7 +102,11 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(3000);
     await tap('Maintenant');
     await page.waitForTimeout(1500);
-    const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
     try {
       await target(tomorrow).click({ timeout: 3000 });
     } catch (_) {}
