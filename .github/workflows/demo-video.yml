@@ -53,6 +53,13 @@ jobs:
           sleep 2
           mkdir -p video
           node .github/demo/record.js http://localhost:8765/ video
+      - name: Écran au moment de l'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-echec
+          path: video/echec.png
+          if-no-files-found: ignore
       - name: Montage
         run: python3 .github/demo/compose.py video taxi-maroc-demo.mp4
       - uses: actions/upload-artifact@v4

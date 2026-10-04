@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -23,8 +24,13 @@ Locale materialLocale(String lang) => switch (lang) {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
+  // Version web : « ?demo=1 » ouvre directement l'accueil en démo (vidéo de démonstration).
+  if (kIsWeb && skipOnboardingFromUrl(Uri.base)) accountStore.skip();
   runApp(const TaxiMarocApp());
 }
+
+/// Vrai si l'adresse demande la démo directe (`?demo=1`), sans écran d'inscription.
+bool skipOnboardingFromUrl(Uri uri) => uri.queryParameters['demo'] == '1';
 
 class TaxiMarocApp extends StatelessWidget {
   const TaxiMarocApp({super.key, this.locate = true, this.onboarding = true});

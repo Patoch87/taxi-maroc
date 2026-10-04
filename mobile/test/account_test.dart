@@ -149,4 +149,10 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     langNotifier.value = 'fr';
   });
+
+  test('« ?demo=1 » ouvre la démo sans inscription (version web)', () {
+    expect(skipOnboardingFromUrl(Uri.parse('http://localhost:8765/?demo=1')), isTrue);
+    expect(skipOnboardingFromUrl(Uri.parse('http://localhost:8765/')), isFalse);
+    expect(skipOnboardingFromUrl(Uri.parse('http://localhost:8765/?demo=0')), isFalse);
+  });
 }
