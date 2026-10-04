@@ -380,6 +380,18 @@ class S {
       'Before 11 am, show your trip'
     ],
 
+    'promoGeneric': ['Votre publicité ici', 'إشهارك هنا', 'الإشهار ديالك هنا', 'Your ad here'],
+    'promoGenericDetail': [
+      'Annonce non personnalisée',
+      'إعلان غير مخصص',
+      'إشهار ماشي على حسابك',
+      'Non-personalised ad'
+    ],
+    'mapView': ['Carte plein écran', 'الخريطة بملء الشاشة', 'الخريطة فالشاشة كاملة', 'Full-screen map'],
+    'detailsView': ['Afficher les détails', 'عرض التفاصيل', 'وري التفاصيل', 'Show details'],
+    'hideAd': ['Masquer la publicité', 'إخفاء الإشهار', 'خبي الإشهار', 'Hide the ad'],
+    'arrivingShort': ['Arrive dans', 'يصل خلال', 'غادي يوصل فـ', 'Arrives in'],
+
     // Touristes : restaurants
     'touristMode': ['Je suis touriste', 'أنا سائح', 'أنا سائح', 'I am a tourist'],
     'touristDesc': [

@@ -166,6 +166,19 @@ const { chromium } = require('playwright');
     await shot('19-chauffeur-vers-la-borne', 5000);
   });
 
+  // Vue carte plein écran avec bandeau publicitaire
+  await step('vue-carte', async () => {
+    await open();
+    await tap('Morocco Mall');
+    await page.waitForTimeout(3500);
+    await tap('Petit taxi seul');
+    await page.waitForTimeout(500);
+    await tap('Commander');
+    await page.waitForTimeout(9000);
+    await tap('Carte plein écran');
+    await shot('20-vue-carte-pub', 3000);
+  });
+
   // Mode senior
   await step('senior', async () => {
     await open();

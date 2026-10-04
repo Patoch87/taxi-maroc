@@ -103,6 +103,12 @@ class _RiderHomeState extends State<RiderHome> {
   /// Mode senior : l'offre ne s'affiche que si le passager la demande.
   bool _seniorPromoOpen = false;
 
+  // Vue carte plein écran pendant la course : bandeau taxi en bas, bandeau publicitaire en haut.
+  bool _mapView = false;
+  bool _adClosed = false;
+  int _adIndex = 0;
+  Timer? _adTimer;
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +133,7 @@ class _RiderHomeState extends State<RiderHome> {
   void dispose() {
     settings.removeListener(_onSettings);
     _ambientTimer?.cancel();
+    _adTimer?.cancel();
     _moveTimer?.cancel();
     for (final t in _dispatchTimers) {
       t.cancel();
@@ -366,6 +373,9 @@ class _RiderHomeState extends State<RiderHome> {
       if (!mounted) return t.cancel();
       setState(() => _elapsed += tick * _speed);
       _announceMinute();
+      // Vue carte : la caméra suit le taxi.
+      final taxi = _taxiPos;
+      if (_mapView && _mapReady && taxi != null) _map.move(taxi, _map.camera.zoom);
       if (_elapsed >= _legDuration) {
         t.cancel();
         onEnd();
@@ -494,6 +504,127 @@ class _RiderHomeState extends State<RiderHome> {
     }
   }
 
+  // ---------------------------------------------------------------- Vue carte et bandeau publicitaire
+
+  bool get _inTrip => const [RiderStep.arriving, RiderStep.arrived, RiderStep.onTrip].contains(_step);
+
+  /// Offres du bandeau : personnalisées selon le trajet, sinon un bandeau générique.
+  List<Promo> get _bannerPromos {
+    if (!settings.offers || _dest == null || _selected == null) return const [genericPromo];
+    final list = promosFor(destination: _dest!, option: _selected!, history: tripHistory);
+    return list.isEmpty ? const [genericPromo] : list;
+  }
+
+  Promo get _bannerPromo {
+    final list = _bannerPromos;
+    return list[_adIndex % list.length];
+  }
+
+  void _setMapView(bool on) {
+    _adTimer?.cancel();
+    if (on) {
+      // Rotation des offres toutes les 15 secondes.
+      _adTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (mounted) setState(() => _adIndex++);
+      });
+    }
+    setState(() => _mapView = on);
+    final taxi = _taxiPos;
+    if (on && _mapReady && taxi != null) _map.move(taxi, 16);
+    if (!on) _fit([...?(_path.isEmpty ? null : _path), _me]);
+  }
+
+  void _openPromo(Promo p) => showModalBottomSheet(
+        context: context,
+        backgroundColor: AppColors.sand,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        builder: (ctx) => SafeArea(
+          child: Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 16), child: PromoCard(promo: p, big: true)),
+        ),
+      );
+
+  /// Bandeau compact du taxi : photo, plaque en grand, voiture, compte à rebours, appel et SOS.
+  Widget _taxiStrip() {
+    final d = _driver!;
+    final carLine = '${d.car} · ${s.t(carColorKey(_selected!.kind))}';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+      decoration: BoxDecoration(
+        color: AppColors.sand,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 14)],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(children: [
+          DriverPhoto(driver: d, size: 52),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.ink, width: 2),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(d.plate,
+                      textDirection: TextDirection.ltr,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: .5)),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(carLine,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600)),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          Semantics(
+            liveRegion: true,
+            label: _step == RiderStep.arrived
+                ? s.t('arrived')
+                : '${s.t('arrivingShort')} ${_minutesText((_remaining.inSeconds / 60).ceil())}',
+            excludeSemantics: true,
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+              if (_step == RiderStep.arrived)
+                const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 32)
+              else ...[
+                Text(_countdown,
+                    style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.moroccoGreen,
+                        fontFeatures: [FontFeature.tabularFigures()])),
+                Text(_clock(_arrivalTime), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+              ],
+            ]),
+          ),
+          Column(mainAxisSize: MainAxisSize.min, children: [
+            IconButton(
+              tooltip: s.t('call'),
+              visualDensity: VisualDensity.compact,
+              color: AppColors.moroccoGreen,
+              onPressed: () => launchUrl(Uri(scheme: 'tel', path: '0600000000')).catchError((_) => false),
+              icon: const Icon(Icons.call),
+            ),
+            IconButton(
+              tooltip: s.t('sos'),
+              visualDensity: VisualDensity.compact,
+              color: AppColors.taxiRed,
+              onPressed: () => showSafetySheet(context, taxiId: d.taxiNumber, onShare: _share),
+              icon: const Icon(Icons.sos),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------- Mode senior
 
   Future<void> _seniorGoHome() async {
@@ -545,6 +676,7 @@ class _RiderHomeState extends State<RiderHome> {
       t.cancel();
     }
     _dispatchTimers.clear();
+    _adTimer?.cancel();
     setState(() {
       _step = RiderStep.idle;
       _dest = null;
@@ -559,6 +691,9 @@ class _RiderHomeState extends State<RiderHome> {
       _forOther = null;
       _lastAnnouncedMin = -1;
       _seniorPromoOpen = false;
+      _mapView = false;
+      _adClosed = false;
+      _adIndex = 0;
     });
     if (_mapReady) _map.move(_me, 15);
   }
@@ -1034,7 +1169,12 @@ class _RiderHomeState extends State<RiderHome> {
                         fontFeatures: [FontFeature.tabularFigures()])),
               ),
             ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: s.t('mapView'),
+            onPressed: () => _setMapView(true),
+            icon: const Icon(Icons.fullscreen, color: AppColors.ink),
+          ),
           _safetyButton(),
         ]),
         const SizedBox(height: 14),
@@ -1422,6 +1562,7 @@ class _RiderHomeState extends State<RiderHome> {
   @override
   Widget build(BuildContext context) {
     if (settings.senior) return _seniorBody();
+    if (_mapView && _inTrip) return _mapViewBody();
     return Scaffold(
       drawer: _drawer(),
       body: Stack(
@@ -1469,4 +1610,34 @@ class _RiderHomeState extends State<RiderHome> {
       ),
     );
   }
+
+  /// Vue carte plein écran : bandeau publicitaire en haut, bandeau du taxi en bas.
+  Widget _mapViewBody() => Scaffold(
+        body: Stack(children: [
+          Positioned.fill(child: _buildMap()),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                if (!_adClosed)
+                  AdBanner(
+                    promo: _bannerPromo,
+                    onOpen: () => _openPromo(_bannerPromo),
+                    onClose: () => setState(() => _adClosed = true),
+                  ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: MapCircleButton(
+                    icon: Icons.fullscreen_exit,
+                    tooltip: s.t('detailsView'),
+                    onTap: () => _setMapView(false),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+          Align(alignment: Alignment.bottomCenter, child: _taxiStrip()),
+        ]),
+      );
 }

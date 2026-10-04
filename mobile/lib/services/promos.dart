@@ -53,25 +53,44 @@ const cafePromo = Promo(
 const _shoppingPlaces = {'Morocco Mall', 'Anfa Place', 'Twin Center'};
 const _seaPlaces = {'Ain Diab', 'Morocco Mall', 'Mosquée Hassan II', 'Anfa Place'};
 
-/// Choisit une offre selon la destination, l'heure, le type de course et les trajets passés.
+/// Bandeau générique, sans personnalisation (quand les offres personnalisées sont désactivées).
+const genericPromo = Promo(
+  id: 'generic',
+  brand: 'Taxi Maroc',
+  titleKey: 'promoGeneric',
+  detailKey: 'promoGenericDetail',
+  icon: Icons.campaign_outlined,
+  color: Color(0xFFC1272D),
+);
+
+/// Offres pertinentes selon la destination, l'heure, le type de course et les trajets passés, la meilleure d'abord.
 /// Jamais selon le revenu, le quartier d'habitation ou d'autres données personnelles.
-Promo? pickPromo({
+List<Promo> promosFor({
   required Place destination,
   required RideOption option,
   DateTime? now,
   List<TripRecord> history = const [],
 }) {
   final h = (now ?? DateTime.now()).hour;
-  // Course seule vers un centre commercial : offre mode.
-  if (destination.name == 'Morocco Mall' && option.seul && !option.electric) return zaraPromo;
-  // Gare tôt le matin : café.
-  if (destination.name.startsWith('Gare') && h >= 6 && h < 11) return cafePromo;
-  // Bord de mer, centres commerciaux l'après-midi, ou habitué de ces lieux : smoothie.
   final regular = history.where((t) => !t.scheduled && _seaPlaces.contains(t.destination)).length >= 2;
-  if (_seaPlaces.contains(destination.name) ||
-      (_shoppingPlaces.contains(destination.name) && h >= 12 && h < 20) ||
-      regular) {
-    return koolsmoothiePromo;
-  }
-  return null;
+  return [
+    // Course seule vers un centre commercial : offre mode.
+    if (destination.name == 'Morocco Mall' && option.seul && !option.electric) zaraPromo,
+    // Gare tôt le matin : café.
+    if (destination.name.startsWith('Gare') && h >= 6 && h < 11) cafePromo,
+    // Bord de mer, centres commerciaux l'après-midi, ou habitué de ces lieux : smoothie.
+    if (_seaPlaces.contains(destination.name) ||
+        (_shoppingPlaces.contains(destination.name) && h >= 12 && h < 20) ||
+        regular)
+      koolsmoothiePromo,
+  ];
 }
+
+/// La meilleure offre pour ce trajet, ou aucune.
+Promo? pickPromo({
+  required Place destination,
+  required RideOption option,
+  DateTime? now,
+  List<TripRecord> history = const [],
+}) =>
+    promosFor(destination: destination, option: option, now: now, history: history).firstOrNull;

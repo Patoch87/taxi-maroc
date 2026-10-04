@@ -105,3 +105,68 @@ class RestaurantSuggestions extends StatelessWidget {
           ),
       ]);
 }
+
+/// Bandeau publicitaire fin en haut de la carte : mention « Exemple publicitaire (démo) », croix pour le masquer,
+/// appui pour voir le détail de l'offre.
+class AdBanner extends StatelessWidget {
+  const AdBanner({super.key, required this.promo, required this.onClose, required this.onOpen});
+  final Promo promo;
+  final VoidCallback onClose;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.white,
+        elevation: 4,
+        shadowColor: Colors.black26,
+        borderRadius: BorderRadius.circular(14),
+        child: Row(children: [
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: '${s.t('promoLabel')}. ${s.t(promo.titleKey)}',
+              excludeSemantics: true,
+              child: InkWell(
+                borderRadius: const BorderRadiusDirectional.horizontal(start: Radius.circular(14)).resolve(
+                  Directionality.of(context),
+                ),
+                onTap: onOpen,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 4, 6),
+                  child: Row(children: [
+                    Icon(promo.icon, color: promo.color, size: 22),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Column(
+                          key: ValueKey(promo.id),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(s.t('promoLabel'),
+                                style:
+                                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.muted)),
+                            Text(s.t(promo.titleKey),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style:
+                                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: s.t('hideAd'),
+            visualDensity: VisualDensity.compact,
+            onPressed: onClose,
+            icon: const Icon(Icons.close, size: 20, color: AppColors.muted),
+          ),
+        ]),
+      );
+}
