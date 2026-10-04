@@ -311,11 +311,14 @@ const VIEW = { width: 390, height: 634 };
   await expectScreen('retour en français', 'Mode senior', 20);
 
   // 10. Mode senior
-  await tapFor('mode senior', 'Mode senior', 'Revenir au mode normal', 15);
+  await wait(1500);
+  await semantics();
   caption('Mode senior simplifié');
+  await tapFor('mode senior', 'Mode senior', 'Revenir au mode normal', 15);
   await wait(3500);
   await tap('Revenir au mode normal');
   await expectScreen('sortie du mode senior', 'Rechercher une destination', 15);
+  caption(null);
   await wait(1000);
 
   // 11. Mode chauffeur
