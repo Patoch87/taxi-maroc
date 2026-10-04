@@ -176,18 +176,32 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(1200);
     await tap('Afficher ou masquer les détails');
     await shot('20-vue-carte-pub', 3000);
-    await tap('Afficher ou masquer les détails');
-    await page.waitForTimeout(1200);
+  });
+
+  // Fin de course : note, avis rapides et pourboire (trajet court vers la gare, accéléré).
+  await step('notation', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await tap('Commander');
+    await page.waitForTimeout(9000);
     await tap('Accélérer');
-    // Fin de course : note, avis rapides et pourboire.
-    for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(12000);
+    await tap('Je suis dans le taxi');
+    await page.waitForTimeout(1500);
+    await tap('Accélérer');
+    for (let i = 0; i < 80; i++) {
       await page.waitForTimeout(3000);
-      if (await page.locator('[aria-label*="5 étoiles sur 5"]').count()) break;
+      if (await target('5 étoiles sur 5').count()) break;
     }
+    await page.waitForTimeout(1500);
     await tap('5 étoiles sur 5');
     await page.waitForTimeout(600);
     await tap('Ponctuel');
     await tap('Conduite prudente');
+    await page.mouse.move(195, 700);
+    await page.mouse.wheel(0, 300);
+    await page.waitForTimeout(500);
     await tap('10 DH');
     await shot('26-notation-pourboire', 1500);
   });
