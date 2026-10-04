@@ -103,7 +103,10 @@ class MapCircleButton extends StatelessWidget {
 
 /// Panneau couleur sable arrondi en bas de l'écran, avec un liseré de zellige en haut.
 class BottomPanel extends StatelessWidget {
-  const BottomPanel({super.key, required this.child, this.handle});
+  const BottomPanel({super.key, required this.child, this.handle, this.maxHeightFactor = .7});
+
+  /// Hauteur maximale, en part de l'écran (fin de course : plus haut pour voir la note et « Envoyer »).
+  final double maxHeightFactor;
   final Widget child;
 
   /// Poignée à glisser (remplace la barre dorée simple) : voir l'accueil du passager.
@@ -144,10 +147,12 @@ class BottomPanel extends StatelessWidget {
                           decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(3)),
                         ),
                       ),
-                  // Le panneau ne dépasse pas 70 % de l'écran ; au-delà, son contenu défile.
+                  // Le panneau ne dépasse pas 70 % de l'écran (par défaut) ; au-delà, son contenu défile.
                   ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * .7),
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * maxHeightFactor),
+                    // Nouvelle étape (clé différente) : le contenu repart du haut.
                     child: SingleChildScrollView(
+                      key: child.key == null ? null : ValueKey(child.key),
                       child: AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
                     ),
                   ),

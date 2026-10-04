@@ -72,6 +72,7 @@ void main() {
     await tester.tap(find.text('10 DH'));
     await tester.pump();
     await tester.ensureVisible(find.byKey(const ValueKey('sendReview')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('sendReview')));
     await tester.pumpAndSettle();
 

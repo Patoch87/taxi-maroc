@@ -679,7 +679,11 @@ class _RiderHomeState extends State<RiderHome> {
   /// Panneau du bas : complet, ou replié sur l'essentiel. Il suit le doigt pendant le glissement.
   Widget _sheet() => Transform.translate(
         offset: Offset(0, _collapsed ? 0 : max(0, _dragDy)),
-        child: BottomPanel(handle: _handle(), child: _collapsed ? _collapsedPanel() : _panel()),
+        child: BottomPanel(
+          handle: _handle(),
+          maxHeightFactor: _step == RiderStep.done ? .86 : .7,
+          child: _collapsed ? _collapsedPanel() : _panel(),
+        ),
       );
 
   /// Panneau replié : l'essentiel seulement, la carte reste visible.
