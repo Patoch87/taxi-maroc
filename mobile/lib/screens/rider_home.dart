@@ -1451,15 +1451,37 @@ class _RiderHomeState extends State<RiderHome> {
             if (_step == RiderStep.arriving)
               TextButton(onPressed: _reset, child: Text(s.t('cancel'), style: const TextStyle(color: AppColors.muted))),
             const Spacer(),
+            // Démo : la vitesse (×1 à ×4) reste toujours lisible dans sa pastille, même si le libellé est coupé.
             Flexible(
-              child: TextButton.icon(
-                onPressed: _nextSpeed,
-                icon: Icon(Icons.fast_forward, size: 18, color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen),
-                label: Text('${s.t('fastForward')} ×$_speed',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen,
-                        fontWeight: _speed == 1 ? null : FontWeight.w900)),
+              child: Semantics(
+                button: true,
+                label: '${s.t('fastForward')} ×$_speed',
+                excludeSemantics: true,
+                child: TextButton(
+                  onPressed: _nextSpeed,
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.fast_forward, size: 18, color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(s.t('fastForward'),
+                          overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted)),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _speed == 1 ? Colors.white : AppColors.moroccoGreen,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.moroccoGreen, width: 1.5),
+                      ),
+                      child: Text('×$_speed',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                              color: _speed == 1 ? AppColors.moroccoGreen : Colors.white)),
+                    ),
+                  ]),
+                ),
               ),
             ),
           ]),

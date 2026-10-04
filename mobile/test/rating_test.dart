@@ -30,7 +30,7 @@ Future<void> rideToTheEnd(WidgetTester tester) async {
     await tester.ensureVisible(find.textContaining('Accélérer (démo)'));
     await tester.tap(find.textContaining('Accélérer (démo)'));
     await tester.pump();
-    expect(find.text('Accélérer (démo) ×$x'), findsOneWidget);
+    expect(find.text('×$x'), findsOneWidget);
   }
   for (var i = 0; i < 200 && find.text('Vous êtes arrivé 🎉').evaluate().isEmpty; i++) {
     await tester.pump(const Duration(seconds: 1));
