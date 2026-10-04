@@ -58,8 +58,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # La vidéo de démo (workflow « Vidéo de démo ») est conservée d'une version à l'autre.
+          mkdir -p /tmp/keep
+          gh release download demo -p taxi-maroc-demo.mp4 -D /tmp/keep || true
           gh release delete demo --yes --cleanup-tag || true
-          gh release create demo build/app/outputs/flutter-apk/taxi-maroc.apk \
+          gh release create demo build/app/outputs/flutter-apk/taxi-maroc.apk $(ls /tmp/keep/taxi-maroc-demo.mp4 2>/dev/null) \
             --target "$GITHUB_SHA" \
             --title "Taxi Maroc - version de démo" \
             --notes "APK de démo (taxis fictifs, sans serveur) fabriqué depuis le commit $GITHUB_SHA."

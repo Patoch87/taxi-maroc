@@ -43,6 +43,10 @@ jobs:
           node .github/captures/capture.js http://localhost:8765/ captures
       - name: Publier sur la branche captures
         run: |
+          # La vidéo de démo (dossier demo/) est conservée.
+          if git clone -q --depth 1 -b captures "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" /tmp/old; then
+            [ -d /tmp/old/demo ] && cp -r /tmp/old/demo captures/ || true
+          fi
           cd captures
           git init -q -b captures
           git config user.name "github-actions"
