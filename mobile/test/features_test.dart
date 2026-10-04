@@ -24,11 +24,20 @@ void main() {
     langNotifier.value = 'fr';
   });
 
-  test('chaque texte existe dans les 4 langues', () {
-    for (final e in S.table.entries) {
-      expect(e.value.length, 4, reason: e.key);
-      expect(e.value.every((v) => v.trim().isNotEmpty), isTrue, reason: e.key);
+  test('chaque texte existe dans les 16 langues', () {
+    expect(S.supported.length, 16);
+    final keys = S.table.keys.toSet();
+    for (final lang in S.supported) {
+      final strings = S.strings(lang);
+      expect(strings.keys.toSet(), keys, reason: lang);
+      expect(strings.values.every((v) => v.trim().isNotEmpty), isTrue, reason: lang);
+      expect(S.names[lang], isNotNull, reason: lang);
+      expect(S.flags[lang], isNotNull, reason: lang);
     }
+    expect(S('fa').rtl && S('ar').rtl && S('dr').rtl, isTrue);
+    expect(S('es').rtl, isFalse);
+    expect(S('ja').speechLocale, 'ja-JP');
+    expect(S('sr').speechLocale, 'sr-RS');
   });
 
   group('réservation pour plus tard', () {
@@ -44,6 +53,10 @@ void main() {
       expect(scheduleLabel(DateTime(2026, 10, 5, 8, 30), lang: 'en', now: now), 'Mon 5 Oct 08:30');
       expect(scheduleLabel(DateTime(2026, 10, 4, 8, 30), lang: 'ar', now: now), 'غدا 08:30');
       expect(scheduleLabel(DateTime(2026, 10, 5, 8, 30), lang: 'dr', now: now), 'الاثنين 5 أكتوبر 08:30');
+      expect(scheduleLabel(DateTime(2026, 10, 4, 8, 30), lang: 'es', now: now), 'Mañana 08:30');
+      expect(scheduleLabel(DateTime(2026, 10, 5, 8, 30), lang: 'es', now: now), 'lun. 5 oct. 08:30');
+      expect(scheduleLabel(DateTime(2026, 10, 5, 8, 30), lang: 'de', now: now), 'Mo. 5. Okt. 08:30');
+      expect(scheduleLabel(DateTime(2026, 10, 5, 8, 30), lang: 'ja', now: now), '10月5日(月) 08:30');
     });
 
     test('au moins 15 minutes avant le départ, au plus 30 jours', () {

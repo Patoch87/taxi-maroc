@@ -22,6 +22,7 @@ import '../services/voice.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/driver_card.dart';
+import '../widgets/language_sheet.dart';
 import '../widgets/map_parts.dart';
 import '../widgets/promo_card.dart';
 import '../widgets/senior.dart';
@@ -462,7 +463,7 @@ class _RiderHomeState extends State<RiderHome> {
   }
 
   /// Touristes (ou application en anglais) : 3 restaurants près de la destination.
-  bool get _showRestaurants => (settings.tourist || s.lang == 'en') && _dest != null && !_dest!.intercity;
+  bool get _showRestaurants => (settings.tourist || s.foreign) && _dest != null && !_dest!.intercity;
 
   List<Widget> _restaurantBlock() => _showRestaurants
       ? [
@@ -1348,8 +1349,12 @@ class _RiderHomeState extends State<RiderHome> {
                         child: const AppLogo(size: 44),
                       ),
                       const SizedBox(width: 12),
-                      Text(s.t('appTitle'),
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+                      Expanded(
+                        child: Text(s.t('appTitle'),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+                      ),
                     ]),
                   ),
                 ),
@@ -1411,19 +1416,17 @@ class _RiderHomeState extends State<RiderHome> {
               onChanged: (v) => settings.tourist = v,
             ),
             const Divider(color: AppColors.line),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Text(s.t('language'), style: const TextStyle(color: AppColors.muted)),
+            // Une seule option « Langue » : le choix se fait dans une grille de drapeaux.
+            ListTile(
+              leading: Text(S.flags[s.lang]!, style: const TextStyle(fontSize: 24)),
+              title: Text(s.t('language')),
+              subtitle: Text(S.names[s.lang]!, style: const TextStyle(color: AppColors.muted)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(context);
+                showLanguageSheet(context);
+              },
             ),
-            for (final code in S.supported)
-              ListTile(
-                title: Text(S.names[code]!),
-                trailing: langNotifier.value == code ? const Icon(Icons.check, color: AppColors.moroccoGreen) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  langNotifier.value = code;
-                },
-              ),
           ],
         ),
       );
@@ -1594,6 +1597,8 @@ class _RiderHomeState extends State<RiderHome> {
                     child: AppBrand(title: s.t('appTitle'), subtitle: s.t('demoShort')),
                   ),
                 )),
+                const SizedBox(width: 8),
+                const LanguageButton(),
                 const SizedBox(width: 8),
                 MapCircleButton(
                   icon: Icons.elderly,

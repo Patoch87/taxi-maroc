@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../l10n/strings.dart';
 import '../main.dart';
 import '../theme.dart';
 import 'demo.dart';
@@ -97,14 +98,14 @@ List<RideOption> rideOptions({required Place destination, required double routeM
 /// Montant en dirhams, avec la virgule en français et en arabe (8,44 DH) et le point en anglais.
 String dh(double v) {
   final txt = v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
-  return '${langNotifier.value == 'en' ? txt : txt.replaceAll('.', ',')} DH';
+  return '${S(langNotifier.value).decimalPoint ? txt : txt.replaceAll('.', ',')} DH';
 }
 
 /// Distance lisible : « 850 m » ou « 2,2 km ».
 String distanceText(double m) {
   if (m < 1000) return '${m.round()} m';
   final km = (m / 1000).toStringAsFixed(1);
-  return '${langNotifier.value == 'en' ? km : km.replaceAll('.', ',')} km';
+  return '${S(langNotifier.value).decimalPoint ? km : km.replaceAll('.', ',')} km';
 }
 
 Color taxiColor(TaxiKind k) => switch (k) {

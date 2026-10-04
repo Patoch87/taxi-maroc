@@ -52,8 +52,9 @@ void main() {
 
     final near = restaurantsNear(place('Morocco Mall'));
     expect(near.length, 3);
-    expect(near.first.$1.name, 'Pasta Mall');
-    expect(near.map((r) => r.$2), orderedEquals([...near.map((r) => r.$2)]..sort()));
+    expect(near.map((r) => r.$1.name), contains('Pasta Mall')); // le plus proche du Morocco Mall
+    final ratings = near.map((r) => r.$1.rating).toList();
+    expect(ratings, orderedEquals([...ratings]..sort((a, b) => b.compareTo(a)))); // mieux notés d'abord
   });
 
   testWidgets('carte d\'offre marquée « Exemple publicitaire (démo) », et désactivable', (tester) async {
@@ -117,6 +118,7 @@ void main() {
     expect(find.text('Your taxi arrives in'), findsOneWidget);
     expect(find.text('Restaurants near Gare Casa Voyageurs'), findsOneWidget);
     expect(find.text('Take a taxi there'), findsNWidgets(3));
+    expect(find.text('TripAdvisor rating (demo)'), findsNWidgets(3));
 
     final first = restaurantsNear(place('Gare Casa Voyageurs')).first.$1;
     await tester.ensureVisible(find.text('Take a taxi there').first);

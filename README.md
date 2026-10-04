@@ -22,7 +22,8 @@ Le plan produit complet est dans le dossier du projet : `plan/plan-application-t
 - **Mode chauffeur** : carte avec sa route, passagers sur sa route proposés devant lui, accepter ou refuser en un geste, gains du jour et places occupées.
 - **Premier chauffeur qui accepte** : la demande part à tous les taxis sur la route du passager ; le premier qui accepte la prend, les autres sont bloqués (serveur : `POST /rides/requests`, `POST /rides/requests/:id/accept`, réponse 409 pour les suivants).
 - Compte à rebours en temps réel, partage de la course et de la position, sécurité (SOS, 19 / 177 / 15, réclamation) depuis l'écran de commande, photo du chauffeur avec les drapeaux des langues qu'il parle, messages rapides traduits en darija, adresses Maison et Travail, réservation à l'avance, espèces ou carte, pourboire, historique.
-- Français, arabe, **darija** et anglais ; **commande vocale** dans la recherche de destination (la destination est répétée à voix haute avant la recherche).
+- **16 langues** : français, arabe, **darija**, anglais et les langues des pays de la Coupe du monde 2022 (espagnol, portugais, allemand, italien, néerlandais, polonais, croate, serbe en alphabet latin, danois, japonais, coréen, persan). Choix par une seule option « Langue » avec une grille de drapeaux ; arabe, darija et persan s'affichent de droite à gauche. Les textes des langues ajoutées sont dans `mobile/lib/l10n/lang/` (un fichier par langue) et **doivent être relus par des locuteurs natifs avant le lancement**.
+- Français, arabe, **darija** et anglais relus ; **commande vocale** dans la recherche de destination (la destination est répétée à voix haute avant la recherche).
 - Captures d'écran automatiques avec la vraie carte : branche `captures` (workflow *Captures*).
 - La carte utilise des services gratuits réservés aux tests (tuiles OpenStreetMap, itinéraires OSRM) : à remplacer par un fournisseur sous contrat (Google Maps, Mapbox, MapTiler) avant le lancement.
 

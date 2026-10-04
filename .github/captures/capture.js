@@ -179,6 +179,28 @@ const { chromium } = require('playwright');
     await shot('20-vue-carte-pub', 3000);
   });
 
+  // Choix de la langue (une seule option, grille de drapeaux), puis restaurants avec note TripAdvisor (démo)
+  await step('langues', async () => {
+    await open();
+    await tap('Langue');
+    await shot('21-choix-langue', 1500);
+    await tap('English');
+    await page.waitForTimeout(2500);
+    await page.evaluate(() => document.querySelector('flt-semantics-placeholder')?.click());
+    await page.waitForTimeout(1000);
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await tap('Request');
+    await page.waitForTimeout(9000);
+    // Fait défiler le panneau jusqu'aux restaurants.
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
+    await shot('22-restaurants-tripadvisor', 1500);
+  });
+
   // Mode senior
   await step('senior', async () => {
     await open();

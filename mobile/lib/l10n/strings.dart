@@ -1,19 +1,115 @@
-/// Textes de l'application en français, arabe, darija marocaine et anglais.
+import 'lang/es.dart' as es_;
+import 'lang/pt.dart' as pt_;
+import 'lang/de.dart' as de_;
+import 'lang/it.dart' as it_;
+import 'lang/nl.dart' as nl_;
+import 'lang/pl.dart' as pl_;
+import 'lang/hr.dart' as hr_;
+import 'lang/sr.dart' as sr_;
+import 'lang/da.dart' as da_;
+import 'lang/ja.dart' as ja_;
+import 'lang/ko.dart' as ko_;
+import 'lang/fa.dart' as fa_;
+
+/// Textes de l'application dans 16 langues : celles du Maroc (français, arabe, darija, anglais)
+/// et celles des pays de la Coupe du monde 2022.
+///
+/// Les 4 langues de base sont dans le tableau [_t] ci-dessous ; les autres ont chacune leur fichier
+/// dans `lang/` (une ligne par clé), plus simple à faire relire par un locuteur natif.
 class S {
   S(this.lang);
   final String lang;
 
-  /// fr : français, ar : arabe, dr : darija marocaine (écrite en arabe), en : anglais.
-  static const supported = ['fr', 'ar', 'dr', 'en'];
-  static const names = {'fr': 'Français', 'ar': 'العربية', 'dr': 'الدارجة', 'en': 'English'};
+  /// Codes des langues, dans l'ordre d'affichage du choix de langue.
+  /// dr : darija marocaine (écrite en arabe) ; sr : serbe en alphabet latin.
+  static const supported = [
+    'fr', 'ar', 'dr', 'en', 'es', 'pt', 'de', 'it', 'nl', 'pl', 'hr', 'sr', 'da', 'ja', 'ko', 'fa' //
+  ];
+
+  /// Nom de chaque langue, écrit dans cette langue.
+  static const names = {
+    'fr': 'Français',
+    'ar': 'العربية',
+    'dr': 'الدارجة',
+    'en': 'English',
+    'es': 'Español',
+    'pt': 'Português',
+    'de': 'Deutsch',
+    'it': 'Italiano',
+    'nl': 'Nederlands',
+    'pl': 'Polski',
+    'hr': 'Hrvatski',
+    'sr': 'Srpski',
+    'da': 'Dansk',
+    'ja': '日本語',
+    'ko': '한국어',
+    'fa': 'فارسی',
+  };
+
+  /// Drapeau affiché pour chaque langue.
+  static const flags = {
+    'fr': '🇫🇷',
+    'ar': '🇲🇦',
+    'dr': '🇲🇦',
+    'en': '🇬🇧',
+    'es': '🇪🇸',
+    'pt': '🇵🇹',
+    'de': '🇩🇪',
+    'it': '🇮🇹',
+    'nl': '🇳🇱',
+    'pl': '🇵🇱',
+    'hr': '🇭🇷',
+    'sr': '🇷🇸',
+    'da': '🇩🇰',
+    'ja': '🇯🇵',
+    'ko': '🇰🇷',
+    'fa': '🇮🇷',
+  };
 
   static const _i = {'fr': 0, 'ar': 1, 'dr': 2, 'en': 3};
 
+  static const Map<String, Map<String, String>> _other = {
+    'es': es_.es,
+    'pt': pt_.pt,
+    'de': de_.de,
+    'it': it_.it,
+    'nl': nl_.nl,
+    'pl': pl_.pl,
+    'hr': hr_.hr,
+    'sr': sr_.sr,
+    'da': da_.da,
+    'ja': ja_.ja,
+    'ko': ko_.ko,
+    'fa': fa_.fa,
+  };
+
   /// Langues écrites de droite à gauche.
-  bool get rtl => lang == 'ar' || lang == 'dr';
+  bool get rtl => lang == 'ar' || lang == 'dr' || lang == 'fa';
 
   /// Langue de la reconnaissance et de la synthèse vocales.
-  String get speechLocale => switch (lang) { 'ar' || 'dr' => 'ar-MA', 'en' => 'en-US', _ => 'fr-FR' };
+  String get speechLocale => switch (lang) {
+        'ar' || 'dr' => 'ar-MA',
+        'en' => 'en-US',
+        'es' => 'es-ES',
+        'pt' => 'pt-PT',
+        'de' => 'de-DE',
+        'it' => 'it-IT',
+        'nl' => 'nl-NL',
+        'pl' => 'pl-PL',
+        'hr' => 'hr-HR',
+        'sr' => 'sr-RS',
+        'da' => 'da-DK',
+        'ja' => 'ja-JP',
+        'ko' => 'ko-KR',
+        'fa' => 'fa-IR',
+        _ => 'fr-FR',
+      };
+
+  /// Les nombres décimaux s'écrivent avec un point dans ces langues, avec une virgule ailleurs.
+  bool get decimalPoint => const ['en', 'ja', 'ko'].contains(lang);
+
+  /// Touriste probable : langue autre que le français, l'arabe ou la darija.
+  bool get foreign => !const ['fr', 'ar', 'dr'].contains(lang);
 
   static const Map<String, List<String>> _t = {
     // Général
@@ -401,6 +497,13 @@ class S {
       'Restaurant ideas near your destination'
     ],
     'restaurantsNear': ['Restaurants près de', 'مطاعم قرب', 'ريسطورات قراب من', 'Restaurants near'],
+    'tripadvisorDemo': [
+      'Note TripAdvisor (démo)',
+      'تقييم تريب أدفايزر (تجريبي)',
+      'تقييم تريب أدفايزر (تجريبي)',
+      'TripAdvisor rating (demo)'
+    ],
+    'reviews': ['avis', 'تقييم', 'تقييم', 'reviews'],
     'goByTaxi': ['Y aller en taxi', 'الذهاب بالطاكسي', 'سير ليه بالطاكسي', 'Take a taxi there'],
     'newDestination': ['Nouvelle destination', 'وجهة جديدة', 'بلاصة جديدة', 'New destination'],
     'cuisineMoroccan': ['Marocaine', 'مغربي', 'مغربية', 'Moroccan'],
@@ -461,12 +564,20 @@ class S {
     'ridesShort': ['courses', 'رحلات', 'كورصات', 'rides'],
   };
 
-  /// Clés et traductions (pour vérifier dans les tests que chaque texte existe dans les 4 langues).
+  /// Clés et textes des 4 langues de base (fr, ar, dr, en).
   static Map<String, List<String>> get table => _t;
 
+  /// Tous les textes d'une langue, clé par clé (pour vérifier dans les tests qu'aucun ne manque).
+  static Map<String, String> strings(String lang) {
+    final i = _i[lang];
+    if (i != null) return {for (final e in _t.entries) e.key: e.value[i]};
+    return _other[lang] ?? const {};
+  }
+
   String t(String key) {
-    final row = _t[key];
-    if (row == null) return key;
-    return row[_i[lang] ?? 0];
+    final i = _i[lang];
+    if (i != null) return _t[key]?[i] ?? key;
+    // Repli sur le français si un texte manque dans une langue.
+    return _other[lang]?[key] ?? _t[key]?[0] ?? key;
   }
 }

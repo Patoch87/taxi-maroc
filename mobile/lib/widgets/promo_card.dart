@@ -76,31 +76,31 @@ class RestaurantSuggestions extends StatelessWidget {
         for (final (r, m) in items)
           Container(
             margin: const EdgeInsets.only(bottom: 6),
-            padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 6, 8),
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 6, 4),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.line, width: 1.5),
             ),
-            child: Row(children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  Text('${s.t(r.cuisineKey)} · ${r.priceMad} · ${distanceText(m)}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-                ]),
-              ),
-              Semantics(
-                button: true,
-                label: '${s.t('goByTaxi')} : ${r.name}',
-                excludeSemantics: true,
-                child: TextButton.icon(
-                  style: TextButton.styleFrom(foregroundColor: AppColors.moroccoGreen),
-                  onPressed: () => onGo(r),
-                  icon: const Icon(Icons.local_taxi, size: 18),
-                  label: Text(s.t('goByTaxi'), style: const TextStyle(fontWeight: FontWeight.w700)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text('${s.t(r.cuisineKey)} · ${r.priceMad} · ${distanceText(m)}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+              // Note et bouton côte à côte, ou l'un sous l'autre si la place manque (grands textes).
+              Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                RatingBubbles(rating: r.rating, reviews: r.reviews),
+                Semantics(
+                  button: true,
+                  label: '${s.t('goByTaxi')} : ${r.name}',
+                  excludeSemantics: true,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(foregroundColor: AppColors.moroccoGreen),
+                    onPressed: () => onGo(r),
+                    icon: const Icon(Icons.local_taxi, size: 18),
+                    label: Text(s.t('goByTaxi'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ),
                 ),
-              ),
+              ]),
             ]),
           ),
       ]);
@@ -169,4 +169,66 @@ class AdBanner extends StatelessWidget {
           ),
         ]),
       );
+}
+
+/// Note façon TripAdvisor : 5 bulles vertes, la note et le nombre d'avis, avec la mention « (démo) ».
+/// Pas de logo officiel : les restaurants et les notes de la démo sont fictifs.
+class RatingBubbles extends StatelessWidget {
+  const RatingBubbles({super.key, required this.rating, required this.reviews});
+  final double rating;
+  final int reviews;
+
+  static const green = Color(0xFF00AA6C);
+
+  @override
+  Widget build(BuildContext context) {
+    final value = s.decimalPoint ? rating.toStringAsFixed(1) : rating.toStringAsFixed(1).replaceAll('.', ',');
+    return Semantics(
+      label: '${s.t('tripadvisorDemo')} $value / 5, $reviews ${s.t('reviews')}',
+      excludeSemantics: true,
+      child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          for (var i = 0; i < 5; i++)
+            Padding(
+              padding: const EdgeInsets.only(right: 2),
+              child: SizedBox.square(
+                dimension: 11,
+                child: CustomPaint(painter: _BubblePainter((rating - i).clamp(0.0, 1.0))),
+              ),
+            ),
+        ]),
+        Text('$value · $reviews ${s.t('reviews')}',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
+        Text(s.t('tripadvisorDemo'), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+      ]),
+    );
+  }
+}
+
+/// Bulle pleine, à moitié pleine ou vide.
+class _BubblePainter extends CustomPainter {
+  const _BubblePainter(this.fill);
+  final double fill;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
+    final paint = Paint()..color = RatingBubbles.green;
+    if (fill > 0) {
+      canvas.save();
+      canvas.clipRect(Rect.fromLTWH(0, 0, size.width * (fill >= 1 ? 1 : .5), size.height));
+      canvas.drawCircle(c, r, paint);
+      canvas.restore();
+    }
+    canvas.drawCircle(
+        c,
+        r - .75,
+        paint
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubblePainter old) => old.fill != fill;
 }
