@@ -22,8 +22,8 @@ class DriverPhoto extends StatelessWidget {
             boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Image.network(
-            driver.photoUrl,
+          child: Image(
+            image: photoImage(driver.photo),
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Center(
               child: Text(driver.name.substring(0, 1),
@@ -53,7 +53,8 @@ class DriverPhoto extends StatelessWidget {
 
 /// Fiche du chauffeur affichée pendant la course.
 class DriverCard extends StatelessWidget {
-  const DriverCard({super.key, required this.driver, this.passengerName, this.lowVision = false});
+  const DriverCard(
+      {super.key, required this.driver, this.passengerName, this.lowVision = false, this.babySeat = false});
   final DemoDriver driver;
 
   /// Course commandée pour quelqu'un d'autre : le nom du passager, comme le voit le chauffeur.
@@ -61,6 +62,9 @@ class DriverCard extends StatelessWidget {
 
   /// Le chauffeur est prévenu que le passager est malvoyant.
   final bool lowVision;
+
+  /// Siège bébé demandé par le passager.
+  final bool babySeat;
 
   @override
   Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -94,12 +98,13 @@ class DriverCard extends StatelessWidget {
                   child: Text('${l.flag} ${l.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
             ]),
-            if (passengerName != null || lowVision) ...[
+            if (passengerName != null || lowVision || babySeat) ...[
               const SizedBox(height: 6),
               Wrap(spacing: 4, runSpacing: 4, children: [
                 if (passengerName != null)
                   _badge(Icons.person, '${s.t('passenger')} : $passengerName', AppColors.moroccoGreen),
                 if (lowVision) _badge(Icons.visibility_off, s.t('lowVisionBadge'), AppColors.ink),
+                if (babySeat) _badge(Icons.child_friendly, s.t('babySeatRequested'), AppColors.moroccoGreen),
               ]),
             ],
           ]),

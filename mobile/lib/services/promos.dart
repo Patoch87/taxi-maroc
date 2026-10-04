@@ -3,67 +3,124 @@ import 'package:flutter/material.dart';
 import 'places.dart';
 import 'rides.dart';
 
-/// Offre contextuelle (données de démo). Les marques citées sont des exemples,
-/// pas des partenaires : chaque carte porte la mention « Exemple publicitaire (démo) ».
+/// Offre contextuelle (données de démo), montrée seulement pendant la course, passager à bord.
+/// Chaque carte porte la mention « Exemple publicitaire (démo) » : ces enseignes ne sont pas partenaires.
+///
+/// Logos : la démo ne reproduit aucun logo de marque. Elle dessine un badge sobre (initiales sur la
+/// couleur de l'annonceur). En production, les vrais logos sont fournis par les annonceurs sous contrat.
 class Promo {
-  const Promo(
-      {required this.id,
-      required this.brand,
-      required this.titleKey,
-      required this.detailKey,
-      required this.icon,
-      required this.color});
+  const Promo({
+    required this.id,
+    required this.brand,
+    required this.initials,
+    required this.titleKey,
+    required this.detailKey,
+    required this.address,
+    required this.icon,
+    required this.color,
+  });
+
+  /// Identifiant court, repris dans le code du bon (lettres majuscules).
   final String id;
   final String brand;
 
-  /// Clés de traduction (S) du titre et du détail.
+  /// Initiales du badge qui remplace le logo.
+  final String initials;
+
+  /// Clés de traduction (S) du titre et des conditions de l'offre.
   final String titleKey;
   final String detailKey;
+
+  /// Adresse du magasin où présenter le bon.
+  final String address;
   final IconData icon;
   final Color color;
 }
 
-const zaraPromo = Promo(
-  id: 'zara',
+const fashionPromo = Promo(
+  id: 'MODE',
   brand: 'Zara',
-  titleKey: 'promoZara',
-  detailKey: 'promoZaraDetail',
+  initials: 'Z',
+  titleKey: 'offerFashion',
+  detailKey: 'offerFashionDetail',
+  address: 'Morocco Mall, niveau 1, Boulevard de la Corniche, Aïn Diab',
   icon: Icons.shopping_bag_outlined,
   color: Color(0xFF14213D),
 );
 
 const koolsmoothiePromo = Promo(
-  id: 'koolsmoothie',
+  id: 'KOOL',
   brand: 'Koolsmoothie',
-  titleKey: 'promoKool',
-  detailKey: 'promoKoolDetail',
+  initials: 'KS',
+  titleKey: 'offerKool',
+  detailKey: 'offerKoolDetail',
+  address: 'Morocco Mall, espace restauration, Aïn Diab',
   icon: Icons.local_drink_outlined,
-  color: Color(0xFF006233),
+  color: Color(0xFF2E9E44),
 );
 
-const cafePromo = Promo(
-  id: 'cafe',
-  brand: 'Café de la Gare',
-  titleKey: 'promoCafe',
-  detailKey: 'promoCafeDetail',
+const portCafePromo = Promo(
+  id: 'PORT',
+  brand: 'Café du Port',
+  initials: 'CP',
+  titleKey: 'offerPortCafe',
+  detailKey: 'offerPortCafeDetail',
+  address: 'Gare Casa Port, hall principal, Boulevard des Almohades',
   icon: Icons.coffee_outlined,
   color: Color(0xFF8A5A00),
 );
 
-const _shoppingPlaces = {'Morocco Mall', 'Anfa Place', 'Twin Center'};
-const _seaPlaces = {'Ain Diab', 'Morocco Mall', 'Mosquée Hassan II', 'Anfa Place'};
+const sportPromo = Promo(
+  id: 'SPORT',
+  brand: 'Anfa Sport',
+  initials: 'AS',
+  titleKey: 'offerSport',
+  detailKey: 'offerSportDetail',
+  address: 'Anfa Place, rez-de-chaussée, Boulevard de la Corniche',
+  icon: Icons.sports_soccer_outlined,
+  color: Color(0xFFC1272D),
+);
 
-/// Bandeau générique, sans personnalisation (quand les offres personnalisées sont désactivées).
+const lunchPromo = Promo(
+  id: 'TWIN',
+  brand: 'Le Comptoir du Twin',
+  initials: 'CT',
+  titleKey: 'offerLunch',
+  detailKey: 'offerLunchDetail',
+  address: 'Twin Center, tour Ouest, rez-de-chaussée, Maârif',
+  icon: Icons.restaurant_outlined,
+  color: Color(0xFF5B3A8E),
+);
+
+const teaPromo = Promo(
+  id: 'CORNICHE',
+  brand: 'Café Corniche Bleue',
+  initials: 'CB',
+  titleKey: 'offerTea',
+  detailKey: 'offerTeaDetail',
+  address: 'Boulevard de la Corniche, Aïn Diab',
+  icon: Icons.emoji_food_beverage_outlined,
+  color: Color(0xFF1565C0),
+);
+
+/// Toutes les offres de la démo.
+const allPromos = [fashionPromo, koolsmoothiePromo, portCafePromo, sportPromo, lunchPromo, teaPromo];
+
+/// Bandeau générique, non personnalisé (quand aucune offre ne correspond au trajet).
 const genericPromo = Promo(
-  id: 'generic',
+  id: 'GEN',
   brand: 'Taxi Maroc',
+  initials: 'TM',
   titleKey: 'promoGeneric',
   detailKey: 'promoGenericDetail',
+  address: '',
   icon: Icons.campaign_outlined,
   color: Color(0xFFC1272D),
 );
 
-/// Offres pertinentes selon la destination, l'heure, le type de course et les trajets passés, la meilleure d'abord.
+const _seaPlaces = {'Ain Diab', 'Morocco Mall', 'Mosquée Hassan II', 'Anfa Place'};
+
+/// Offres pertinentes selon la destination, l'heure et les trajets passés, la meilleure d'abord.
 /// Jamais selon le revenu, le quartier d'habitation ou d'autres données personnelles.
 List<Promo> promosFor({
   required Place destination,
@@ -71,18 +128,19 @@ List<Promo> promosFor({
   DateTime? now,
   List<TripRecord> history = const [],
 }) {
-  final h = (now ?? DateTime.now()).hour;
-  final regular = history.where((t) => !t.scheduled && _seaPlaces.contains(t.destination)).length >= 2;
+  final t = now ?? DateTime.now();
+  final h = t.hour;
+  final weekday = t.weekday <= DateTime.friday;
+  final regular = history.where((r) => !r.scheduled && _seaPlaces.contains(r.destination)).length >= 2;
+  final name = destination.name;
   return [
-    // Course seule vers un centre commercial : offre mode.
-    if (destination.name == 'Morocco Mall' && option.seul && !option.electric) zaraPromo,
-    // Gare tôt le matin : café.
-    if (destination.name.startsWith('Gare') && h >= 6 && h < 11) cafePromo,
-    // Bord de mer, centres commerciaux l'après-midi, ou habitué de ces lieux : smoothie.
-    if (_seaPlaces.contains(destination.name) ||
-        (_shoppingPlaces.contains(destination.name) && h >= 12 && h < 20) ||
-        regular)
-      koolsmoothiePromo,
+    if (name == 'Morocco Mall') fashionPromo,
+    if (name == 'Anfa Place') sportPromo,
+    if (name == 'Twin Center' && weekday && h >= 11 && h < 15) lunchPromo,
+    if (name.startsWith('Gare') && h >= 6 && h < 11) portCafePromo,
+    if (name == 'Ain Diab' || name == 'Mosquée Hassan II') teaPromo,
+    // Koolsmoothie avant 18 h : bord de mer et centres commerciaux, ou habitué de ces lieux.
+    if (h < 18 && (_seaPlaces.contains(name) || name == 'Twin Center' || regular)) koolsmoothiePromo,
   ];
 }
 

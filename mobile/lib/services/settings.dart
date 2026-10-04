@@ -16,9 +16,7 @@ class AppSettings extends ChangeNotifier {
 
   bool _senior = false;
   bool _lowVision = false;
-  bool _voiceAnnounce = true;
-  bool _offers = true;
-  bool _tourist = false;
+  bool _voiceAnnounce = false;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
 
@@ -26,21 +24,17 @@ class AppSettings extends ChangeNotifier {
   bool get senior => _senior;
   set senior(bool v) => _set(() => _senior = v);
 
-  /// Passager malvoyant : le chauffeur est prévenu, et les étapes sont annoncées à voix haute.
+  /// Passager malvoyant : le chauffeur est prévenu, et les annonces vocales sont activées.
   bool get lowVision => _lowVision;
-  set lowVision(bool v) => _set(() => _lowVision = v);
+  set lowVision(bool v) => _set(() {
+        _lowVision = v;
+        if (v) _voiceAnnounce = true;
+      });
 
-  /// Annonces vocales : taxi accepté, minutes restantes, arrivée.
+  /// Annonces vocales (taxi accepté, minutes restantes, arrivée) : désactivées par défaut.
+  /// Elles s'activent aussi d'elles-mêmes quand le lecteur d'écran du téléphone (TalkBack) est actif.
   bool get voiceAnnounce => _voiceAnnounce;
   set voiceAnnounce(bool v) => _set(() => _voiceAnnounce = v);
-
-  /// Offres selon la destination et les trajets passés (activé dans la démo).
-  bool get offers => _offers;
-  set offers(bool v) => _set(() => _offers = v);
-
-  /// Touriste : restaurants proposés près de la destination (aussi quand l'application est en anglais).
-  bool get tourist => _tourist;
-  set tourist(bool v) => _set(() => _tourist = v);
 
   AutoShare get autoShare => _autoShare;
   set autoShare(AutoShare v) => _set(() => _autoShare = v);
@@ -70,9 +64,7 @@ class AppSettings extends ChangeNotifier {
   void reset() => _set(() {
         _senior = false;
         _lowVision = false;
-        _voiceAnnounce = true;
-        _offers = true;
-        _tourist = false;
+        _voiceAnnounce = false;
         _autoShare = AutoShare.night;
         _contacts.clear();
       });

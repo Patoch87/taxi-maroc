@@ -48,9 +48,28 @@ class HistoryScreen extends StatelessWidget {
                                 style: const TextStyle(
                                     color: AppColors.moroccoGreen, fontSize: 13, fontWeight: FontWeight.w600)),
                           if (t.driver != null)
-                            Text(
-                                '${t.driver!.name} · ${t.driver!.taxiNumber}${t.rating > 0 ? ' · ${'★' * t.rating}' : ''}',
-                                style: const TextStyle(fontSize: 13)),
+                            Text('${t.driver!.name} · ${t.driver!.taxiNumber}', style: const TextStyle(fontSize: 13)),
+                          // Note, avis et pourboire laissés à la fin de la course.
+                          if (t.rating > 0)
+                            Semantics(
+                              label: '${t.rating} ${s.t('stars')}',
+                              excludeSemantics: true,
+                              child: Row(children: [
+                                for (var i = 1; i <= 5; i++)
+                                  Icon(i <= t.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                      size: 18, color: AppColors.gold),
+                              ]),
+                            ),
+                          if (t.tags.isNotEmpty)
+                            Text(t.tags.join(' · '), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                          if (t.comment.isNotEmpty)
+                            Text('« ${t.comment} »',
+                                style:
+                                    const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.muted)),
+                          if (t.tip > 0)
+                            Text('${s.t('tip')} : ${dh(t.tip)}',
+                                style: const TextStyle(
+                                    fontSize: 13, color: AppColors.moroccoGreen, fontWeight: FontWeight.w700)),
                         ]),
                       ),
                       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [

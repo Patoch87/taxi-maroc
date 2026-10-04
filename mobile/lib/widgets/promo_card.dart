@@ -8,49 +8,97 @@ import '../theme.dart';
 
 /// Carte d'offre discrète, toujours marquée « Exemple publicitaire (démo) ».
 class PromoCard extends StatelessWidget {
-  const PromoCard({super.key, required this.promo, this.big = false});
+  const PromoCard({super.key, required this.promo, this.big = false, this.onClose, this.onTap});
   final Promo promo;
 
   /// Mode senior : texte plus grand.
   final bool big;
 
+  /// Croix « Masquer la publicité » : l'offre disparaît pour le reste de la course.
+  final VoidCallback? onClose;
+
+  /// Toucher l'offre : ouvre le bon de réduction avec son QR code.
+  final VoidCallback? onTap;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-        container: true,
-        label: '${s.t('promoLabel')}. ${s.t(promo.titleKey)}. ${s.t(promo.detailKey)}',
-        excludeSemantics: true,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.line, width: 1.5),
+  Widget build(BuildContext context) => Container(
+        padding: EdgeInsetsDirectional.fromSTEB(12, 10, onClose == null ? 12 : 0, 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.line, width: 1.5),
+        ),
+        child: Row(children: [
+          Expanded(
+            child: Semantics(
+              container: true,
+              button: onTap != null,
+              label: '${s.t('promoLabel')}. ${promo.brand}. ${s.t(promo.titleKey)}. ${s.t(promo.detailKey)}',
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: Row(children: [
+                  BrandBadge(promo: promo, size: big ? 56 : 44),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      // Mention visible : ces enseignes ne sont pas des partenaires.
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(color: AppColors.sandDeep, borderRadius: BorderRadius.circular(6)),
+                        child: Text(s.t('promoLabel'),
+                            style: TextStyle(
+                                fontSize: big ? 16 : 11, fontWeight: FontWeight.w700, color: AppColors.muted)),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(s.t(promo.titleKey),
+                          style: TextStyle(fontSize: big ? 24 : 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                      Text('${promo.brand} · ${s.t(promo.detailKey)}',
+                          style: TextStyle(fontSize: big ? 20 : 12, color: AppColors.muted)),
+                    ]),
+                  ),
+                  if (onTap != null) ...[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.qr_code_2, color: AppColors.moroccoGreen),
+                  ],
+                ]),
+              ),
+            ),
           ),
-          child: Row(children: [
-            Container(
-              width: big ? 56 : 42,
-              height: big ? 56 : 42,
-              decoration:
-                  BoxDecoration(color: promo.color.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)),
-              child: Icon(promo.icon, color: promo.color, size: big ? 30 : 22),
+          if (onClose != null)
+            IconButton(
+              tooltip: s.t('hideAd'),
+              onPressed: onClose,
+              icon: const Icon(Icons.close, size: 20, color: AppColors.muted),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // Mention visible : ces marques ne sont pas des partenaires.
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(color: AppColors.sandDeep, borderRadius: BorderRadius.circular(6)),
-                  child: Text(s.t('promoLabel'),
-                      style: TextStyle(fontSize: big ? 16 : 11, fontWeight: FontWeight.w700, color: AppColors.muted)),
-                ),
-                const SizedBox(height: 3),
-                Text(s.t(promo.titleKey),
-                    style: TextStyle(fontSize: big ? 24 : 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
-                Text(s.t(promo.detailKey), style: TextStyle(fontSize: big ? 20 : 12, color: AppColors.muted)),
-              ]),
-            ),
-          ]),
+        ]),
+      );
+}
+
+/// Badge de l'annonceur : initiales sur sa couleur, dans une tuile arrondie.
+/// Aucun logo de marque n'est reproduit ; en production, les vrais logos sont fournis par les annonceurs sous contrat.
+class BrandBadge extends StatelessWidget {
+  const BrandBadge({super.key, required this.promo, this.size = 44});
+  final Promo promo;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        padding: EdgeInsets.all(size * .14),
+        decoration: BoxDecoration(
+          color: promo.color,
+          borderRadius: BorderRadius.circular(size * .28),
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)],
+        ),
+        child: FittedBox(
+          child: Text(promo.initials,
+              textDirection: TextDirection.ltr,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20, height: 1)),
         ),
       );
 }
@@ -134,7 +182,7 @@ class AdBanner extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 4, 6),
                   child: Row(children: [
-                    Icon(promo.icon, color: promo.color, size: 22),
+                    BrandBadge(promo: promo, size: 32),
                     const SizedBox(width: 8),
                     Expanded(
                       child: AnimatedSwitcher(

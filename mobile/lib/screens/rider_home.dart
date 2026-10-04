@@ -26,6 +26,11 @@ import '../widgets/language_sheet.dart';
 import '../widgets/map_parts.dart';
 import '../widgets/promo_card.dart';
 import '../widgets/senior.dart';
+import '../widgets/coupon_sheet.dart';
+import '../services/coupons.dart';
+import 'my_offers_screen.dart';
+import 'complaint_screen.dart';
+import '../widgets/card_payment_sheet.dart';
 import '../widgets/sheets.dart';
 import 'driver_home.dart';
 import 'history_screen.dart';
@@ -78,6 +83,10 @@ class _RiderHomeState extends State<RiderHome> {
   /// Réservation à l'avance : date et heure de prise en charge (null = maintenant).
   DateTime? _scheduledAt;
 
+  /// Siège bébé demandé (gratuit) et nombre de valises du passager (0 à 4).
+  bool _babySeat = false;
+  int _bags = 0;
+
   /// Course commandée pour quelqu'un d'autre (null = pour moi).
   TrustedContact? _forOther;
 
@@ -95,6 +104,8 @@ class _RiderHomeState extends State<RiderHome> {
   Timer? _moveTimer;
   int _rating = 0;
   double _tip = 0;
+  final _tags = <String>{};
+  final _comment = TextEditingController();
 
   // Annonces vocales pour les passagers malvoyants.
   Voice? _voiceEngine;
@@ -104,8 +115,13 @@ class _RiderHomeState extends State<RiderHome> {
   /// Mode senior : l'offre ne s'affiche que si le passager la demande.
   bool _seniorPromoOpen = false;
 
-  // Vue carte plein écran pendant la course : bandeau taxi en bas, bandeau publicitaire en haut.
-  bool _mapView = false;
+  /// Identifiant de la course en cours (pour les bons de réduction).
+  String _tripId = 'T000000';
+
+  // Panneau du bas à glisser : replié, il ne garde que l'essentiel et laisse voir la carte.
+  // Pendant la course, replié = vue carte : bandeau du taxi en bas, bandeau publicitaire en haut.
+  bool _collapsed = false;
+  double _dragDy = 0;
   bool _adClosed = false;
   int _adIndex = 0;
   Timer? _adTimer;
@@ -133,6 +149,7 @@ class _RiderHomeState extends State<RiderHome> {
   @override
   void dispose() {
     settings.removeListener(_onSettings);
+    _comment.dispose();
     _ambientTimer?.cancel();
     _adTimer?.cancel();
     _moveTimer?.cancel();
@@ -180,6 +197,7 @@ class _RiderHomeState extends State<RiderHome> {
       _options = options;
       _selected = options.first;
       _step = RiderStep.choosing;
+      _collapsed = false;
     });
     _fit(route);
   }
@@ -243,13 +261,12 @@ class _RiderHomeState extends State<RiderHome> {
 
   // ---------------------------------------------------------------- Annonces vocales
 
-  /// Annonces minute par minute : pour les malvoyants, le mode senior ou un lecteur d'écran actif.
-  bool get _announceMinutes =>
-      settings.voiceAnnounce &&
-      (settings.lowVision || settings.senior || MediaQuery.maybeOf(context)?.accessibleNavigation == true);
+  /// Annonces vocales : désactivées par défaut. Activées par le passager (menu, ou « Malvoyant »),
+  /// ou d'elles-mêmes quand le lecteur d'écran du téléphone (TalkBack) est actif.
+  bool get _voiceOn => settings.voiceAnnounce || MediaQuery.maybeOf(context)?.accessibleNavigation == true;
 
   void _say(String text) {
-    if (settings.voiceAnnounce) _voice.say(text);
+    if (_voiceOn) _voice.say(text);
   }
 
   String _minutesText(int m) => m <= 1 ? s.t('minuteOne') : '$m ${s.t('minutesLong')}';
@@ -263,7 +280,7 @@ class _RiderHomeState extends State<RiderHome> {
   }
 
   void _announceMinute() {
-    if (_step != RiderStep.arriving || !_announceMinutes) return;
+    if (_step != RiderStep.arriving || !_voiceOn) return;
     final mins = (_remaining.inSeconds / 60).ceil();
     if (mins >= 1 && mins < _lastAnnouncedMin) {
       _lastAnnouncedMin = mins;
@@ -297,7 +314,8 @@ class _RiderHomeState extends State<RiderHome> {
       );
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('${s.t('tripBooked')} ${scheduleLabel(_scheduledAt!, lang: s.lang)} · ${_dest!.name}'
-            '${_forOther == null ? '' : ' · ${_forOther!.name}'}'),
+            '${_forOther == null ? '' : ' · ${_forOther!.name}'}'
+            '${_babySeat ? ' · ${s.t('babySeatRequested')}' : ''}'),
       ));
       if (_forOther != null) _sharePassenger();
       _reset();
@@ -308,7 +326,9 @@ class _RiderHomeState extends State<RiderHome> {
     const d = Distance();
     final nearest = [..._ambient]..sort((a, b) => d(a, _me).compareTo(d(b, _me)));
     final candidates = [
-      for (final p in nearest.take(3 + _rnd.nextInt(2))) _Candidate(DemoDriver.random(_selected!.kind, _rnd), p),
+      // Siège bébé : la demande ne part qu'aux chauffeurs qui en ont un.
+      for (final p in nearest.take(3 + _rnd.nextInt(2)))
+        _Candidate(DemoDriver.random(_selected!.kind, _rnd, babySeat: _babySeat), p),
     ];
     setState(() {
       _candidates = candidates;
@@ -376,7 +396,7 @@ class _RiderHomeState extends State<RiderHome> {
       _announceMinute();
       // Vue carte : la caméra suit le taxi.
       final taxi = _taxiPos;
-      if (_mapView && _mapReady && taxi != null) _map.move(taxi, _map.camera.zoom);
+      if (_collapsed && _inTrip && _mapReady && taxi != null) _map.move(taxi, _map.camera.zoom);
       if (_elapsed >= _legDuration) {
         t.cancel();
         onEnd();
@@ -425,6 +445,8 @@ class _RiderHomeState extends State<RiderHome> {
   String _clock(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   void _startTrip() {
+    // Identifiant de la course, repris dans le code des bons de réduction.
+    _tripId = 'T${(DateTime.now().millisecondsSinceEpoch % 1000000).toString().padLeft(6, '0')}';
     // Durée réelle du trajet à 25 km/h, décomptée en temps réel.
     _startLeg(_route, Duration(seconds: (_routeM / _cityMps).round()), RiderStep.onTrip,
         onEnd: () => setState(() => _step = RiderStep.done));
@@ -452,18 +474,25 @@ class _RiderHomeState extends State<RiderHome> {
 
   // ---------------------------------------------------------------- Offres et restaurants
 
-  /// Offre selon la destination, l'heure, le type de course et les trajets passés (si le passager l'accepte).
-  Promo? get _promo => settings.offers && _dest != null && _selected != null
+  /// Offre selon la destination, l'heure et les trajets passés : seulement une fois la course commencée
+  /// (passager à bord), jamais sur l'accueil, le choix du taxi, la recherche ou l'attente du taxi.
+  /// Toujours affichée pendant la course, sauf si le passager l'a fermée.
+  Promo? get _promo => _step == RiderStep.onTrip && !_adClosed && _dest != null && _selected != null
       ? pickPromo(destination: _dest!, option: _selected!, history: tripHistory)
       : null;
 
   List<Widget> _promoBlock() {
     final p = _promo;
-    return p == null ? const [] : [const SizedBox(height: 10), PromoCard(promo: p)];
+    return p == null
+        ? const []
+        : [
+            const SizedBox(height: 10),
+            PromoCard(promo: p, onTap: () => _openPromo(p), onClose: () => setState(() => _adClosed = true)),
+          ];
   }
 
-  /// Touristes (ou application en anglais) : 3 restaurants près de la destination.
-  bool get _showRestaurants => (settings.tourist || s.foreign) && _dest != null && !_dest!.intercity;
+  /// Pour tous les passagers : 3 restaurants près de la destination.
+  bool get _showRestaurants => _dest != null && !_dest!.intercity;
 
   List<Widget> _restaurantBlock() => _showRestaurants
       ? [
@@ -511,7 +540,7 @@ class _RiderHomeState extends State<RiderHome> {
 
   /// Offres du bandeau : personnalisées selon le trajet, sinon un bandeau générique.
   List<Promo> get _bannerPromos {
-    if (!settings.offers || _dest == null || _selected == null) return const [genericPromo];
+    if (_dest == null || _selected == null) return const [genericPromo];
     final list = promosFor(destination: _dest!, option: _selected!, history: tripHistory);
     return list.isEmpty ? const [genericPromo] : list;
   }
@@ -521,109 +550,179 @@ class _RiderHomeState extends State<RiderHome> {
     return list[_adIndex % list.length];
   }
 
-  void _setMapView(bool on) {
+  void _setCollapsed(bool on) {
     _adTimer?.cancel();
     if (on) {
-      // Rotation des offres toutes les 15 secondes.
+      // Rotation des offres du bandeau toutes les 15 secondes.
       _adTimer = Timer.periodic(const Duration(seconds: 15), (_) {
         if (mounted) setState(() => _adIndex++);
       });
     }
-    setState(() => _mapView = on);
+    setState(() {
+      _collapsed = on;
+      _dragDy = 0;
+    });
     final taxi = _taxiPos;
-    if (on && _mapReady && taxi != null) _map.move(taxi, 16);
-    if (!on) _fit([...?(_path.isEmpty ? null : _path), _me]);
+    if (on && _inTrip && _mapReady && taxi != null) _map.move(taxi, 16);
+    if (!on && _inTrip) _fit([...?(_path.isEmpty ? null : _path), _me]);
   }
 
-  void _openPromo(Promo p) => showModalBottomSheet(
-        context: context,
-        backgroundColor: AppColors.sand,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        builder: (ctx) => SafeArea(
-          child: Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 16), child: PromoCard(promo: p, big: true)),
+  /// Fin du glissement de la poignée : vers le bas, le panneau se replie ; vers le haut, il s'ouvre.
+  void _onHandleDragEnd(DragEndDetails d) {
+    final v = d.primaryVelocity ?? 0;
+    if (v > 250 || _dragDy > 40) {
+      _setCollapsed(true);
+    } else if (v < -250 || _dragDy < -40) {
+      _setCollapsed(false);
+    } else {
+      setState(() => _dragDy = 0);
+    }
+  }
+
+  /// Poignée du panneau : grande zone à saisir, glisser ou toucher pour afficher ou masquer les détails.
+  Widget _handle() => Semantics(
+        button: true,
+        expanded: !_collapsed,
+        label: s.t('toggleDetails'),
+        excludeSemantics: true,
+        onTap: () => _setCollapsed(!_collapsed),
+        child: GestureDetector(
+          key: const ValueKey('sheetHandle'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _setCollapsed(!_collapsed),
+          onVerticalDragStart: (_) => _dragDy = 0,
+          onVerticalDragUpdate: (d) => setState(() => _dragDy += d.delta.dy),
+          onVerticalDragEnd: _onHandleDragEnd,
+          child: SizedBox(
+            height: 40,
+            child: Center(
+              child: Container(
+                width: 56,
+                height: 6,
+                decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(3)),
+              ),
+            ),
+          ),
         ),
       );
+
+  /// Panneau du bas : complet, ou replié sur l'essentiel. Il suit le doigt pendant le glissement.
+  Widget _sheet() => Transform.translate(
+        offset: Offset(0, _collapsed ? 0 : max(0, _dragDy)),
+        child: BottomPanel(handle: _handle(), child: _collapsed ? _collapsedPanel() : _panel()),
+      );
+
+  /// Panneau replié : l'essentiel seulement, la carte reste visible.
+  Widget _collapsedPanel() => switch (_step) {
+        RiderStep.idle => KeyedSubtree(key: const ValueKey('mini-idle'), child: _searchBar()),
+        RiderStep.choosing => Row(key: const ValueKey('mini-choose'), children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(_dest!.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                Text(_selected!.title, style: const TextStyle(color: AppColors.muted)),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            FilledButton(onPressed: _request, child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}')),
+          ]),
+        RiderStep.dispatching => Row(key: const ValueKey('mini-dispatch'), children: [
+            const SizedBox.square(
+                dimension: 24, child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.moroccoGreen)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(s.t('searching'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        RiderStep.arriving ||
+        RiderStep.arrived ||
+        RiderStep.onTrip =>
+          KeyedSubtree(key: const ValueKey('mini-trip'), child: _taxiStrip()),
+        RiderStep.done => Row(key: const ValueKey('mini-done'), children: [
+            Expanded(
+              child: Text('${s.t('tripDone')} · ${dh(_selected!.priceMad + _tip)}',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            ),
+            FilledButton(onPressed: _finish, child: Text(s.t('done'))),
+          ]),
+      };
+
+  /// Toucher une offre : bon de réduction avec QR code, lié au compte, à l'offre et à cette course.
+  void _openPromo(Promo p) {
+    if (p.id == genericPromo.id) return;
+    showCouponSheet(context, Coupon(promo: p, tripId: _tripId, issuedAt: DateTime.now()));
+  }
 
   /// Bandeau compact du taxi : photo, plaque en grand, voiture, compte à rebours, appel et SOS.
   Widget _taxiStrip() {
     final d = _driver!;
     final carLine = '${d.car} · ${s.t(carColorKey(_selected!.kind))}';
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
-      decoration: BoxDecoration(
-        color: AppColors.sand,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 14)],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(children: [
-          DriverPhoto(driver: d, size: 52),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.ink, width: 2),
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(d.plate,
-                      textDirection: TextDirection.ltr,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: .5)),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(carLine,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600)),
-            ]),
-          ),
-          const SizedBox(width: 8),
-          Semantics(
-            liveRegion: true,
-            label: _step == RiderStep.arrived
-                ? s.t('arrived')
-                : '${s.t('arrivingShort')} ${_minutesText((_remaining.inSeconds / 60).ceil())}',
-            excludeSemantics: true,
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-              if (_step == RiderStep.arrived)
-                const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 32)
-              else ...[
-                Text(_countdown,
-                    style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.moroccoGreen,
-                        fontFeatures: [FontFeature.tabularFigures()])),
-                Text(_clock(_arrivalTime), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-              ],
-            ]),
-          ),
-          Column(mainAxisSize: MainAxisSize.min, children: [
-            IconButton(
-              tooltip: s.t('call'),
-              visualDensity: VisualDensity.compact,
-              color: AppColors.moroccoGreen,
-              onPressed: () => launchUrl(Uri(scheme: 'tel', path: '0600000000')).catchError((_) => false),
-              icon: const Icon(Icons.call),
+    return Row(children: [
+      DriverPhoto(driver: d, size: 52),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.ink, width: 2),
             ),
-            IconButton(
-              tooltip: s.t('sos'),
-              visualDensity: VisualDensity.compact,
-              color: AppColors.taxiRed,
-              onPressed: () => showSafetySheet(context, taxiId: d.taxiNumber, onShare: _share),
-              icon: const Icon(Icons.sos),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(d.plate,
+                  textDirection: TextDirection.ltr,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: .5)),
             ),
-          ]),
+          ),
+          const SizedBox(height: 4),
+          Text(carLine,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600)),
         ]),
       ),
-    );
+      const SizedBox(width: 8),
+      Semantics(
+        liveRegion: true,
+        label: _step == RiderStep.arrived
+            ? s.t('arrived')
+            : '${s.t('arrivingShort')} ${_minutesText((_remaining.inSeconds / 60).ceil())}',
+        excludeSemantics: true,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+          if (_step == RiderStep.arrived)
+            const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 32)
+          else ...[
+            Text(_countdown,
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.moroccoGreen,
+                    fontFeatures: [FontFeature.tabularFigures()])),
+            Text(_clock(_arrivalTime), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          ],
+        ]),
+      ),
+      Column(mainAxisSize: MainAxisSize.min, children: [
+        IconButton(
+          tooltip: s.t('call'),
+          visualDensity: VisualDensity.compact,
+          color: AppColors.moroccoGreen,
+          onPressed: () => launchUrl(Uri(scheme: 'tel', path: '0600000000')).catchError((_) => false),
+          icon: const Icon(Icons.call),
+        ),
+        IconButton(
+          tooltip: s.t('sos'),
+          visualDensity: VisualDensity.compact,
+          color: AppColors.taxiRed,
+          onPressed: () => showSafetySheet(context, taxiId: d.taxiNumber, onShare: _share),
+          icon: const Icon(Icons.sos),
+        ),
+      ]),
+    ]);
   }
 
   // ---------------------------------------------------------------- Mode senior
@@ -665,6 +764,8 @@ class _RiderHomeState extends State<RiderHome> {
         driver: _driver,
         tip: _tip,
         rating: _rating,
+        tags: [for (final k in _tags) s.t(k)],
+        comment: _comment.text.trim(),
         passengerName: _forOther?.name,
       ),
     );
@@ -688,11 +789,16 @@ class _RiderHomeState extends State<RiderHome> {
       _candidates = [];
       _rating = 0;
       _tip = 0;
+      _tags.clear();
+      _comment.clear();
       _scheduledAt = null;
       _forOther = null;
+      _babySeat = false;
+      _bags = 0;
       _lastAnnouncedMin = -1;
       _seniorPromoOpen = false;
-      _mapView = false;
+      _collapsed = false;
+      _dragDy = 0;
       _adClosed = false;
       _adIndex = 0;
     });
@@ -749,6 +855,39 @@ class _RiderHomeState extends State<RiderHome> {
         RiderStep.done => _donePanel(),
       };
 
+  // Barre de recherche avec le micro : la commande vocale est dans l'écran de commande.
+  Widget _searchBar() => Material(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.line, width: 1.5)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openSearch,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 6, 6),
+            child: Row(children: [
+              const Icon(Icons.search, size: 26, color: AppColors.moroccoGreen),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label: s.t('searchPlace'),
+                  excludeSemantics: true,
+                  child: Text(s.t('searchPlace'), style: const TextStyle(fontSize: 17, color: AppColors.muted)),
+                ),
+              ),
+              IconButton.filled(
+                tooltip: s.t('speakNow'),
+                style: IconButton.styleFrom(backgroundColor: AppColors.moroccoGreen, foregroundColor: Colors.white),
+                iconSize: 26,
+                onPressed: () => _openSearch(voice: true),
+                icon: const Icon(Icons.mic),
+              ),
+            ]),
+          ),
+        ),
+      );
+
   Widget _idlePanel() {
     final recent = {for (final t in tripHistory.where((t) => !t.scheduled)) t.destination}.take(3).toList();
     final suggestions = [
@@ -762,38 +901,7 @@ class _RiderHomeState extends State<RiderHome> {
         Text(s.t('hello'), style: const TextStyle(fontSize: 15, color: AppColors.muted, fontWeight: FontWeight.w600)),
         Text(s.t('whereTo'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
         const SizedBox(height: 12),
-        // Barre de recherche avec le micro : la commande vocale est dans l'écran de commande.
-        Material(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.line, width: 1.5)),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: _openSearch,
-            child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 6, 6),
-              child: Row(children: [
-                const Icon(Icons.search, size: 26, color: AppColors.moroccoGreen),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Semantics(
-                    button: true,
-                    label: s.t('searchPlace'),
-                    excludeSemantics: true,
-                    child: Text(s.t('searchPlace'), style: const TextStyle(fontSize: 17, color: AppColors.muted)),
-                  ),
-                ),
-                IconButton.filled(
-                  tooltip: s.t('speakNow'),
-                  style: IconButton.styleFrom(backgroundColor: AppColors.moroccoGreen, foregroundColor: Colors.white),
-                  iconSize: 26,
-                  onPressed: () => _openSearch(voice: true),
-                  icon: const Icon(Icons.mic),
-                ),
-              ]),
-            ),
-          ),
-        ),
+        _searchBar(),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: _savedPlace(Icons.home_rounded, s.t('home'), homePlace)),
@@ -894,7 +1002,6 @@ class _RiderHomeState extends State<RiderHome> {
               child: Text(s.t('officialPrice'), style: const TextStyle(fontSize: 12, color: AppColors.moroccoGreen)),
             ),
           ]),
-          ..._promoBlock(),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             _pill(
@@ -920,6 +1027,15 @@ class _RiderHomeState extends State<RiderHome> {
               onTap: _pickPassenger,
             ),
             _pill(
+              icon: Icons.child_friendly,
+              label: s.t('babySeat'),
+              semantics: '${s.t('babySeat')}, ${s.t('babySeatFree')}',
+              selected: _babySeat,
+              toggle: true,
+              onTap: () => setState(() => _babySeat = !_babySeat),
+            ),
+            _bagStepper(),
+            _pill(
               icon: Icons.visibility_off_outlined,
               label: s.t('lowVisionShort'),
               semantics: s.t('lowVisionDesc'),
@@ -931,6 +1047,10 @@ class _RiderHomeState extends State<RiderHome> {
           if (settings.lowVision) ...[
             const SizedBox(height: 8),
             _infoNote(Icons.record_voice_over, s.t('lowVisionDesc')),
+          ],
+          if (_babySeat) ...[
+            const SizedBox(height: 8),
+            _infoNote(Icons.child_friendly, s.t('babySeatFree')),
           ],
           if (_forOther != null) ...[
             const SizedBox(height: 8),
@@ -998,6 +1118,44 @@ class _RiderHomeState extends State<RiderHome> {
     );
   }
 
+  /// Nombre de valises (0 à 4) : les options dont le coffre est trop petit sont grisées.
+  Widget _bagStepper() {
+    Widget btn(IconData icon, String tip, int delta) => IconButton(
+          tooltip: tip,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          onPressed: (_bags + delta).clamp(0, 4) == _bags ? null : () => _setBags(_bags + delta),
+          icon: Icon(icon, size: 18),
+        );
+    return Container(
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: StadiumBorder(side: BorderSide(color: _bags > 0 ? AppColors.moroccoGreen : AppColors.line, width: 1.5)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        btn(Icons.remove, s.t('fewerBags'), -1),
+        Semantics(
+          liveRegion: true,
+          label: '${s.t('suitcases')} : $_bags',
+          excludeSemantics: true,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.luggage, size: 18, color: AppColors.ink),
+            const SizedBox(width: 4),
+            Text('$_bags', style: const TextStyle(fontWeight: FontWeight.w800)),
+          ]),
+        ),
+        btn(Icons.add, s.t('moreBags'), 1),
+      ]),
+    );
+  }
+
+  void _setBags(int n) => setState(() {
+        _bags = n;
+        if (_selected != null && _selected!.luggage < n) {
+          _selected = _options.where((o) => o.luggage >= n).firstOrNull ?? _selected;
+        }
+      });
+
   Widget _infoNote(IconData icon, String text) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(12)),
@@ -1013,60 +1171,63 @@ class _RiderHomeState extends State<RiderHome> {
 
   Widget _optionTile(RideOption o) {
     final selected = o.id == _selected?.id;
+    // Coffre trop petit pour les valises du passager : option grisée, non sélectionnable.
+    final fits = o.luggage >= _bags;
     return Semantics(
         button: true,
         selected: selected,
-        label: '${o.title}, ${dh(o.priceMad)}, ${o.description}',
+        enabled: fits,
+        label: '${o.title}, ${dh(o.priceMad)}, ${o.description}, ${o.luggage} ${s.t('suitcasesMax')}'
+            '${fits ? '' : ', ${s.t('tooManyBags')}'}',
         excludeSemantics: true,
         child: GestureDetector(
-          onTap: () => setState(() => _selected = o),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: selected ? const Color(0xFFF4FAF6) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: selected ? AppColors.moroccoGreen : AppColors.line, width: selected ? 2 : 1.5),
-            ),
-            child: Row(children: [
-              Container(
-                width: 54,
-                height: 42,
-                decoration: BoxDecoration(color: taxiColor(o.kind), borderRadius: BorderRadius.circular(11)),
-                child: Icon(Icons.local_taxi, color: o.kind == TaxiKind.grand ? AppColors.ink : Colors.white),
+          onTap: fits ? () => setState(() => _selected = o) : null,
+          child: Opacity(
+            opacity: fits ? 1 : .4,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFFF4FAF6) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border:
+                    Border.all(color: selected ? AppColors.moroccoGreen : AppColors.line, width: selected ? 2 : 1.5),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(
-                      child: Text(o.title,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                    const SizedBox(width: 6),
-                    if (o.electric) ...[
-                      // Badge feuille verte
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(6)),
-                        child: const Icon(Icons.eco, size: 14, color: AppColors.moroccoGreen),
+              child: Row(children: [
+                Container(
+                  width: 54,
+                  height: 42,
+                  decoration: BoxDecoration(color: taxiColor(o.kind), borderRadius: BorderRadius.circular(11)),
+                  child: Icon(Icons.local_taxi, color: o.kind == TaxiKind.grand ? AppColors.ink : Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Flexible(
+                        child: Text(o.title,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            overflow: TextOverflow.ellipsis),
                       ),
                       const SizedBox(width: 6),
-                    ],
-                    const Icon(Icons.person, size: 14, color: AppColors.muted),
-                    Text('${o.seats}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                      const Icon(Icons.person, size: 14, color: AppColors.muted),
+                      Text('${o.seats}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                      const SizedBox(width: 6),
+                      // Nombre de valises que le coffre peut prendre.
+                      const Icon(Icons.luggage, size: 14, color: AppColors.muted),
+                      Text('${o.luggage}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                    ]),
+                    Text(fits ? o.description : s.t('tooManyBags'),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: fits ? AppColors.muted : AppColors.taxiRed,
+                            fontWeight: fits ? null : FontWeight.w600)),
                   ]),
-                  Text(o.description,
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: o.electric ? AppColors.moroccoGreen : AppColors.muted,
-                          fontWeight: o.electric ? FontWeight.w600 : null)),
-                ]),
-              ),
-              Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-            ]),
+                ),
+                Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              ]),
+            ),
           ),
         ));
   }
@@ -1096,7 +1257,9 @@ class _RiderHomeState extends State<RiderHome> {
                     width: 44,
                     height: 44,
                     child: ClipOval(
-                        child: Image.network(c.driver.photoUrl,
+                        child: Image(
+                            image: photoImage(c.driver.photo),
+                            fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => CircleAvatar(child: Text(c.driver.name[0]))))),
               ),
               const SizedBox(width: 12),
@@ -1113,7 +1276,6 @@ class _RiderHomeState extends State<RiderHome> {
           const SizedBox(width: 6),
           Expanded(child: Text(s.t('firstWins'), style: const TextStyle(fontSize: 12, color: AppColors.muted))),
         ]),
-        ..._promoBlock(),
         const SizedBox(height: 10),
         OutlinedButton(onPressed: _reset, child: Text(s.t('cancel'))),
       ],
@@ -1173,13 +1335,13 @@ class _RiderHomeState extends State<RiderHome> {
           const SizedBox(width: 4),
           IconButton(
             tooltip: s.t('mapView'),
-            onPressed: () => _setMapView(true),
+            onPressed: () => _setCollapsed(true),
             icon: const Icon(Icons.fullscreen, color: AppColors.ink),
           ),
           _safetyButton(),
         ]),
         const SizedBox(height: 14),
-        DriverCard(driver: d, passengerName: _forOther?.name, lowVision: settings.lowVision),
+        DriverCard(driver: d, passengerName: _forOther?.name, lowVision: settings.lowVision, babySeat: _babySeat),
         if (_forOther != null) ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -1228,8 +1390,8 @@ class _RiderHomeState extends State<RiderHome> {
               ),
             ),
           ]),
-        // En attendant le taxi : une offre (jamais pendant la course ni dans la sécurité).
-        if (_step == RiderStep.arriving) ..._promoBlock(),
+        // Passager à bord : une offre (jamais avant la course, ni dans la sécurité ou une plainte).
+        ..._promoBlock(),
         ..._restaurantBlock(),
       ],
     );
@@ -1257,72 +1419,191 @@ class _RiderHomeState extends State<RiderHome> {
         ),
       ));
 
-  Widget _donePanel() => Column(
-        key: const ValueKey('done'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(s.t('tripDone'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-            child: Row(children: [
-              DriverPhoto(driver: _driver!, size: 54),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s.t('pay'), style: const TextStyle(color: AppColors.muted)),
-                  Text(dh(_selected!.priceMad + _tip),
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
-                  Text('${_driver!.name} · ${_driver!.taxiNumber}', style: const TextStyle(color: AppColors.muted)),
-                ]),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          Text(s.t('tip'), style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Row(children: [
-            for (final t in [0.0, 5.0, 10.0, 20.0])
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: ChoiceChip(
-                    label: SizedBox(
-                        width: double.infinity, child: Text(t == 0 ? '—' : dh(t), textAlign: TextAlign.center)),
-                    selected: _tip == t,
-                    showCheckmark: false,
-                    selectedColor: AppColors.moroccoGreen,
-                    backgroundColor: Colors.white,
-                    labelStyle: TextStyle(color: _tip == t ? Colors.white : AppColors.ink, fontWeight: FontWeight.w700),
-                    onSelected: (_) => setState(() => _tip = t),
-                  ),
-                ),
-              ),
-          ]),
-          const SizedBox(height: 10),
-          Text(s.t('rate'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 1; i <= 5; i++)
-                IconButton(
-                  iconSize: 38,
-                  tooltip: '$i / 5',
-                  onPressed: () => setState(() => _rating = i),
-                  icon: Icon(i <= _rating ? Icons.star_rounded : Icons.star_outline_rounded, color: AppColors.gold),
-                ),
-            ],
-          ),
-          ..._restaurantBlock(),
-          const SizedBox(height: 8),
-          FilledButton(onPressed: _finish, child: Text(s.t('done'))),
-          TextButton(
-            onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
-            child: Text(s.t('complain'), style: const TextStyle(color: AppColors.muted)),
+  /// Avis rapides selon la note : points positifs (4 ou 5 étoiles) ou problèmes (3 étoiles ou moins).
+  static const _goodTags = ['tagCareful', 'tagClean', 'tagPunctual', 'tagMusic'];
+  static const _badTags = ['tagLate', 'tagRough', 'tagPrice'];
+
+  /// Montant du pourboire au choix (« Autre montant »).
+  Future<void> _otherTip() async {
+    final ctrl =
+        TextEditingController(text: _tip > 0 && ![5.0, 10.0, 20.0].contains(_tip) ? _tip.toStringAsFixed(0) : '');
+    final v = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.t('otherAmount')),
+        content: TextField(
+          key: const ValueKey('otherTipField'),
+          controller: ctrl,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: s.t('amountDh'), suffixText: 'DH'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(s.t('cancel'))),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text.replaceAll(',', '.').trim())),
+            child: const Text('OK'),
           ),
         ],
+      ),
+    );
+    if (v != null && v > 0 && v <= 500 && mounted) setState(() => _tip = v);
+  }
+
+  /// « Envoyer » : le pourboire est payé par carte (paiement simulé), puis la note et l'avis sont gardés
+  /// dans l'historique de la course.
+  Future<void> _send() async {
+    final tip = _tip;
+    if (tip > 0) {
+      final ok = await showCardPaymentSheet(context, amount: tip);
+      if (ok != true || !mounted) return;
+    }
+    _finish();
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 48),
+        title: Text(s.t('thanksSent'), textAlign: TextAlign.center),
+        content: tip > 0
+            ? Text('${s.t('tipPaid')} : ${dh(tip)} · ${s.t('simulatedPayment')}', textAlign: TextAlign.center)
+            : null,
+        actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+      ),
+    );
+  }
+
+  Widget _tipChip(String label, bool selected, VoidCallback onTap) => Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: ChoiceChip(
+            label: SizedBox(
+                width: double.infinity,
+                child: Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            selected: selected,
+            showCheckmark: false,
+            selectedColor: AppColors.moroccoGreen,
+            backgroundColor: Colors.white,
+            labelStyle: TextStyle(color: selected ? Colors.white : AppColors.ink, fontWeight: FontWeight.w700),
+            onSelected: (_) => onTap(),
+          ),
+        ),
       );
+
+  Widget _donePanel() {
+    final presets = [5.0, 10.0, 20.0];
+    final other = _tip > 0 && !presets.contains(_tip);
+    final tags = _rating >= 4 ? _goodTags : _badTags;
+    return Column(
+      key: const ValueKey('done'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(s.t('tripDone'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          child: Row(children: [
+            DriverPhoto(driver: _driver!, size: 54),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(s.t('pay'), style: const TextStyle(color: AppColors.muted)),
+                Text(dh(_selected!.priceMad), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+                Text('${_driver!.name} · ${_driver!.taxiNumber}', style: const TextStyle(color: AppColors.muted)),
+              ]),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        // Note de 1 à 5 : grandes étoiles faciles à toucher.
+        Text(s.t('rate'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 1; i <= 5; i++)
+              Semantics(
+                button: true,
+                selected: i <= _rating,
+                label: '$i ${s.t('stars')}',
+                excludeSemantics: true,
+                child: IconButton(
+                  iconSize: 46,
+                  tooltip: '$i ${s.t('stars')}',
+                  onPressed: () => setState(() {
+                    if ((_rating >= 4) != (i >= 4)) _tags.clear();
+                    _rating = i;
+                  }),
+                  icon: Icon(i <= _rating ? Icons.star_rounded : Icons.star_outline_rounded, color: AppColors.gold),
+                ),
+              ),
+          ],
+        ),
+        if (_rating > 0) ...[
+          Wrap(alignment: WrapAlignment.center, spacing: 6, runSpacing: 6, children: [
+            for (final k in tags)
+              FilterChip(
+                label: Text(s.t(k)),
+                selected: _tags.contains(k),
+                selectedColor: _rating >= 4 ? AppColors.greenSoft : const Color(0xFFFBEAEA),
+                backgroundColor: Colors.white,
+                onSelected: (on) => setState(() => on ? _tags.add(k) : _tags.remove(k)),
+              ),
+          ]),
+          // Mauvaise course : raccourci vers la réclamation.
+          if (_rating <= 2)
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: AppColors.taxiRed),
+              onPressed: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => ComplaintScreen(taxiId: _driver?.taxiNumber))),
+              icon: const Icon(Icons.report_outlined),
+              label: Text(s.t('badRide')),
+            ),
+          const SizedBox(height: 8),
+        ],
+        TextField(
+          controller: _comment,
+          minLines: 1,
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: s.t('commentHint'),
+            filled: true,
+            fillColor: Colors.white,
+            isDense: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(s.t('tip'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Row(children: [
+          for (final v in presets) _tipChip(dh(v), _tip == v, () => setState(() => _tip = _tip == v ? 0 : v)),
+          _tipChip(other ? dh(_tip) : s.t('otherAmount'), other, _otherTip),
+        ]),
+        Row(children: [
+          const Icon(Icons.credit_card, size: 16, color: AppColors.muted),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text('${s.t('tipByCard')} · ${s.t('simulatedPayment')}',
+                style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          ),
+        ]),
+        ..._restaurantBlock(),
+        const SizedBox(height: 10),
+        FilledButton.icon(
+          key: const ValueKey('sendReview'),
+          onPressed: _send,
+          icon: const Icon(Icons.send),
+          label: Text(_tip > 0 ? '${s.t('send')} · ${dh(_tip)}' : s.t('send')),
+        ),
+        TextButton(
+          onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
+          child: Text(s.t('complain'), style: const TextStyle(color: AppColors.muted)),
+        ),
+      ],
+    );
+  }
 
   // ---------------------------------------------------------------- Menu
 
@@ -1362,6 +1643,7 @@ class _RiderHomeState extends State<RiderHome> {
             ),
             const SizedBox(height: 8),
             _menuItem(Icons.receipt_long, s.t('history'), () => const HistoryScreen()),
+            _menuItem(Icons.local_offer_outlined, s.t('myOffers'), () => const MyOffersScreen()),
             _menuItem(Icons.people_alt_outlined, s.t('trustedContacts'), () => const TrustedContactsScreen()),
             _menuItem(Icons.drive_eta_outlined, s.t('driverMode'), () => const DriverHome()),
             ListTile(
@@ -1370,6 +1652,17 @@ class _RiderHomeState extends State<RiderHome> {
               onTap: () {
                 Navigator.pop(context);
                 showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share);
+              },
+            ),
+            // Une seule option « Langue », juste sous « Sécurité » : le choix se fait dans une grille de drapeaux.
+            ListTile(
+              leading: Text(S.flags[s.lang]!, style: const TextStyle(fontSize: 24)),
+              title: Text(s.t('language')),
+              subtitle: Text(S.names[s.lang]!, style: const TextStyle(color: AppColors.muted)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(context);
+                showLanguageSheet(context);
               },
             ),
             const Divider(color: AppColors.line),
@@ -1400,33 +1693,6 @@ class _RiderHomeState extends State<RiderHome> {
               value: settings.voiceAnnounce,
               onChanged: (v) => settings.voiceAnnounce = v,
             ),
-            const Divider(color: AppColors.line),
-            SwitchListTile(
-              secondary: const Icon(Icons.local_offer_outlined),
-              title: Text(s.t('offersSetting')),
-              subtitle: Text(s.t('offersWhy'), style: const TextStyle(color: AppColors.muted)),
-              value: settings.offers,
-              onChanged: (v) => settings.offers = v,
-            ),
-            SwitchListTile(
-              secondary: const Icon(Icons.luggage_outlined),
-              title: Text(s.t('touristMode')),
-              subtitle: Text(s.t('touristDesc'), style: const TextStyle(color: AppColors.muted)),
-              value: settings.tourist,
-              onChanged: (v) => settings.tourist = v,
-            ),
-            const Divider(color: AppColors.line),
-            // Une seule option « Langue » : le choix se fait dans une grille de drapeaux.
-            ListTile(
-              leading: Text(S.flags[s.lang]!, style: const TextStyle(fontSize: 24)),
-              title: Text(s.t('language')),
-              subtitle: Text(S.names[s.lang]!, style: const TextStyle(color: AppColors.muted)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.pop(context);
-                showLanguageSheet(context);
-              },
-            ),
           ],
         ),
       );
@@ -1449,7 +1715,6 @@ class _RiderHomeState extends State<RiderHome> {
           onOrder: _openSearch,
           onGoHome: _seniorGoHome,
           onCall: _callContact,
-          onExit: () => settings.senior = false,
           contactName: settings.contacts.firstOrNull?.name,
         );
       case RiderStep.choosing:
@@ -1488,19 +1753,6 @@ class _RiderHomeState extends State<RiderHome> {
             onTap: _request,
           ),
           SeniorTextButton(label: s.t('cancel'), onTap: _reset),
-          // Mode senior : pas de publicité, sauf si le passager la demande.
-          if (_promo != null) ...[
-            const SizedBox(height: 14),
-            if (_seniorPromoOpen)
-              PromoCard(promo: _promo!, big: true)
-            else
-              TextButton.icon(
-                style: TextButton.styleFrom(foregroundColor: AppColors.muted, minimumSize: const Size.fromHeight(56)),
-                onPressed: () => setState(() => _seniorPromoOpen = true),
-                icon: const Icon(Icons.local_offer_outlined, size: 26),
-                label: Text(s.t('seeOffer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-              ),
-          ],
         ]);
       case RiderStep.dispatching:
         final accepted = _candidates.where((c) => c.answer == _Answer.accepted).firstOrNull;
@@ -1537,6 +1789,18 @@ class _RiderHomeState extends State<RiderHome> {
           onStart: _step == RiderStep.arrived ? _startTrip : null,
           onSos: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
           onFastForward: _step == RiderStep.arrived ? null : () => setState(() => _speed = _speed == 1 ? 10 : 1),
+          // Mode senior : pas de publicité pendant la course, sauf si le passager la demande.
+          extra: _promo == null
+              ? null
+              : _seniorPromoOpen
+                  ? PromoCard(promo: _promo!, big: true, onTap: () => _openPromo(_promo!))
+                  : TextButton.icon(
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppColors.muted, minimumSize: const Size.fromHeight(56)),
+                      onPressed: () => setState(() => _seniorPromoOpen = true),
+                      icon: const Icon(Icons.local_offer_outlined, size: 26),
+                      label: Text(s.t('seeOffer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                    ),
         );
       case RiderStep.done:
         return SeniorScaffold(children: [
@@ -1565,7 +1829,6 @@ class _RiderHomeState extends State<RiderHome> {
   @override
   Widget build(BuildContext context) {
     if (settings.senior) return _seniorBody();
-    if (_mapView && _inTrip) return _mapViewBody();
     return Scaffold(
       drawer: _drawer(),
       body: Stack(
@@ -1574,75 +1837,56 @@ class _RiderHomeState extends State<RiderHome> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(children: [
-                Builder(
-                    builder: (ctx) => MapCircleButton(
-                        icon: Icons.menu,
-                        tooltip: MaterialLocalizations.of(ctx).openAppDrawerTooltip,
-                        onTap: () => Scaffold.of(ctx).openDrawer())),
-                const SizedBox(width: 8),
-                // Logo et nom de l'application, sur une pastille sable.
-                Expanded(
-                    child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  heightFactor: 1,
-                  child: Container(
-                    padding: const EdgeInsetsDirectional.fromSTEB(8, 5, 14, 5),
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      color: AppColors.sand,
-                      borderRadius: BorderRadius.circular(26),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
-                    ),
-                    child: AppBrand(title: s.t('appTitle'), subtitle: s.t('demoShort')),
-                  ),
-                )),
-                const SizedBox(width: 8),
-                const LanguageButton(),
-                const SizedBox(width: 8),
-                MapCircleButton(
-                  icon: Icons.elderly,
-                  tooltip: s.t('seniorMode'),
-                  onTap: () => settings.senior = true,
-                ),
-                const SizedBox(width: 8),
-                MapCircleButton(icon: Icons.my_location, tooltip: s.t('myPosition'), onTap: _locate),
-              ]),
-            ),
-          ),
-          Align(alignment: Alignment.bottomCenter, child: BottomPanel(child: _panel())),
-        ],
-      ),
-    );
-  }
-
-  /// Vue carte plein écran : bandeau publicitaire en haut, bandeau du taxi en bas.
-  Widget _mapViewBody() => Scaffold(
-        body: Stack(children: [
-          Positioned.fill(child: _buildMap()),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                if (!_adClosed)
+                // Panneau replié pendant la course : bandeau publicitaire en haut (fermable).
+                if (_collapsed && _step == RiderStep.onTrip && !_adClosed) ...[
                   AdBanner(
                     promo: _bannerPromo,
                     onOpen: () => _openPromo(_bannerPromo),
                     onClose: () => setState(() => _adClosed = true),
                   ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: MapCircleButton(
-                    icon: Icons.fullscreen_exit,
-                    tooltip: s.t('detailsView'),
-                    onTap: () => _setMapView(false),
+                  const SizedBox(height: 8),
+                ],
+                Row(children: [
+                  Builder(
+                      builder: (ctx) => MapCircleButton(
+                          icon: Icons.menu,
+                          tooltip: MaterialLocalizations.of(ctx).openAppDrawerTooltip,
+                          onTap: () => Scaffold.of(ctx).openDrawer())),
+                  const SizedBox(width: 8),
+                  // Logo et nom de l'application, sur une pastille sable.
+                  Expanded(
+                      child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    heightFactor: 1,
+                    child: Container(
+                      padding: const EdgeInsetsDirectional.fromSTEB(8, 5, 14, 5),
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: AppColors.sand,
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+                      ),
+                      child: AppBrand(title: s.t('appTitle'), subtitle: s.t('demoShort')),
+                    ),
+                  )),
+                  const SizedBox(width: 8),
+                  const LanguageButton(),
+                  const SizedBox(width: 8),
+                  MapCircleButton(
+                    icon: Icons.elderly,
+                    tooltip: s.t('seniorMode'),
+                    onTap: () => settings.senior = true,
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  MapCircleButton(icon: Icons.my_location, tooltip: s.t('myPosition'), onTap: _locate),
+                ]),
               ]),
             ),
           ),
-          Align(alignment: Alignment.bottomCenter, child: _taxiStrip()),
-        ]),
-      );
+          Align(alignment: Alignment.bottomCenter, child: _sheet()),
+        ],
+      ),
+    );
+  }
 }

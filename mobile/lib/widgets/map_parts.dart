@@ -103,8 +103,11 @@ class MapCircleButton extends StatelessWidget {
 
 /// Panneau couleur sable arrondi en bas de l'écran, avec un liseré de zellige en haut.
 class BottomPanel extends StatelessWidget {
-  const BottomPanel({super.key, required this.child});
+  const BottomPanel({super.key, required this.child, this.handle});
   final Widget child;
+
+  /// Poignée à glisser (remplace la barre dorée simple) : voir l'accueil du passager.
+  final Widget? handle;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -127,19 +130,20 @@ class BottomPanel extends StatelessWidget {
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+              padding: EdgeInsets.fromLTRB(20, handle == null ? 10 : 0, 20, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(bottom: 14),
-                      decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(3)),
-                    ),
-                  ),
+                  handle ??
+                      Center(
+                        child: Container(
+                          width: 44,
+                          height: 5,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(3)),
+                        ),
+                      ),
                   // Le panneau ne dépasse pas 70 % de l'écran ; au-delà, son contenu défile.
                   ConstrainedBox(
                     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * .7),

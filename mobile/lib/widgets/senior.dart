@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../services/rides.dart';
+import '../services/settings.dart';
 import '../theme.dart';
 import 'app_logo.dart';
 import 'driver_card.dart';
@@ -11,6 +12,7 @@ const seniorText = TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: A
 const seniorSmall = TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.25);
 
 /// Fond commun : bandeau vert décoré de zellige avec le logo, puis contenu sur fond sable.
+/// Le bouton « Revenir au mode normal » est toujours en haut, sur tous les écrans du mode senior.
 class SeniorScaffold extends StatelessWidget {
   const SeniorScaffold({super.key, required this.children, this.subtitle, this.footer});
   final List<Widget> children;
@@ -35,23 +37,27 @@ class SeniorScaffold extends StatelessWidget {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-                  child: Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(color: AppColors.sand, shape: BoxShape.circle),
-                      child: const AppLogo(size: 52),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(s.t('appTitle'),
-                            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white)),
-                        if (subtitle != null)
-                          Text(subtitle!,
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white)),
-                      ]),
-                    ),
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    const SeniorExitButton(),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(color: AppColors.sand, shape: BoxShape.circle),
+                        child: const AppLogo(size: 52),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(s.t('appTitle'),
+                              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white)),
+                          if (subtitle != null)
+                            Text(subtitle!,
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ]),
+                      ),
+                    ]),
                   ]),
                 ),
               ),
@@ -70,6 +76,35 @@ class SeniorScaffold extends StatelessWidget {
             ),
           ),
         ]),
+      );
+}
+
+/// « Revenir au mode normal » : gros bouton blanc, bien visible en haut de chaque écran senior.
+class SeniorExitButton extends StatelessWidget {
+  const SeniorExitButton({super.key, this.onExit});
+
+  /// Action en plus (par exemple fermer l'écran de recherche).
+  final VoidCallback? onExit;
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: FilledButton.icon(
+          key: const ValueKey('seniorExit'),
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: AppColors.moroccoGreen,
+            minimumSize: const Size(0, 52),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          onPressed: () {
+            settings.senior = false;
+            onExit?.call();
+          },
+          icon: const Icon(Icons.elderly, size: 28),
+          label: Text(s.t('normalMode')),
+        ),
       );
 }
 
@@ -169,24 +204,16 @@ class SeniorHome extends StatelessWidget {
     required this.onOrder,
     required this.onGoHome,
     required this.onCall,
-    required this.onExit,
     this.contactName,
   });
   final VoidCallback onOrder;
   final VoidCallback onGoHome;
   final VoidCallback onCall;
-  final VoidCallback onExit;
   final String? contactName;
 
   @override
   Widget build(BuildContext context) => SeniorScaffold(
         subtitle: s.t('hello'),
-        footer: TextButton.icon(
-          onPressed: onExit,
-          style: TextButton.styleFrom(minimumSize: const Size.fromHeight(60), foregroundColor: AppColors.ink),
-          icon: const Icon(Icons.tune, size: 28),
-          label: Text(s.t('normalMode'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-        ),
         children: [
           SeniorButton(icon: Icons.local_taxi, label: s.t('seniorOrder'), onTap: onOrder),
           SeniorButton(
@@ -246,6 +273,7 @@ class SeniorTrip extends StatelessWidget {
     this.countdownLabel,
     this.onStart,
     this.onFastForward,
+    this.extra,
   });
   final String title;
   final DemoDriver driver;
@@ -254,6 +282,9 @@ class SeniorTrip extends StatelessWidget {
   final VoidCallback onSos;
   final VoidCallback? onStart;
   final VoidCallback? onFastForward;
+
+  /// Contenu en plus, sous le bouton SOS (offre à la demande pendant la course).
+  final Widget? extra;
 
   @override
   Widget build(BuildContext context) => SeniorScaffold(
@@ -315,6 +346,7 @@ class SeniorTrip extends StatelessWidget {
               icon: const Icon(Icons.fast_forward, color: AppColors.muted),
               label: Text(s.t('fastForward'), style: const TextStyle(color: AppColors.muted, fontSize: 18)),
             ),
+          if (extra != null) ...[const SizedBox(height: 14), extra!],
         ],
       );
 }

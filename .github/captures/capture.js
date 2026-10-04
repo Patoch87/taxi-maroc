@@ -134,19 +134,62 @@ const { chromium } = require('playwright');
     await shot('13-contacts-de-confiance', 1200);
   });
 
-  // Offre contextuelle (exemple de démo) et taxi électrique
+  // Options : valises par taxi, siège bébé ; puis offre seulement passager à bord, bon avec QR code,
+  // panneau replié (vue carte avec bandeau), et fin de course (note et pourboire).
   await step('offre', async () => {
     await open();
+    // Panneau replié par la poignée : il ne reste que la recherche, la carte est visible.
+    await tap('Afficher ou masquer les détails');
+    await shot('23-panneau-replie', 1500);
+    await tap('Afficher ou masquer les détails');
+    await page.waitForTimeout(800);
     await tap('Rechercher une destination');
     await page.waitForTimeout(1500);
     await page.keyboard.type('mall', { delay: 60 });
     await page.waitForTimeout(800);
     await tap('Morocco Mall');
     await page.waitForTimeout(3500);
-    await tap('Petit taxi seul');
+    await tap('Une valise de plus');
+    await page.waitForTimeout(300);
+    await tap('Une valise de plus');
+    await page.waitForTimeout(300);
+    await tap('Une valise de plus');
+    await page.waitForTimeout(300);
+    await tap('Siège bébé');
+    await shot('24-options-valises-siege-bebe', 1500);
+    await tap('Commander');
+    await page.waitForTimeout(9000);
+    await tap('Accélérer');
+    await page.waitForTimeout(12000);
+    await tap('Je suis dans le taxi');
+    await page.waitForTimeout(2000);
+    // Passager à bord : l'offre apparaît en bas du panneau.
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
     await shot('16-offre-exemple-publicitaire', 1200);
-    await tap('Électrique');
-    await shot('17-option-electrique', 1200);
+    await tap('nouvelle collection');
+    await shot('25-offre-qr-code', 2000);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(1200);
+    await tap('Afficher ou masquer les détails');
+    await shot('20-vue-carte-pub', 3000);
+    await tap('Afficher ou masquer les détails');
+    await page.waitForTimeout(1200);
+    await tap('Accélérer');
+    // Fin de course : note, avis rapides et pourboire.
+    for (let i = 0; i < 40; i++) {
+      await page.waitForTimeout(3000);
+      if (await page.locator('[aria-label*="5 étoiles sur 5"]').count()) break;
+    }
+    await tap('5 étoiles sur 5');
+    await page.waitForTimeout(600);
+    await tap('Ponctuel');
+    await tap('Conduite prudente');
+    await tap('10 DH');
+    await shot('26-notation-pourboire', 1500);
   });
 
   // Chauffeur de taxi électrique : batterie et bornes de recharge
@@ -164,19 +207,6 @@ const { chromium } = require('playwright');
     await shot('18-chauffeur-bornes-de-recharge', 1500);
     await tap('Y aller');
     await shot('19-chauffeur-vers-la-borne', 5000);
-  });
-
-  // Vue carte plein écran avec bandeau publicitaire
-  await step('vue-carte', async () => {
-    await open();
-    await tap('Morocco Mall');
-    await page.waitForTimeout(3500);
-    await tap('Petit taxi seul');
-    await page.waitForTimeout(500);
-    await tap('Commander');
-    await page.waitForTimeout(9000);
-    await tap('Carte plein écran');
-    await shot('20-vue-carte-pub', 3000);
   });
 
   // Choix de la langue (une seule option, grille de drapeaux), puis restaurants avec note TripAdvisor (démo)

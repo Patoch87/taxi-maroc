@@ -426,56 +426,95 @@ class S {
       'مثال ديال الإشهار (تجريبي)',
       'Ad example (demo)'
     ],
-    'offersSetting': [
-      'Offres personnalisées selon mes trajets',
-      'عروض مخصصة حسب رحلاتي',
-      'عروض على حساب الكورصات ديالي',
-      'Offers based on my trips'
-    ],
-    'offersWhy': [
-      'Basé sur votre destination et vos trajets, jamais sur vos données personnelles',
-      'حسب وجهتك ورحلاتك، وليس أبدا حسب بياناتك الشخصية',
-      'على حساب فين غادي والكورصات ديالك، عمرو ما على المعلومات الشخصية ديالك',
-      'Based on your destination and trips, never on your personal data'
-    ],
     'seeOffer': ['Voir une offre', 'عرض متاح', 'شوف واحد العرض', 'See an offer'],
-    'promoZara': [
-      '-15 % chez Zara au Morocco Mall',
-      '-15٪ في زارا بموروكو مول',
-      '-15٪ عند زارا فموروكو مول',
-      '15% off at Zara, Morocco Mall'
-    ],
-    'promoZaraDetail': [
-      'Montrez ce trajet en caisse, valable aujourd\'hui',
-      'أظهر هذه الرحلة عند الأداء، صالح اليوم',
-      'وري هاد الكورصة فالكيس، صالح اليوم',
-      'Show this trip at checkout, valid today'
-    ],
-    'promoKool': [
-      'Koolsmoothie : un smoothie offert pour un acheté',
-      'كولسموذي: عصير مجاني عند شراء واحد',
-      'كولسموذي: شري واحد وخود واحد فابور',
-      'Koolsmoothie: buy one smoothie, get one free'
-    ],
-    'promoKoolDetail': [
-      'Près de votre destination, jusqu\'à 20 h',
-      'قرب وجهتك، حتى الساعة 20',
-      'قريب من فين غادي، حتى ل 8 دالليل',
-      'Near your destination, until 8 pm'
-    ],
-    'promoCafe': [
-      'Café de la Gare : café offert avec un croissant',
-      'مقهى المحطة: قهوة مجانية مع كرواسون',
-      'قهوة لاكار: قهوة فابور مع كرواصة',
-      'Café de la Gare: free coffee with a croissant'
-    ],
-    'promoCafeDetail': [
-      'Avant 11 h, sur présentation du trajet',
-      'قبل الساعة 11، بتقديم الرحلة',
-      'قبل 11، وري الكورصة',
-      'Before 11 am, show your trip'
-    ],
 
+    // Offres réalistes (démo) et bons de réduction avec QR code
+    'offerFashion': [
+      '-15 % sur la nouvelle collection',
+      'خصم 15٪ على المجموعة الجديدة',
+      '-15٪ على الكوليكسيون الجديدة',
+      '15% off the new collection'
+    ],
+    'offerFashionDetail': [
+      'Dès 300 DH d\'achat',
+      'ابتداء من 300 درهم من المشتريات',
+      'من 300 درهم دالشرا',
+      'With a purchase of 300 DH or more'
+    ],
+    'offerKool': [
+      'Un smoothie offert pour un acheté',
+      'عصير سموذي مجاني عند شراء واحد',
+      'شري سموذي وخود واحد فابور',
+      'Buy one smoothie, get one free'
+    ],
+    'offerKoolDetail': ['Avant 18 h', 'قبل الساعة 18', 'قبل 6 دالعشية', 'Before 6 pm'],
+    'offerPortCafe': [
+      'Café + croissant à 15 DH',
+      'قهوة + كرواسون بـ 15 درهم',
+      'قهوة + كرواصة ب 15 درهم',
+      'Coffee + croissant for 15 DH'
+    ],
+    'offerPortCafeDetail': [
+      'De 7 h à 11 h, sur place ou à emporter',
+      'من 7 إلى 11 صباحا، في المكان أو للأخذ',
+      'من 7 حتى 11 دالصباح، تما ولا تديها',
+      '7 to 11 am, eat in or take away'
+    ],
+    'offerSport': ['-20 % sur les baskets', 'خصم 20٪ على الأحذية الرياضية', '-20٪ على السبرديلات', '20% off sneakers'],
+    'offerSportDetail': [
+      'Dès 500 DH d\'achat, hors promotions',
+      'ابتداء من 500 درهم، باستثناء التخفيضات',
+      'من 500 درهم، من غير الصولد',
+      'From 500 DH, sale items excluded'
+    ],
+    'offerLunch': [
+      'Menu déjeuner à 69 DH au lieu de 89 DH',
+      'قائمة الغداء بـ 69 درهم بدل 89 درهم',
+      'منيو الغدا ب 69 درهم عوض 89',
+      'Lunch menu 69 DH instead of 89 DH'
+    ],
+    'offerLunchDetail': [
+      'De 12 h à 15 h, du lundi au vendredi',
+      'من 12 إلى 15، من الإثنين إلى الجمعة',
+      'من 12 حتى 3، من الاثنين للجمعة',
+      '12 to 3 pm, Monday to Friday'
+    ],
+    'offerTea': [
+      'Thé à la menthe offert dès 50 DH de commande',
+      'شاي بالنعناع مجاني ابتداء من 50 درهم',
+      'أتاي بالنعناع فابور من 50 درهم',
+      'Free mint tea with orders from 50 DH'
+    ],
+    'offerTeaDetail': [
+      'Tous les jours jusqu\'à 23 h, en terrasse face à la mer',
+      'كل يوم حتى الساعة 23، في الشرفة أمام البحر',
+      'كل نهار حتى ل 11 دالليل، فالتيراس قدام البحر',
+      'Every day until 11 pm, sea-view terrace'
+    ],
+    'couponTitle': [
+      'Votre bon de réduction',
+      'قسيمة التخفيض الخاصة بك',
+      'البون ديال التخفيض ديالك',
+      'Your discount voucher'
+    ],
+    'couponLinked': ['Lié à votre compte', 'مرتبط بحسابك', 'مربوط بالحساب ديالك', 'Linked to your account'],
+    'couponExpires': ['Valable jusqu\'au', 'صالح حتى', 'صالح حتى', 'Valid until'],
+    'couponConditions': [
+      'Valable 24 h, une fois, sur présentation en caisse',
+      'صالح 24 ساعة، مرة واحدة، عند تقديمه في الصندوق',
+      'صالح 24 ساعة، مرة وحدة، وريه فالكيس',
+      'Valid for 24 h, once, show it at the checkout'
+    ],
+    'saveOffer': ['Enregistrer dans mes offres', 'حفظ في عروضي', 'سجل فالعروض ديالي', 'Save to my offers'],
+    'offerSaved': ['Enregistré dans mes offres', 'تم الحفظ في عروضي', 'تسجل فالعروض ديالي', 'Saved to my offers'],
+    'myOffers': ['Mes offres', 'عروضي', 'العروض ديالي', 'My offers'],
+    'noOffers': [
+      'Aucune offre enregistrée. Les offres apparaissent pendant la course.',
+      'لا توجد عروض محفوظة. تظهر العروض أثناء الرحلة.',
+      'ما كاين حتى عرض مسجل. العروض كيبانو فالكورصة.',
+      'No saved offers. Offers appear during the ride.'
+    ],
+    'storeAddress': ['Adresse', 'العنوان', 'العنوان', 'Address'],
     'promoGeneric': ['Votre publicité ici', 'إشهارك هنا', 'الإشهار ديالك هنا', 'Your ad here'],
     'promoGenericDetail': [
       'Annonce non personnalisée',
@@ -485,17 +524,87 @@ class S {
     ],
     'mapView': ['Carte plein écran', 'الخريطة بملء الشاشة', 'الخريطة فالشاشة كاملة', 'Full-screen map'],
     'detailsView': ['Afficher les détails', 'عرض التفاصيل', 'وري التفاصيل', 'Show details'],
+    // Siège bébé et valises
+    'babySeat': ['Siège bébé', 'مقعد الرضيع', 'كرسي ديال البيبي', 'Baby seat'],
+    'babySeatRequested': ['Siège bébé demandé', 'مطلوب مقعد للرضيع', 'طالبين كرسي ديال البيبي', 'Baby seat requested'],
+    'babySeatFree': [
+      'Gratuit : seuls les chauffeurs équipés d\'un siège bébé reçoivent la demande',
+      'مجاني: يتلقى الطلب فقط السائقون الذين لديهم مقعد للرضيع',
+      'فابور: غير الشيفورات اللي عندهم كرسي ديال البيبي اللي كيوصلهم الطلب',
+      'Free: only drivers with a baby seat receive the request'
+    ],
+    'suitcases': ['Valises', 'حقائب', 'فاليزات', 'Suitcases'],
+    'suitcasesMax': ['valises max', 'حقائب كحد أقصى', 'فاليزات ماكسيموم', 'suitcases max'],
+    'tooManyBags': [
+      'Pas assez de place pour vos valises',
+      'لا يوجد مكان كاف لحقائبك',
+      'ما كايناش بلاصة كافية للفاليزات ديالك',
+      'Not enough room for your suitcases'
+    ],
+    'fewerBags': ['Une valise de moins', 'حقيبة أقل', 'فاليزة قل', 'One suitcase less'],
+    'moreBags': ['Une valise de plus', 'حقيبة إضافية', 'فاليزة زايدة', 'One more suitcase'],
+    // Fin de course : note, avis et pourboire par carte
+    'tagCareful': ['Conduite prudente', 'قيادة حذرة', 'سايق بشوية', 'Careful driving'],
+    'tagClean': ['Propre', 'نظيف', 'نقي', 'Clean'],
+    'tagPunctual': ['Ponctuel', 'دقيق في الموعد', 'جا فالوقت', 'On time'],
+    'tagMusic': ['Bonne musique', 'موسيقى جيدة', 'موسيقى زوينة', 'Good music'],
+    'tagLate': ['Retard', 'تأخير', 'تعطل', 'Late'],
+    'tagRough': ['Conduite brusque', 'قيادة متهورة', 'سايق بالزربة', 'Rough driving'],
+    'tagPrice': ['Prix non respecté', 'لم يحترم السعر', 'ما احترمش الثمن', 'Price not respected'],
+    'commentHint': ['Un commentaire (facultatif)', 'تعليق (اختياري)', 'شي تعليق (إلا بغيتي)', 'A comment (optional)'],
+    'otherAmount': ['Autre montant', 'مبلغ آخر', 'شي مبلغ آخر', 'Other amount'],
+    'amountDh': ['Montant en DH', 'المبلغ بالدرهم', 'المبلغ بالدرهم', 'Amount in DH'],
+    'tipByCard': [
+      'Le pourboire est payé par carte',
+      'تدفع الإكرامية بالبطاقة',
+      'البوربوار كيتخلص بالكارط',
+      'The tip is paid by card'
+    ],
+    'simulatedPayment': [
+      'Paiement simulé (démo)',
+      'دفع تجريبي (محاكاة)',
+      'خلاص تجريبي (ديمو)',
+      'Simulated payment (demo)'
+    ],
+    'savedCard': ['Carte enregistrée', 'بطاقة محفوظة', 'الكارط المسجلة', 'Saved card'],
+    'addCard': ['Ajouter une carte', 'إضافة بطاقة', 'زيد كارط', 'Add a card'],
+    'cardNumber': ['Numéro de carte', 'رقم البطاقة', 'نمرة الكارط', 'Card number'],
+    'cardExpiry': ['Expiration (MM/AA)', 'تاريخ الانتهاء (شهر/سنة)', 'تاريخ الانتهاء (MM/AA)', 'Expiry (MM/YY)'],
+    'cardCvc': ['CVC', 'رمز CVC', 'CVC', 'CVC'],
+    'invalidCard': ['Numéro de carte invalide', 'رقم البطاقة غير صالح', 'نمرة الكارط غالطة', 'Invalid card number'],
+    'invalidExpiry': [
+      'Date d\'expiration invalide',
+      'تاريخ انتهاء غير صالح',
+      'تاريخ الانتهاء غالط',
+      'Invalid expiry date'
+    ],
+    'invalidCvc': ['CVC invalide', 'رمز CVC غير صالح', 'CVC غالط', 'Invalid CVC'],
+    'payNow': ['Payer', 'ادفع', 'خلص', 'Pay'],
+    'thanksSent': [
+      'Merci ! Votre avis a été envoyé.',
+      'شكرا! تم إرسال رأيك.',
+      'شكرا! وصل الرأي ديالك.',
+      'Thank you! Your feedback has been sent.'
+    ],
+    'tipPaid': ['Pourboire payé', 'تم دفع الإكرامية', 'البوربوار تخلص', 'Tip paid'],
+    'badRide': [
+      'Un problème pendant la course ? Faire une réclamation',
+      'مشكلة أثناء الرحلة؟ قدم شكاية',
+      'شي مشكل فالكورصة؟ دير شكاية',
+      'A problem during the ride? File a complaint'
+    ],
+    'stars': ['étoiles sur 5', 'نجوم من 5', 'نجوم من 5', 'stars out of 5'],
+    'tipsReceived': ['pourboires', 'إكراميات', 'البوربوار', 'tips'],
+    'toggleDetails': [
+      'Afficher ou masquer les détails',
+      'إظهار التفاصيل أو إخفاؤها',
+      'وري ولا خبي التفاصيل',
+      'Show or hide details'
+    ],
     'hideAd': ['Masquer la publicité', 'إخفاء الإشهار', 'خبي الإشهار', 'Hide the ad'],
     'arrivingShort': ['Arrive dans', 'يصل خلال', 'غادي يوصل فـ', 'Arrives in'],
 
     // Touristes : restaurants
-    'touristMode': ['Je suis touriste', 'أنا سائح', 'أنا سائح', 'I am a tourist'],
-    'touristDesc': [
-      'Restaurants proposés près de votre destination',
-      'مطاعم مقترحة قرب وجهتك',
-      'ريسطورات قراب من فين غادي',
-      'Restaurant ideas near your destination'
-    ],
     'restaurantsNear': ['Restaurants près de', 'مطاعم قرب', 'ريسطورات قراب من', 'Restaurants near'],
     'tripadvisorDemo': [
       'Note TripAdvisor (démo)',

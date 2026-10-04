@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:taxi_maroc/main.dart';
 import 'package:taxi_maroc/screens/driver_home.dart';
+import 'package:taxi_maroc/services/card_check.dart';
+import 'package:taxi_maroc/services/coupons.dart';
 import 'package:taxi_maroc/services/places.dart';
 import 'package:taxi_maroc/services/promos.dart';
 import 'package:taxi_maroc/services/rides.dart';
 import 'package:taxi_maroc/services/settings.dart';
 import 'package:taxi_maroc/services/tourism.dart';
 import 'package:taxi_maroc/theme.dart';
+import 'package:taxi_maroc/widgets/promo_card.dart';
 
 void phone(WidgetTester tester) {
   tester.view.physicalSize = const Size(1170, 2532);
@@ -22,33 +26,71 @@ void main() {
     settings.reset();
     langNotifier.value = 'fr';
     tripHistory.clear();
+    savedCoupons.clear();
   });
 
-  test('offre choisie selon la destination, l\'heure, le type de course et les trajets passés', () {
+  test('offre choisie selon la destination, l\'heure et les trajets passés', () {
     final mall = place('Morocco Mall');
     final options = rideOptions(destination: mall, routeM: 9000);
-    RideOption opt(String id) => options.firstWhere((o) => o.id == id);
-    final noon = DateTime(2026, 10, 3, 12);
+    final opt = options.first;
+    final noon = DateTime(2026, 10, 5, 12); // lundi
 
-    expect(pickPromo(destination: mall, option: opt('seul'), now: noon), zaraPromo);
-    expect(pickPromo(destination: mall, option: opt('partage'), now: noon), koolsmoothiePromo);
-    expect(pickPromo(destination: place('Gare Casa Voyageurs'), option: opt('partage'), now: DateTime(2026, 10, 3, 8)),
-        cafePromo);
-    final twin = place('Twin Center');
-    expect(pickPromo(destination: twin, option: opt('partage'), now: DateTime(2026, 10, 3, 9)), isNull);
+    expect(promosFor(destination: mall, option: opt, now: noon), [fashionPromo, koolsmoothiePromo]);
+    expect(promosFor(destination: mall, option: opt, now: DateTime(2026, 10, 5, 19)), [fashionPromo]);
+    expect(pickPromo(destination: place('Gare Casa Port'), option: opt, now: DateTime(2026, 10, 5, 8)), portCafePromo);
+    expect(pickPromo(destination: place('Anfa Place'), option: opt, now: noon), sportPromo);
+    expect(pickPromo(destination: place('Twin Center'), option: opt, now: noon), lunchPromo);
+    expect(
+        pickPromo(destination: place('Twin Center'), option: opt, now: DateTime(2026, 10, 4, 12)), // dimanche
+        koolsmoothiePromo);
+    expect(pickPromo(destination: place('Ain Diab'), option: opt, now: DateTime(2026, 10, 5, 21)), teaPromo);
+    expect(pickPromo(destination: place('Habous'), option: opt, now: noon), isNull);
     final history = [
       for (var i = 0; i < 2; i++) TripRecord(destination: 'Ain Diab', option: 'Petit taxi', price: 15, date: noon),
     ];
-    expect(pickPromo(destination: twin, option: opt('partage'), now: DateTime(2026, 10, 3, 9), history: history),
-        koolsmoothiePromo);
+    expect(pickPromo(destination: place('Habous'), option: opt, now: noon, history: history), koolsmoothiePromo);
+    // Chaque annonceur a un badge (initiales), jamais un logo de marque.
+    for (final p in allPromos) {
+      expect(p.initials.length, inInclusiveRange(1, 3));
+      expect(p.address, isNotEmpty);
+    }
   });
 
-  test('taxi électrique au prix officiel du petit taxi, restaurants proches', () {
+  test('code du bon : compte, offre, course, expiration et somme de contrôle', () {
+    final code =
+        buildCouponCode(userId: 'U7Q3K9', offerId: 'MODE', tripId: 'T123456', expires: DateTime(2026, 10, 6, 14, 30));
+    expect(code, startsWith('TM-U7Q3K9-MODE-T123456-20261006-'));
+    expect(code.split('-').last, hasLength(2));
+    expect(isValidCouponCode(code), isTrue);
+    expect(isValidCouponCode(code.replaceFirst('MODE', 'MODA')), isFalse); // faute de frappe détectée
+    expect(isValidCouponCode('nimporte quoi'), isFalse);
+    // Même entrée, même code ; course différente, code différent.
+    expect(buildCouponCode(userId: 'U7Q3K9', offerId: 'MODE', tripId: 'T123456', expires: DateTime(2026, 10, 6)), code);
+    expect(
+        buildCouponCode(userId: 'U7Q3K9', offerId: 'MODE', tripId: 'T654321', expires: DateTime(2026, 10, 6)) == code,
+        isFalse);
+    final c = Coupon(promo: fashionPromo, tripId: 'T1', issuedAt: DateTime(2026, 10, 5, 9));
+    expect(c.expires, DateTime(2026, 10, 6, 9)); // valable 24 h
+    expect(c.code, contains('-$demoUserId-MODE-T1-20261006-'));
+  });
+
+  test('carte (paiement simulé) : vérification du format seulement', () {
+    expect(validCardNumber('4242 4242 4242 4242'), isTrue);
+    expect(validCardNumber('4242'), isFalse);
+    expect(validCardNumber('4242 abcd 4242 4242'), isFalse);
+    final now = DateTime(2026, 10, 5);
+    expect(validExpiry('12/29', now: now), isTrue);
+    expect(validExpiry('10/26', now: now), isTrue);
+    expect(validExpiry('09/26', now: now), isFalse);
+    expect(validExpiry('13/29', now: now), isFalse);
+    expect(validExpiry('1229', now: now), isFalse);
+    expect(validCvc('123'), isTrue);
+    expect(validCvc('12'), isFalse);
+  });
+
+  test('plus d\'option électrique côté passager, restaurants proches', () {
     final options = rideOptions(destination: place('Twin Center'), routeM: 4000, date: DateTime(2026, 10, 3, 12));
-    final e = options.firstWhere((o) => o.id == 'electrique');
-    expect(e.electric, isTrue);
-    expect(e.priceMad, options.first.priceMad);
-    expect(e.description, '0 essence, 0 CO₂ en route');
+    expect(options.where((o) => o.kind == TaxiKind.electrique), isEmpty);
 
     final near = restaurantsNear(place('Morocco Mall'));
     expect(near.length, 3);
@@ -57,7 +99,7 @@ void main() {
     expect(ratings, orderedEquals([...ratings]..sort((a, b) => b.compareTo(a)))); // mieux notés d'abord
   });
 
-  testWidgets('carte d\'offre marquée « Exemple publicitaire (démo) », et désactivable', (tester) async {
+  testWidgets('options : valises et siège bébé, sans offre avant la course', (tester) async {
     phone(tester);
     await tester.pumpWidget(const TaxiMarocApp(locate: false));
     await tester.pump();
@@ -67,39 +109,105 @@ void main() {
     await tester.tap(find.text('Morocco Mall'));
     await tester.pumpAndSettle();
 
-    // Électrique : feuille verte et « 0 essence, 0 CO₂ en route ».
-    expect(find.text('Électrique'), findsOneWidget);
-    expect(find.text('0 essence, 0 CO₂ en route'), findsOneWidget);
-    expect(find.byIcon(Icons.eco), findsOneWidget);
+    // Plus d'option « Électrique » ; chaque option montre ses valises.
+    expect(find.text('Électrique'), findsNothing);
+    expect(find.byIcon(Icons.luggage), findsNWidgets(4)); // 3 options + compteur de valises
 
-    await tester.tap(find.text('Petit taxi seul'));
-    await tester.pumpAndSettle();
-    expect(find.text('Exemple publicitaire (démo)'), findsOneWidget);
-    expect(find.text('-15 % chez Zara au Morocco Mall'), findsOneWidget);
+    // 3 valises : seul le premium reste possible, il est choisi.
+    for (var i = 0; i < 3; i++) {
+      await tester.ensureVisible(find.byTooltip('Une valise de plus'));
+      await tester.tap(find.byTooltip('Une valise de plus'));
+      await tester.pump();
+    }
+    expect(find.text('Pas assez de place pour vos valises'), findsNWidgets(2));
+    expect(find.textContaining('Commander ·'), findsOneWidget);
+    await tester.ensureVisible(find.text('Petit taxi seul'));
+    await tester.tap(find.text('Petit taxi seul'), warnIfMissed: false);
+    await tester.pump();
+    expect(find.text('Pas assez de place pour vos valises'), findsNWidgets(2)); // non sélectionnable
+    await tester.ensureVisible(find.byTooltip('Une valise de moins'));
+    await tester.tap(find.byTooltip('Une valise de moins'));
+    await tester.pump();
+    await tester.ensureVisible(find.byTooltip('Une valise de moins'));
+    await tester.tap(find.byTooltip('Une valise de moins'));
+    await tester.pump();
+    await tester.ensureVisible(find.byTooltip('Une valise de moins'));
+    await tester.tap(find.byTooltip('Une valise de moins'));
+    await tester.pump();
 
-    settings.offers = false;
-    await tester.pumpAndSettle();
+    // Pas d'offre avant le début de la course.
     expect(find.text('Exemple publicitaire (démo)'), findsNothing);
+
+    // Siège bébé : gratuit, puis visible sur la fiche du chauffeur.
+    await tester.ensureVisible(find.text('Siège bébé'));
+    await tester.tap(find.text('Siège bébé'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('seuls les chauffeurs équipés'), findsOneWidget);
+    await tester.ensureVisible(find.textContaining('Commander ·'));
+    await tester.tap(find.textContaining('Commander ·'));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+    expect(find.text('Votre taxi arrive dans'), findsOneWidget);
+    expect(find.text('Siège bébé demandé'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('mode senior : pas d\'offre tant que le passager ne la demande pas', (tester) async {
+  testWidgets('offre seulement passager à bord : bon avec QR code, enregistré dans « Mes offres »', (tester) async {
     phone(tester);
-    settings.senior = true;
     await tester.pumpWidget(const TaxiMarocApp(locate: false));
     await tester.pump();
-    await tester.tap(find.text('Commander un taxi'));
+    await tester.tap(find.text('Rechercher une destination'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'mall');
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Morocco Mall'), 200, scrollable: find.byType(Scrollable).last);
     await tester.tap(find.text('Morocco Mall'));
     await tester.pumpAndSettle();
-
+    await tester.ensureVisible(find.textContaining('Commander ·'));
+    await tester.tap(find.textContaining('Commander ·'));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+    // Le taxi arrive : toujours pas d'offre.
+    expect(find.text('Votre taxi arrive dans'), findsOneWidget);
     expect(find.text('Exemple publicitaire (démo)'), findsNothing);
-    await tester.ensureVisible(find.text('Voir une offre'));
-    await tester.tap(find.text('Voir une offre'));
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 90 && find.text('Je suis dans le taxi').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+    await tester.ensureVisible(find.text('Je suis dans le taxi'));
+    await tester.tap(find.text('Je suis dans le taxi'));
+    await tester.pump();
+
+    // Passager à bord : l'offre apparaît, avec le badge de l'annonceur.
     expect(find.text('Exemple publicitaire (démo)'), findsOneWidget);
+    expect(find.text('-15 % sur la nouvelle collection'), findsOneWidget);
+    expect(find.byType(BrandBadge), findsOneWidget);
+
+    await tester.ensureVisible(find.text('-15 % sur la nouvelle collection'));
+    await tester.tap(find.text('-15 % sur la nouvelle collection'));
+    await tester.pumpAndSettle();
+    expect(find.text('Votre bon de réduction'), findsOneWidget);
+    expect(find.byType(QrImageView), findsOneWidget);
+    final code = tester.widget<QrImageView>(find.byType(QrImageView));
+    final text = tester.widget<SelectableText>(find.byType(SelectableText)).data!;
+    expect(text, startsWith('TM-$demoUserId-MODE-T'));
+    expect(isValidCouponCode(text), isTrue);
+    expect(code.semanticsLabel, isNotNull);
+    expect(find.text('Valable 24 h, une fois, sur présentation en caisse'), findsOneWidget);
+    expect(find.textContaining('Morocco Mall, niveau 1'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Enregistrer dans mes offres'));
+    await tester.tap(find.text('Enregistrer dans mes offres'));
+    await tester.pump();
+    expect(savedCoupons.single.code, text);
+    expect(find.text('Enregistré dans mes offres'), findsWidgets);
+    Navigator.of(tester.element(find.text('Votre bon de réduction'))).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Ouvrir le menu de navigation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mes offres'));
+    await tester.pumpAndSettle();
+    expect(find.text('-15 % sur la nouvelle collection'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 

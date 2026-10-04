@@ -21,17 +21,19 @@ class RideOption {
     required this.kind,
     required this.priceMad,
     required this.seats,
+    required this.luggage,
     this.seul = false,
   });
 
-  /// Taxi électrique : même prix officiel que le petit taxi.
-  bool get electric => kind == TaxiKind.electrique;
   final String id;
   final String title;
   final String description;
   final TaxiKind kind;
   final double priceMad;
   final int seats;
+
+  /// Nombre de valises que le coffre peut prendre.
+  final int luggage;
   final bool seul;
 }
 
@@ -48,7 +50,8 @@ List<RideOption> rideOptions({required Place destination, required double routeM
           description: s.t('grandDesc'),
           kind: TaxiKind.grand,
           priceMad: prix,
-          seats: 1),
+          seats: 1,
+          luggage: 1),
       RideOption(
           id: 'grand-entier',
           title: s.t('grandWhole'),
@@ -56,6 +59,7 @@ List<RideOption> rideOptions({required Place destination, required double routeM
           kind: TaxiKind.grand,
           priceMad: prix * 6,
           seats: 6,
+          luggage: 4,
           seul: true),
     ];
   }
@@ -68,14 +72,8 @@ List<RideOption> rideOptions({required Place destination, required double routeM
         description: s.t('sharedDesc'),
         kind: TaxiKind.petit,
         priceMad: price(false, false),
-        seats: 3),
-    RideOption(
-        id: 'electrique',
-        title: s.t('electricTaxi'),
-        description: s.t('electricDesc'),
-        kind: TaxiKind.electrique,
-        priceMad: price(false, false),
-        seats: 3),
+        seats: 3,
+        luggage: 2),
     RideOption(
         id: 'seul',
         title: s.t('aloneTitle'),
@@ -83,6 +81,7 @@ List<RideOption> rideOptions({required Place destination, required double routeM
         kind: TaxiKind.petit,
         priceMad: price(true, false),
         seats: 3,
+        luggage: 2,
         seul: true),
     RideOption(
         id: 'premium',
@@ -91,6 +90,7 @@ List<RideOption> rideOptions({required Place destination, required double routeM
         kind: TaxiKind.premium,
         priceMad: price(true, true),
         seats: 3,
+        luggage: 3,
         seul: true),
   ];
 }
@@ -138,9 +138,29 @@ const francais = DriverLanguage('🇫🇷', 'Français');
 const anglais = DriverLanguage('🇬🇧', 'English');
 const espagnol = DriverLanguage('🇪🇸', 'Español');
 
+/// Portraits des chauffeurs de la démo (photos fournies), avec un prénom qui correspond à chaque personne.
+const demoDriverPortraits = [
+  ('Khadija L.', 'assets/drivers/chauffeur-01.jpg'),
+  ('Abdelkader M.', 'assets/drivers/chauffeur-02.jpg'),
+  ('Naima B.', 'assets/drivers/chauffeur-03.jpg'),
+  ('Youssef B.', 'assets/drivers/chauffeur-04.jpg'),
+  ('Mustapha K.', 'assets/drivers/chauffeur-05.jpg'),
+  ('Ahmed R.', 'assets/drivers/chauffeur-06.jpg'),
+  ('Said A.', 'assets/drivers/chauffeur-07.jpg'),
+  ('Salma E.', 'assets/drivers/chauffeur-08.jpg'),
+  ('Imane O.', 'assets/drivers/chauffeur-09.jpg'),
+  ('Mohamed T.', 'assets/drivers/chauffeur-10.jpg'),
+  ('Hicham E.', 'assets/drivers/chauffeur-11.jpg'),
+  ('Rachid T.', 'assets/drivers/chauffeur-12.jpg'),
+];
+
+/// Image d'une photo : fichier de l'application ou adresse web.
+ImageProvider photoImage(String photo) => photo.startsWith('http') ? NetworkImage(photo) : AssetImage(photo);
+
 /// Chauffeur fictif pour la démo.
 class DemoDriver {
-  DemoDriver(this.name, this.taxiNumber, this.plate, this.rating, this.car, this.languages, this.rides);
+  DemoDriver(this.name, this.taxiNumber, this.plate, this.rating, this.car, this.languages, this.rides,
+      {this.babySeat = false, this.photo = ''});
   final String name;
   final String taxiNumber;
   final String plate;
@@ -149,21 +169,13 @@ class DemoDriver {
   final List<DriverLanguage> languages;
   final int rides;
 
-  /// Avatar illustré (pas de vraie photo dans la démo) ; les vrais chauffeurs auront leur photo vérifiée.
-  String get photoUrl =>
-      'https://api.dicebear.com/9.x/avataaars/png?size=160&backgroundColor=e8e2d0&seed=${Uri.encodeComponent(name)}';
+  /// Chauffeur équipé d'un siège bébé : lui seul reçoit les demandes avec siège bébé.
+  final bool babySeat;
 
-  static DemoDriver random(TaxiKind kind, Random rnd) {
-    const names = [
-      'Youssef B.',
-      'Abdelkader M.',
-      'Hicham E.',
-      'Rachid T.',
-      'Said A.',
-      'Mustapha K.',
-      'Khadija L.',
-      'Nabil O.'
-    ];
+  /// Photo : chemin d'une image de l'application (assets/...) ou adresse web (https://...).
+  final String photo;
+
+  static DemoDriver random(TaxiKind kind, Random rnd, {bool babySeat = false}) {
     const langSets = [
       [darija, francais],
       [darija, francais, anglais],
@@ -177,8 +189,9 @@ class DemoDriver {
       TaxiKind.grand => 'Dacia Lodgy',
       TaxiKind.electrique => 'Dacia Spring électrique',
     };
+    final (name, photo) = demoDriverPortraits[rnd.nextInt(demoDriverPortraits.length)];
     return DemoDriver(
-      names[rnd.nextInt(names.length)],
+      name,
       'Taxi n° ${1000 + rnd.nextInt(9000)}',
       // Marque de gauche à droite après la lettre arabe : la plaque se lit « 12345 | أ | 6 » dans toutes les langues.
       '${10000 + rnd.nextInt(89999)} | أ\u200E | 6',
@@ -186,6 +199,8 @@ class DemoDriver {
       car,
       langSets[rnd.nextInt(langSets.length)],
       200 + rnd.nextInt(4000),
+      babySeat: babySeat,
+      photo: photo,
     );
   }
 }
@@ -201,6 +216,8 @@ class TripRecord {
       this.scheduled = false,
       this.tip = 0,
       this.rating = 0,
+      this.tags = const [],
+      this.comment = '',
       this.passengerName});
   final String destination;
   final String option;
@@ -213,6 +230,10 @@ class TripRecord {
   final String? passengerName;
   double tip;
   int rating;
+
+  /// Avis rapides (« Ponctuel », « Retard »...) et commentaire libre laissés à la fin de la course.
+  final List<String> tags;
+  final String comment;
 }
 
 /// Historique des courses de la session.

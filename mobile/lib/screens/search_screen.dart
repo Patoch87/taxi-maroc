@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../services/places.dart';
+import '../services/settings.dart';
 import '../services/voice.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/senior.dart';
 
 /// Recherche de destination plein écran, avec la commande vocale.
 /// La destination dictée est d'abord répétée à voix haute, puis écrite dans la recherche.
@@ -80,10 +82,13 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     if (place != null) await _voice.say('${s.t('searchingFor')} ${place.name}');
   }
 
+  /// Grand affichage tant que le mode senior est actif (il peut être quitté depuis cet écran).
+  bool get _big => widget.senior && settings.senior;
+
   @override
   Widget build(BuildContext context) {
     final results = searchPlaces(_ctrl.text);
-    final big = widget.senior;
+    final big = _big;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: big ? 72 : null,
@@ -93,6 +98,15 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
       ),
       body: Column(
         children: [
+          // Mode senior : le retour au mode normal reste visible ici aussi.
+          if (big)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Container(
+                decoration: BoxDecoration(color: AppColors.moroccoGreen, borderRadius: BorderRadius.circular(30)),
+                child: SeniorExitButton(onExit: () => setState(() {})),
+              ),
+            ),
           if (big)
             // Gros bouton micro : la façon la plus simple de dire où aller.
             Padding(
@@ -196,7 +210,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   }
 
   Widget _tile(Place p, IconData icon, String title) {
-    final big = widget.senior;
+    final big = _big;
     return Semantics(
       button: true,
       label: '$title, ${p.subtitle}',

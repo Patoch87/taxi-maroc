@@ -19,13 +19,17 @@ import '../widgets/map_parts.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
 class _Request {
-  _Request(this.rider, this.destination, this.rating, {this.takenAfter, this.lowVision = false, this.bookedBy});
+  _Request(this.rider, this.destination, this.rating,
+      {this.takenAfter, this.lowVision = false, this.bookedBy, this.babySeat = false});
   final ShiftRider rider;
   final String destination;
   final double rating;
 
   /// Passager malvoyant : le chauffeur se présente et le guide jusqu'à la portière.
   final bool lowVision;
+
+  /// Siège bébé demandé : la démo considère que ce chauffeur en a un, il reçoit donc ces demandes.
+  final bool babySeat;
 
   /// Course commandée par quelqu'un d'autre pour ce passager.
   final String? bookedBy;
@@ -230,12 +234,20 @@ class _DriverHomeState extends State<DriverHome> {
     final first = _requestCount++ == 0;
     final name = names[_rnd.nextInt(names.length)];
     _request = _Request(
-      ShiftRider(name: name, pickupIdx: pickup, dropIdx: drop, fare: fare, seats: seats),
+      ShiftRider(
+          name: name,
+          pickupIdx: pickup,
+          dropIdx: drop,
+          fare: fare,
+          seats: seats,
+          // Démo : un passager sur deux laisse un pourboire par carte.
+          tip: _rnd.nextBool() ? const [5.0, 10.0, 20.0][_rnd.nextInt(3)] : 0),
       _nearestPlaceName(_route[drop]),
       4.5 + _rnd.nextInt(5) / 10,
       takenAfter: !first && _rnd.nextInt(4) == 0 ? Duration(milliseconds: 4000 + _rnd.nextInt(6000)) : null,
       // Démo : si le passager de l'application s'est déclaré malvoyant, la première demande l'est aussi.
       lowVision: (first && settings.lowVision) || _rnd.nextInt(5) == 0,
+      babySeat: _rnd.nextInt(4) == 0,
       bookedBy: _rnd.nextInt(4) == 0 ? names.where((n) => n != name).elementAt(_rnd.nextInt(names.length - 1)) : null,
     );
   }
@@ -524,6 +536,8 @@ class _DriverHomeState extends State<DriverHome> {
         child: Row(children: [
           Expanded(child: _stat(dh(_shift.earningsToday), s.t('earned'))),
           _divider(),
+          Expanded(child: _stat(dh(_shift.tipsToday), s.t('tipsReceived'))),
+          _divider(),
           Expanded(child: _stat('${_shift.passengersToday}', s.t('passengersShort'))),
           _divider(),
           Expanded(child: _stat('${_shift.ridesToday}', s.t('ridesShort'))),
@@ -728,6 +742,22 @@ class _DriverHomeState extends State<DriverHome> {
                     ),
                   ]),
                 ),
+              ),
+            ],
+            if (r.babySeat) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(12)),
+                child: Row(children: [
+                  const Icon(Icons.child_friendly, color: AppColors.moroccoGreen),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(s.t('babySeatRequested'),
+                        style:
+                            const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w800, fontSize: 15)),
+                  ),
+                ]),
               ),
             ],
             const SizedBox(height: 12),

@@ -1,13 +1,22 @@
 /// Compteur du chauffeur : passagers à bord, places libres et bilan de la journée.
 /// Indépendant de l'affichage pour être testé facilement.
 class ShiftRider {
-  ShiftRider({required this.name, required this.pickupIdx, required this.dropIdx, required this.fare, this.seats = 1});
+  ShiftRider(
+      {required this.name,
+      required this.pickupIdx,
+      required this.dropIdx,
+      required this.fare,
+      this.seats = 1,
+      this.tip = 0});
   final String name;
 
   /// Positions sur l'itinéraire du taxi (indices des points).
   final int pickupIdx;
   final int dropIdx;
   final double fare;
+
+  /// Pourboire laissé par carte à la fin de la course (démo).
+  final double tip;
   final int seats;
   bool onBoard = false;
 }
@@ -27,6 +36,9 @@ class DriverShift {
   int passengersToday = 0;
   int ridesToday = 0;
   double earningsToday = 0;
+
+  /// Pourboires reçus aujourd'hui (payés par carte par les passagers).
+  double tipsToday = 0;
 
   int get onBoard => riders.where((r) => r.onBoard).fold(0, (n, r) => n + r.seats) + hailOnBoard;
 
@@ -73,6 +85,7 @@ class DriverShift {
       riders.remove(r);
       ridesToday++;
       earningsToday += r.fare;
+      tipsToday += r.tip;
       dropped.add(r);
     }
     return (pickedUp: pickedUp, dropped: dropped);
