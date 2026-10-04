@@ -135,4 +135,21 @@ void main() {
     expect(find.byType(ComplaintScreen), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('panneau replié à l\'arrivée : texte sur une ligne et bouton Terminé lisibles', (tester) async {
+    phone(tester);
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
+    await tester.pump();
+    await rideToTheEnd(tester);
+
+    await tester.tap(find.byKey(const ValueKey('sheetHandle')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    final summary = find.textContaining('Vous êtes arrivé ·');
+    expect(summary, findsOneWidget);
+    // Bug corrigé : le bouton prenait toute la largeur et le texte s'affichait une lettre par ligne.
+    expect(tester.getSize(summary).width, greaterThan(150));
+    expect(tester.getSize(summary).height, lessThan(60));
+  });
 }

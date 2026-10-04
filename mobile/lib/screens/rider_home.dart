@@ -700,7 +700,10 @@ class _RiderHomeState extends State<RiderHome> {
               ]),
             ),
             const SizedBox(width: 10),
-            FilledButton(onPressed: _request, child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}')),
+            FilledButton(
+                style: _rowButton,
+                onPressed: _request,
+                child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}')),
           ]),
         RiderStep.dispatching => Row(key: const ValueKey('mini-dispatch'), children: [
             const SizedBox.square(
@@ -717,11 +720,17 @@ class _RiderHomeState extends State<RiderHome> {
         RiderStep.done => Row(key: const ValueKey('mini-done'), children: [
             Expanded(
               child: Text('${s.t('tripDone')} · ${dh(_selected!.priceMad + _tip)}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
             ),
-            FilledButton(onPressed: _finish, child: Text(s.t('done'))),
+            const SizedBox(width: 10),
+            FilledButton(style: _rowButton, onPressed: _finish, child: Text(s.t('done'))),
           ]),
       };
+
+  /// Le thème donne aux boutons toute la largeur : dans une ligne, on les limite à leur contenu.
+  static final _rowButton = FilledButton.styleFrom(minimumSize: const Size(0, 52));
 
   /// Toucher une offre : bon de réduction avec QR code, lié au compte, à l'offre et à cette course.
   void _openPromo(Promo p) {
