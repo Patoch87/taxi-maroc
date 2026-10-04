@@ -187,7 +187,12 @@ class _DriverHomeState extends State<DriverHome> {
   void _onTick() {
     if (!mounted || _route.length < 2) return;
     // Avancer le taxi d'une distance fixe le long de la route.
-    _carry += _metersPerTick;
+    // Le taxi ralentit en approchant d'un passager à prendre (démo : environ 5 s pour les 50 derniers mètres).
+    final nextPickup = _shift.riders
+        .where((r) => !r.onBoard)
+        .map((r) => _metersTo(r.pickupIdx))
+        .fold<double?>(null, (m, v) => m == null || v < m ? v : m);
+    _carry += nextPickup != null && nextPickup <= 60 ? 1.0 : _metersPerTick;
     const d = Distance();
     var moved = false;
     while (_pos < _route.length - 1) {

@@ -235,10 +235,23 @@ const { chromium } = require('playwright');
     keepSignUp = true;
     await open();
     keepSignUp = false;
-    await typeInto('Prénom', 'Lucía');
-    await typeInto('Nom', 'García');
+    // Chaque saisie est facultative : la capture est prise même si l'une d'elles échoue.
+    const soft = async (fn) => {
+      try {
+        await fn();
+      } catch (e) {
+        console.error('compte :', e.message);
+      }
+    };
+    await soft(() => typeInto('Prénom', 'Lucía'));
+    await soft(() => typeInto('Nom', 'García'));
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(500);
     // Indicatif : liste complète avec drapeaux et recherche, Maroc +212 en premier.
-    await tap('Indicatif');
+    await soft(async () => {
+      if (await target('Indicatif').count()) await tap('Indicatif');
+      else await tap('+212');
+    });
     await page.waitForTimeout(1500);
     await shot('27-creation-compte', 1500);
   });
