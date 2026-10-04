@@ -32,10 +32,10 @@ Future<void> rideToTheEnd(WidgetTester tester) async {
     await tester.pump();
     expect(find.text('×$x'), findsOneWidget);
   }
-  for (var i = 0; i < 200 && find.text('Vous êtes arrivé 🎉').evaluate().isEmpty; i++) {
+  for (var i = 0; i < 200 && find.text('Vous êtes arrivé').evaluate().isEmpty; i++) {
     await tester.pump(const Duration(seconds: 1));
   }
-  expect(find.text('Vous êtes arrivé 🎉'), findsOneWidget);
+  expect(find.text('Vous êtes arrivé'), findsOneWidget);
 }
 
 void main() {

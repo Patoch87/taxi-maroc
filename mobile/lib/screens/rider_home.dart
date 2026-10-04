@@ -1593,7 +1593,12 @@ class _RiderHomeState extends State<RiderHome> {
       key: const ValueKey('done'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(s.t('tripDone'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        // Arrivée : drapeau à damier (ligne d'arrivée).
+        Row(children: [
+          const Icon(Icons.sports_score, size: 32, color: AppColors.ink),
+          const SizedBox(width: 8),
+          Expanded(child: Text(s.t('tripDone'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+        ]),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -1684,7 +1689,7 @@ class _RiderHomeState extends State<RiderHome> {
                 style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ),
         ]),
-        ..._restaurantBlock(),
+        // « Envoyer » juste sous le pourboire, avant les restaurants.
         const SizedBox(height: 10),
         FilledButton.icon(
           key: const ValueKey('sendReview'),
@@ -1692,6 +1697,7 @@ class _RiderHomeState extends State<RiderHome> {
           icon: const Icon(Icons.send),
           label: Text(_tip > 0 ? '${s.t('send')} · ${dh(_tip)}' : s.t('send')),
         ),
+        ..._restaurantBlock(),
         TextButton(
           onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
           child: Text(s.t('complain'), style: const TextStyle(color: AppColors.muted)),
@@ -1902,7 +1908,11 @@ class _RiderHomeState extends State<RiderHome> {
         );
       case RiderStep.done:
         return SeniorScaffold(children: [
-          Text(s.t('tripDone'), style: seniorText.copyWith(fontSize: 32)),
+          Row(children: [
+            const Icon(Icons.sports_score, size: 44, color: AppColors.ink),
+            const SizedBox(width: 10),
+            Expanded(child: Text(s.t('tripDone'), style: seniorText.copyWith(fontSize: 32))),
+          ]),
           const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.all(20),

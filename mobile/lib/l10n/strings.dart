@@ -274,7 +274,7 @@ class S {
     'translatedFor': ['Traduit pour le chauffeur', 'مترجم للسائق', 'مترجم للشيفور', 'Translated for the driver'],
 
     // Fin de course
-    'tripDone': ['Vous êtes arrivé 🎉', 'لقد وصلت 🎉', 'وصلتي 🎉', 'You have arrived 🎉'],
+    'tripDone': ['Vous êtes arrivé', 'لقد وصلت', 'وصلتي', 'You have arrived'],
     'pay': ['À payer au chauffeur', 'المبلغ للسائق', 'خلص الشيفور', 'Pay the driver'],
     'tip': ['Pourboire', 'إكرامية', 'البوربوار', 'Tip'],
     'rate': ['Notez votre chauffeur', 'قيم السائق', 'عطي نقطة للشيفور', 'Rate your driver'],
@@ -657,6 +657,46 @@ class S {
     'newPrice': ['Nouveau prix', 'السعر الجديد', 'الثمن الجديد', 'New price'],
     'newEta': ['Nouvelle arrivée', 'الوصول الجديد', 'الوصول الجديد', 'New arrival'],
     'confirmChange': ['Confirmer', 'تأكيد', 'أكد', 'Confirm'],
+    'dialCode': ['Indicatif', 'رمز الاتصال الدولي', 'الرمز ديال البلاد', 'Country code'],
+    'searchDialCode': [
+      'Rechercher un pays ou un indicatif',
+      'ابحث عن بلد أو رمز',
+      'قلب على بلاد ولا رمز',
+      'Search a country or code'
+    ],
+    'localNumber': ['Numéro de téléphone', 'رقم الهاتف', 'النمرة ديال التيليفون', 'Phone number'],
+    'requestSound': ['Son des demandes', 'صوت الطلبات', 'الصوت ديال الطلبات', 'Request sound'],
+    'requestSoundDesc': [
+      'Petit son doux quand un passager apparaît sur votre route',
+      'صوت خفيف عندما يظهر راكب على طريقك',
+      'صوت خفيف ملي كيبان شي راكب فطريقك',
+      'A soft chime when a passenger appears on your route'
+    ],
+    'driverSettings': ['Réglages chauffeur', 'إعدادات السائق', 'الإعدادات ديال الشيفور', 'Driver settings'],
+    'requestVoice': [
+      'Annonce vocale de la destination',
+      'الإعلان الصوتي عن الوجهة',
+      'قراية الوجهة بالصوت',
+      'Spoken destination'
+    ],
+    'requestVoiceDesc': [
+      'Lue en arabe, seulement quand le taxi est vide',
+      'تقرأ بالعربية، فقط عندما تكون سيارة الأجرة فارغة',
+      'بالعربية، غير ملي يكون الطاكسي خاوي',
+      'Read in Arabic, only when the taxi is empty'
+    ],
+    'hazardLights': [
+      'Allumez vos feux de détresse',
+      'شغّل أضواء التنبيه',
+      'شعل الضو ديال الخطر',
+      'Turn on your hazard lights'
+    ],
+    'hazardNear': [
+      'Passager à moins de 50 m',
+      'الراكب على بعد أقل من 50 م',
+      'الراكب قريب، أقل من 50 متر',
+      'Passenger less than 50 m away'
+    ],
     'toggleDetails': [
       'Afficher ou masquer les détails',
       'إظهار التفاصيل أو إخفاؤها',

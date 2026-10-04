@@ -13,6 +13,7 @@ import '../services/location.dart';
 import '../services/places.dart';
 import '../services/rides.dart';
 import '../services/routing.dart';
+import '../services/request_chime.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 import '../widgets/map_parts.dart';
@@ -69,6 +70,32 @@ class _DriverHomeState extends State<DriverHome> {
   double _carry = 0;
   Timer? _tick;
   _Request? _request;
+
+  /// Son doux à chaque nouvelle demande (réglage « Son des demandes »).
+  final _chime = RequestChime();
+
+  /// Feux de détresse : rappel affiché une fois par prise en charge, à 50 m ou moins.
+  final _pickupAlerts = PickupAlerts();
+  ShiftRider? _hazardFor;
+  Timer? _hazardTimer;
+
+  void _showHazard(ShiftRider r) {
+    _hazardTimer?.cancel();
+    setState(() => _hazardFor = r);
+    // Pas besoin de toucher l'écran en conduisant : le rappel disparaît seul.
+    _hazardTimer = Timer(const Duration(seconds: 6), _hideHazard);
+    _chime.alert(r,
+        enabled: settings.requestSound,
+        voice: settings.requestVoice,
+        empty: _shift.onBoard == 0,
+        speakText: hazardAnnouncementAr);
+  }
+
+  void _hideHazard() {
+    _hazardTimer?.cancel();
+    if (mounted && _hazardFor != null) setState(() => _hazardFor = null);
+  }
+
   DateTime _lastRequest = DateTime.now();
   int _requestCount = 0;
 
@@ -91,6 +118,8 @@ class _DriverHomeState extends State<DriverHome> {
   @override
   void dispose() {
     _tick?.cancel();
+    _hazardTimer?.cancel();
+    _chime.cancel();
     super.dispose();
   }
 
@@ -172,6 +201,7 @@ class _DriverHomeState extends State<DriverHome> {
       // Démo : une Dacia Spring consomme environ 1 % tous les 2 km.
       if (_electric) _battery = max(.05, _battery - _metersPerTick / 200000);
       final events = _shift.advance(_pos);
+      if (_hazardFor != null && events.pickedUp.contains(_hazardFor)) _hideHazard();
       for (final r in events.pickedUp) {
         _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
       }
@@ -199,6 +229,13 @@ class _DriverHomeState extends State<DriverHome> {
       _request = null;
     }
     _maybeNewRequest();
+    // Demande partie (acceptée, refusée, expirée) : on arrête l'annonce vocale.
+    if (_request == null) _chime.cancel();
+
+    // Bientôt chez le passager : rappel des feux de détresse.
+    for (final r in _shift.riders.where((r) => !r.onBoard)) {
+      if (_pickupAlerts.check(r, _metersTo(r.pickupIdx))) _showHazard(r);
+    }
 
     // Fin de la route : nouvelle direction si plus personne à déposer.
     if (_pos >= _route.length - 1 && _shift.riders.isEmpty) {
@@ -250,6 +287,14 @@ class _DriverHomeState extends State<DriverHome> {
       babySeat: _rnd.nextInt(4) == 0,
       bookedBy: _rnd.nextInt(4) == 0 ? names.where((n) => n != name).elementAt(_rnd.nextInt(names.length - 1)) : null,
     );
+    // Son doux ; taxi vide : la destination est aussi lue en arabe.
+    _chime.onRequest(
+      _request,
+      enabled: settings.requestSound,
+      voice: settings.requestVoice,
+      empty: _shift.onBoard == 0,
+      speakText: requestAnnouncementAr(arabicPlaceName(_request!.destination)),
+    );
   }
 
   String _nearestPlaceName(LatLng p) {
@@ -263,13 +308,17 @@ class _DriverHomeState extends State<DriverHome> {
   void _accept() {
     final r = _request!;
     if (r.takenAt != null || !_shift.canAccept(r.rider.seats)) return;
+    _chime.cancel();
     setState(() {
       _shift.accept(r.rider);
       _request = null;
     });
   }
 
-  void _decline() => setState(() => _request = null);
+  void _decline() {
+    _chime.cancel();
+    setState(() => _request = null);
+  }
 
   // ---------------------------------------------------------------- Recharge
 
@@ -487,39 +536,96 @@ class _DriverHomeState extends State<DriverHome> {
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: Row(children: [
             MapCircleButton(icon: Icons.arrow_back, onTap: () => Navigator.pop(context)),
-            const Spacer(),
+            const SizedBox(width: 8),
             // Interrupteur en ligne / hors ligne
-            GestureDetector(
-              onTap: _online ? _goOffline : _goOnline,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                decoration: BoxDecoration(
-                  color: _online ? AppColors.moroccoGreen : AppColors.ink,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_online ? s.t('online') : s.t('offline'),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: Icon(Icons.power_settings_new,
-                        size: 18, color: _online ? AppColors.moroccoGreen : AppColors.ink),
+            Expanded(
+              child: Center(
+                child: GestureDetector(
+                  onTap: _online ? _goOffline : _goOnline,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                    decoration: BoxDecoration(
+                      color: _online ? AppColors.moroccoGreen : AppColors.ink,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Flexible(
+                        child: Text(_online ? s.t('online') : s.t('offline'),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Icon(Icons.power_settings_new,
+                            size: 18, color: _online ? AppColors.moroccoGreen : AppColors.ink),
+                      ),
+                    ]),
                   ),
-                ]),
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
+            Builder(
+              builder: (ctx) => MapCircleButton(
+                icon: Icons.tune,
+                tooltip: s.t('driverSettings'),
+                onTap: () => Scaffold.of(ctx).openEndDrawer(),
+              ),
+            ),
+            const SizedBox(width: 8),
             MapCircleButton(
               icon: _follow ? Icons.navigation : Icons.navigation_outlined,
               onTap: () {
                 setState(() => _follow = true);
                 if (_mapReady) _map.move(_taxi, 16, offset: _followOffset);
               },
+            ),
+          ]),
+        ),
+      );
+
+  /// Grand rappel lisible d'un coup d'œil : triangle de danger, texte en gros, bouton OK.
+  Widget _hazardBanner() => Semantics(
+        liveRegion: true,
+        container: true,
+        label: s.t('hazardLights'),
+        child: Container(
+          key: const ValueKey('hazardBanner'),
+          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFB300),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.taxiRed, width: 4),
+            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 14)],
+          ),
+          child: Row(children: [
+            const Icon(Icons.warning_rounded, size: 64, color: AppColors.taxiRed),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(s.t('hazardLights'),
+                    style:
+                        const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.ink, height: 1.1)),
+                const SizedBox(height: 4),
+                Text('${s.t('hazardNear')} · ${_hazardFor!.name}',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink)),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.ink,
+                minimumSize: const Size(72, 64),
+                textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+              ),
+              onPressed: _hideHazard,
+              child: const Text('OK'),
             ),
           ]),
         ),
@@ -871,11 +977,43 @@ class _DriverHomeState extends State<DriverHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      endDrawer: Drawer(
+        backgroundColor: AppColors.sand,
+        child: SafeArea(
+          child: ListView(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text(s.t('driverSettings'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+            ),
+            ListenableBuilder(
+              listenable: settings,
+              builder: (_, __) => SwitchListTile(
+                secondary: const Icon(Icons.notifications_active_outlined),
+                title: Text(s.t('requestSound')),
+                subtitle: Text(s.t('requestSoundDesc'), style: const TextStyle(color: AppColors.muted)),
+                value: settings.requestSound,
+                onChanged: (v) => settings.requestSound = v,
+              ),
+            ),
+            ListenableBuilder(
+              listenable: settings,
+              builder: (_, __) => SwitchListTile(
+                secondary: const Icon(Icons.record_voice_over_outlined),
+                title: Text(s.t('requestVoice')),
+                subtitle: Text(s.t('requestVoiceDesc'), style: const TextStyle(color: AppColors.muted)),
+                value: settings.requestVoice,
+                onChanged: (v) => settings.requestVoice = v,
+              ),
+            ),
+          ]),
+        ),
+      ),
       body: Stack(children: [
         Positioned.fill(child: _buildMap()),
         Column(children: [
           _topBar(),
           if (_online) _earningsCard(),
+          if (_hazardFor != null) _hazardBanner(),
         ]),
         Align(
           alignment: Alignment.bottomCenter,

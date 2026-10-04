@@ -95,6 +95,7 @@ class Account {
     required this.lastName,
     required this.phone,
     required this.nationality,
+    this.phoneCountry = 'MA',
     this.email = '',
   });
   final String id;
@@ -105,6 +106,9 @@ class Account {
 
   /// Code ISO du pays.
   final String nationality;
+
+  /// Pays de l'indicatif du numéro (code ISO).
+  final String phoneCountry;
 }
 
 /// Code SMS de la démo (aucun SMS n'est envoyé).
@@ -112,6 +116,9 @@ const demoSmsCode = '1234';
 
 /// Numéro marocain ou international : + et 8 à 15 chiffres.
 bool validPhone(String v) => RegExp(r'^\+\d{8,15}$').hasMatch(v.replaceAll(RegExp(r'[\s.-]'), ''));
+
+/// Numéro local (sans l'indicatif) : 6 à 12 chiffres, espaces, points et tirets permis.
+bool validLocalNumber(String v) => RegExp(r'^\d{6,12}$').hasMatch(v.replaceAll(RegExp(r'[\s.-]'), ''));
 
 bool validEmail(String v) => v.trim().isEmpty || RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
 

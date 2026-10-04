@@ -5,6 +5,7 @@ import '../l10n/strings.dart';
 import '../main.dart';
 import '../screens/complaint_screen.dart';
 import '../screens/trusted_contacts_screen.dart';
+import '../services/request_chime.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 
@@ -35,7 +36,9 @@ Future<void> showSafetySheet(BuildContext context, {String? taxiId, required Voi
   }
 
   final contacts = settings.contacts;
-  return showModalBottomSheet(
+  // Pendant le SOS, aucun son de demande (chauffeur).
+  sosActive = true;
+  return showModalBottomSheet<void>(
     context: context,
     backgroundColor: AppColors.sand,
     isScrollControlled: true,
@@ -192,7 +195,7 @@ Future<void> showSafetySheet(BuildContext context, {String? taxiId, required Voi
         ]),
       ),
     ),
-  );
+  ).whenComplete(() => sosActive = false);
 }
 
 /// Messages rapides au chauffeur, traduits dans sa langue (darija).

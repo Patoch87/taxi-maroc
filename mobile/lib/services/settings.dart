@@ -17,6 +17,8 @@ class AppSettings extends ChangeNotifier {
   bool _senior = false;
   bool _lowVision = false;
   bool _voiceAnnounce = false;
+  bool _requestSound = true;
+  bool _requestVoice = true;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
 
@@ -35,6 +37,14 @@ class AppSettings extends ChangeNotifier {
   /// Elles s'activent aussi d'elles-mêmes quand le lecteur d'écran du téléphone (TalkBack) est actif.
   bool get voiceAnnounce => _voiceAnnounce;
   set voiceAnnounce(bool v) => _set(() => _voiceAnnounce = v);
+
+  /// Chauffeur : petit son doux à chaque nouvelle demande sur la route (activé par défaut).
+  bool get requestSound => _requestSound;
+  set requestSound(bool v) => _set(() => _requestSound = v);
+
+  /// Chauffeur : destination lue en arabe quand le taxi est vide (activé par défaut).
+  bool get requestVoice => _requestVoice;
+  set requestVoice(bool v) => _set(() => _requestVoice = v);
 
   AutoShare get autoShare => _autoShare;
   set autoShare(AutoShare v) => _set(() => _autoShare = v);
@@ -65,6 +75,8 @@ class AppSettings extends ChangeNotifier {
         _senior = false;
         _lowVision = false;
         _voiceAnnounce = false;
+        _requestSound = true;
+        _requestVoice = true;
         _autoShare = AutoShare.night;
         _contacts.clear();
       });

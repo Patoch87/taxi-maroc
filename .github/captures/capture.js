@@ -240,13 +240,31 @@ const { chromium } = require('playwright');
     keepSignUp = false;
     await typeInto('Prénom', 'Lucía');
     await typeInto('Nom', 'García');
-    await typeInto('Téléphone', '612345678');
+    await typeInto('téléphone', '612345678');
     await tap('Recevoir le code');
     await page.waitForTimeout(800);
     await typeInto('Code reçu', '1234');
-    await tap('Nationalité');
+    // Indicatif : liste complète avec drapeaux et recherche, Maroc +212 en premier.
+    await tap('Indicatif');
     await page.waitForTimeout(1500);
     await shot('27-creation-compte', 1500);
+  });
+
+  // Chauffeur : rappel des feux de détresse à 50 m du passager.
+  await step('feux', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Mode chauffeur');
+    await page.waitForTimeout(2500);
+    await tap('Passer en ligne');
+    await target('Accepter').waitFor({ timeout: 40000 });
+    await tap('Accepter');
+    for (let i = 0; i < 120; i++) {
+      if (await page.locator('[aria-label*="Allumez vos feux"]').count()) break;
+      await page.waitForTimeout(500);
+    }
+    await shot('30-chauffeur-feux-detresse', 300);
   });
 
   // Chauffeur de taxi électrique : batterie et bornes de recharge

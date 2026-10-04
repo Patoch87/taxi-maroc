@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/strings.dart';
 import '../main.dart';
 import '../services/account.dart';
+import '../services/dial_codes.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 
@@ -78,6 +79,81 @@ class _NationalityPickerState extends State<_NationalityPicker> {
   }
 }
 
+/// Liste UIT complète des indicatifs, avec recherche (pays ou indicatif) et drapeaux, Maroc en premier.
+Future<DialCode?> showDialCodeSheet(BuildContext context) => showModalBottomSheet<DialCode>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.sand,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => const _DialPicker(),
+    );
+
+class _DialPicker extends StatefulWidget {
+  const _DialPicker();
+
+  @override
+  State<_DialPicker> createState() => _DialPickerState();
+}
+
+class _DialPickerState extends State<_DialPicker> {
+  final _query = TextEditingController();
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = searchDialCodes(_query.text);
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * .75,
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(s.t('dialCode'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              key: const ValueKey('dialSearch'),
+              controller: _query,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: s.t('searchDialCode'),
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: list.length,
+              itemBuilder: (_, i) {
+                final d = list[i];
+                return ListTile(
+                  key: ValueKey('dial-${d.iso}'),
+                  leading: Text(d.flag, style: const TextStyle(fontSize: 26)),
+                  title: Text(d.name(s.lang), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  trailing: Text(d.code,
+                      textDirection: TextDirection.ltr,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.moroccoGreen)),
+                  onTap: () => Navigator.pop(context, d),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
 /// Création du compte (premier lancement ou menu), et « Mon compte » pour le modifier.
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key, this.firstLaunch = false});
@@ -94,7 +170,11 @@ class _AccountScreenState extends State<AccountScreen> {
   late final Account? _existing = accountStore.account;
   late final _first = TextEditingController(text: _existing?.firstName ?? '');
   late final _last = TextEditingController(text: _existing?.lastName ?? '');
-  late final _phone = TextEditingController(text: _existing?.phone ?? '+212 ');
+
+  /// Indicatif (liste UIT complète, Maroc par défaut) et numéro local, dans deux champs séparés.
+  late DialCode _dial = dialCodeFor(_existing?.phoneCountry);
+  late final _phone = TextEditingController(text: _localPart(_existing));
+  bool _dialTouched = false;
   late final _email = TextEditingController(text: _existing?.email ?? '');
   final _code = TextEditingController();
   late Country? _country = countryByCode(_existing?.nationality);
@@ -114,9 +194,18 @@ class _AccountScreenState extends State<AccountScreen> {
 
   String _normPhone(String v) => v.replaceAll(RegExp(r'[\s.-]'), '');
 
+  static String _localPart(Account? a) {
+    if (a == null) return '';
+    final code = dialCodeFor(a.phoneCountry).code;
+    return a.phone.startsWith(code) ? a.phone.substring(code.length).trim() : a.phone;
+  }
+
+  /// Numéro complet : « +212 612345678 ».
+  String get _fullPhone => '${_dial.code} ${_phone.text.trim()}';
+
   /// Le numéro est vérifié s'il n'a pas changé, ou si le bon code SMS a été saisi.
   bool get _verified =>
-      (_existing != null && _normPhone(_phone.text) == _normPhone(_existing.phone)) || _code.text.trim() == demoSmsCode;
+      (_existing != null && _normPhone(_fullPhone) == _normPhone(_existing.phone)) || _code.text.trim() == demoSmsCode;
 
   Future<void> _pickCountry() async {
     final c = await showNationalitySheet(context);
@@ -126,6 +215,17 @@ class _AccountScreenState extends State<AccountScreen> {
       _nationalityMissing = false;
       // La langue est proposée selon la nationalité ; le passager peut la changer.
       if (!_langTouched) _lang = c.lang;
+      // L'indicatif suit aussi la nationalité, sauf s'il a été choisi à la main.
+      if (!_dialTouched) _dial = dialCodeFor(c.code);
+    });
+  }
+
+  Future<void> _pickDial() async {
+    final d = await showDialCodeSheet(context);
+    if (d == null || !mounted) return;
+    setState(() {
+      _dial = d;
+      _dialTouched = true;
     });
   }
 
@@ -141,7 +241,8 @@ class _AccountScreenState extends State<AccountScreen> {
       id: _existing?.id ?? newAccountId(),
       firstName: _first.text.trim(),
       lastName: _last.text.trim(),
-      phone: _phone.text.trim(),
+      phone: _fullPhone,
+      phoneCountry: _dial.iso,
       email: _email.text.trim(),
       nationality: _country!.code,
     ));
@@ -210,22 +311,60 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ]),
             const SizedBox(height: 12),
-            TextFormField(
-              key: const ValueKey('phone'),
-              controller: _phone,
-              keyboardType: TextInputType.phone,
+            // Indicatif (drapeau + code, compact) à côté du numéro local.
+            Directionality(
               textDirection: TextDirection.ltr,
-              onChanged: (_) => setState(() {}),
-              decoration: _deco(s.t('phone'),
-                  error: _phoneUnverified && validPhone(_phone.text) && !_verified ? s.t('verifyPhoneFirst') : null,
-                  suffix: _verified ? const Icon(Icons.verified, color: AppColors.moroccoGreen) : null),
-              validator: (v) => validPhone(v ?? '') ? null : s.t('invalidPhone'),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Semantics(
+                  button: true,
+                  label: '${s.t('dialCode')} : ${_dial.name(s.lang)} ${_dial.code}',
+                  excludeSemantics: true,
+                  child: Material(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppColors.muted)),
+                    child: InkWell(
+                      key: const ValueKey('dialCode'),
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: _pickDial,
+                      child: SizedBox(
+                        height: 56,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Text(_dial.flag, style: const TextStyle(fontSize: 22)),
+                            const SizedBox(width: 6),
+                            Text(_dial.code, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                            const Icon(Icons.arrow_drop_down),
+                          ]),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    key: const ValueKey('phone'),
+                    controller: _phone,
+                    keyboardType: TextInputType.phone,
+                    onChanged: (_) => setState(() {}),
+                    decoration: _deco(s.t('localNumber'),
+                        hint: '612345678',
+                        error: _phoneUnverified && validLocalNumber(_phone.text) && !_verified
+                            ? s.t('verifyPhoneFirst')
+                            : null,
+                        suffix: _verified ? const Icon(Icons.verified, color: AppColors.moroccoGreen) : null),
+                    validator: (v) => validLocalNumber(v ?? '') ? null : s.t('invalidPhone'),
+                  ),
+                ),
+              ]),
             ),
             if (!_verified) ...[
               const SizedBox(height: 8),
               if (!_codeSent)
                 OutlinedButton.icon(
-                  onPressed: validPhone(_phone.text) ? () => setState(() => _codeSent = true) : null,
+                  onPressed: validLocalNumber(_phone.text) ? () => setState(() => _codeSent = true) : null,
                   icon: const Icon(Icons.sms_outlined),
                   label: Text(s.t('sendCode')),
                 )
@@ -243,7 +382,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       _deco(s.t('smsCode'), error: _code.text.length >= 4 && !_verified ? s.t('wrongCode') : null),
                 ),
               ],
-            ] else if (_existing == null || _normPhone(_phone.text) != _normPhone(_existing.phone)) ...[
+            ] else if (_existing == null || _normPhone(_fullPhone) != _normPhone(_existing.phone)) ...[
               const SizedBox(height: 4),
               Text(s.t('phoneVerified'),
                   style: const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w700)),
