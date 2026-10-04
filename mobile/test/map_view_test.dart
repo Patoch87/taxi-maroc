@@ -34,7 +34,7 @@ void main() {
       (tester) async {
     phone(tester);
     final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     expect(find.bySemanticsLabel('Afficher ou masquer les détails'), findsOneWidget);
     // Zone à saisir assez grande.
@@ -55,7 +55,7 @@ void main() {
 
   testWidgets('course : panneau replié = bandeau du taxi et bandeau publicitaire masquable', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await startTrip(tester);
     expect(find.text('Votre taxi arrive dans'), findsOneWidget);
@@ -105,7 +105,7 @@ void main() {
 
   testWidgets('mode senior : l\'icône l\'active, « Revenir au mode normal » fonctionne partout', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
 
     // Depuis l'accueil senior.
@@ -154,7 +154,7 @@ void main() {
 
   testWidgets('mode senior après un changement de langue : retour au mode normal', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await tester.tap(find.byTooltip('Mode senior'));
     await tester.pumpAndSettle();
@@ -172,7 +172,7 @@ void main() {
   testWidgets('menu : Langue sous Sécurité, annonces vocales désactivées par défaut', (tester) async {
     phone(tester);
     expect(settings.voiceAnnounce, isFalse);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await tester.tap(find.byTooltip('Ouvrir le menu de navigation'));
     await tester.pumpAndSettle();

@@ -6,7 +6,10 @@ import 'package:taxi_maroc/screens/driver_home.dart';
 import 'package:taxi_maroc/services/card_check.dart';
 import 'package:taxi_maroc/services/coupons.dart';
 import 'package:taxi_maroc/services/places.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:taxi_maroc/services/promos.dart';
+import 'package:taxi_maroc/services/location.dart';
+import 'package:taxi_maroc/services/routing.dart';
 import 'package:taxi_maroc/services/rides.dart';
 import 'package:taxi_maroc/services/settings.dart';
 import 'package:taxi_maroc/services/tourism.dart';
@@ -101,7 +104,7 @@ void main() {
 
   testWidgets('options : valises et siège bébé, sans offre avant la course', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await tester.tap(find.text('Rechercher une destination'));
     await tester.pumpAndSettle();
@@ -155,7 +158,7 @@ void main() {
 
   testWidgets('offre seulement passager à bord : bon avec QR code, enregistré dans « Mes offres »', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await tester.tap(find.text('Rechercher une destination'));
     await tester.pumpAndSettle();
@@ -214,7 +217,7 @@ void main() {
   testWidgets('touriste (application en anglais) : 3 restaurants avec « Take a taxi there »', (tester) async {
     phone(tester);
     langNotifier.value = 'en';
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await tester.tap(find.text('Gare Casa Voyageurs'));
     await tester.pumpAndSettle();
@@ -229,8 +232,31 @@ void main() {
     expect(find.text('TripAdvisor rating (demo)'), findsNWidgets(3));
 
     final first = restaurantsNear(place('Gare Casa Voyageurs')).first.$1;
+    // Confirmation : nouveau prix depuis la position actuelle, même type de taxi, et nouvelle arrivée.
     await tester.ensureVisible(find.text('Take a taxi there').first);
     await tester.tap(find.text('Take a taxi there').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Change destination?'), findsOneWidget);
+    expect(find.text('Current price'), findsOneWidget);
+    expect(find.textContaining('New price'), findsOneWidget);
+    expect(find.text('New arrival'), findsOneWidget);
+    final newPrice = tester.widget<Text>(find.byKey(const ValueKey('newPrice'))).data!;
+    final expected = rideOptions(
+            destination: first.place,
+            routeM: routeLengthM(interpolate(casablancaCenter, LatLng(first.lat, first.lng), 40)))
+        .first;
+    expect(newPrice, dh(expected.priceMad));
+
+    // Annuler : la destination ne change pas.
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Cancel')));
+    await tester.pumpAndSettle();
+    expect(find.text('New destination : ${first.name}'), findsNothing);
+    expect(find.text('Restaurants near Gare Casa Voyageurs'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Take a taxi there').first);
+    await tester.tap(find.text('Take a taxi there').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Confirm')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('New destination : ${first.name}'), findsOneWidget);

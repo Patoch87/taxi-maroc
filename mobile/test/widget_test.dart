@@ -6,7 +6,7 @@ import 'package:taxi_maroc/services/rides.dart';
 
 void main() {
   testWidgets("l'accueil affiche la carte et « Où allez-vous ? », et change de langue", (tester) async {
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     expect(find.text('Où allez-vous ?'), findsOneWidget);
 

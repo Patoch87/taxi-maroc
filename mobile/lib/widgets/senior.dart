@@ -273,6 +273,7 @@ class SeniorTrip extends StatelessWidget {
     this.countdownLabel,
     this.onStart,
     this.onFastForward,
+    this.speed = 1,
     this.extra,
   });
   final String title;
@@ -282,6 +283,9 @@ class SeniorTrip extends StatelessWidget {
   final VoidCallback onSos;
   final VoidCallback? onStart;
   final VoidCallback? onFastForward;
+
+  /// Vitesse de la démo (×1 à ×4).
+  final int speed;
 
   /// Contenu en plus, sous le bouton SOS (offre à la demande pendant la course).
   final Widget? extra;
@@ -344,7 +348,8 @@ class SeniorTrip extends StatelessWidget {
             TextButton.icon(
               onPressed: onFastForward,
               icon: const Icon(Icons.fast_forward, color: AppColors.muted),
-              label: Text(s.t('fastForward'), style: const TextStyle(color: AppColors.muted, fontSize: 18)),
+              label:
+                  Text('${s.t('fastForward')} ×$speed', style: const TextStyle(color: AppColors.muted, fontSize: 18)),
             ),
           if (extra != null) ...[const SizedBox(height: 14), extra!],
         ],

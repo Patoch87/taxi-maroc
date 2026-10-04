@@ -114,7 +114,7 @@ void main() {
 
   testWidgets('mode senior : trois gros boutons, puis retour au mode normal', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     expect(find.text('Où allez-vous ?'), findsOneWidget);
     expect(find.byType(AppLogo), findsWidgets);
@@ -148,7 +148,7 @@ void main() {
   testWidgets('commander pour quelqu\'un d\'autre : le passager apparaît sur la fiche du chauffeur', (tester) async {
     phone(tester);
     settings.addContact(const TrustedContact('Fatima', '0611223344'));
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
 
     await tester.tap(find.text('Gare Casa Voyageurs'));
@@ -190,7 +190,7 @@ void main() {
   testWidgets('mode senior : « Rentrer à la maison » commande un petit taxi partagé en un geste', (tester) async {
     phone(tester);
     settings.senior = true;
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
 
     await tester.tap(find.text('Rentrer à la maison'));

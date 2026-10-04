@@ -29,6 +29,8 @@ import '../widgets/senior.dart';
 import '../widgets/coupon_sheet.dart';
 import '../services/coupons.dart';
 import 'my_offers_screen.dart';
+import 'account_screen.dart';
+import '../services/account.dart';
 import 'complaint_screen.dart';
 import '../widgets/card_payment_sheet.dart';
 import '../widgets/sheets.dart';
@@ -440,6 +442,9 @@ class _RiderHomeState extends State<RiderHome> {
     return '${r.inMinutes.toString().padLeft(2, '0')}:${(r.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
+  /// Démo : vitesse du temps ×1 → ×2 → ×3 → ×4 → ×1.
+  void _nextSpeed() => setState(() => _speed = _speed % 4 + 1);
+
   DateTime get _arrivalTime => DateTime.now().add(_remaining ~/ _speed);
 
   String _clock(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -500,20 +505,83 @@ class _RiderHomeState extends State<RiderHome> {
           RestaurantSuggestions(
             destinationName: _dest!.name,
             items: restaurantsNear(_dest!),
-            onGo: (r) => _retarget(r.place),
+            onGo: _confirmRestaurant,
           ),
         ]
       : const [];
 
+  /// « Y aller en taxi » : fenêtre de confirmation avec le nouveau prix (depuis la position actuelle,
+  /// même type de taxi) et la nouvelle heure d'arrivée, comparés au prix actuel. Rien ne change sans « Confirmer ».
+  Future<void> _confirmRestaurant(Restaurant r) async {
+    final p = r.place;
+    final from = _step == RiderStep.onTrip ? (_taxiPos ?? _me) : _me;
+    final route = await fetchRoute(from, LatLng(p.lat, p.lng));
+    if (!mounted) return;
+    final routeM = routeLengthM(route);
+    final options = rideOptions(destination: p, routeM: routeM);
+    final next = options.firstWhere((o) => o.id == _selected?.id, orElse: () => options.first);
+    final drive = Duration(seconds: (routeM / _cityMps).round());
+    // En attendant le taxi, il faut d'abord qu'il arrive.
+    final wait = _step == RiderStep.arriving ? _remaining : Duration.zero;
+    final eta = DateTime.now().add(wait + drive);
+    final current = _selected?.priceMad;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.t('changeDestTitle')),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.restaurant, color: AppColors.taxiRed),
+            const SizedBox(width: 8),
+            Expanded(child: Text(r.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+          ]),
+          Text('${s.t('newDestination')} : ${p.name} · ${distanceText(routeM)}',
+              style: const TextStyle(color: AppColors.muted)),
+          const SizedBox(height: 4),
+          Text(s.t('fromCurrentPosition'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          const SizedBox(height: 12),
+          Table(columnWidths: const {
+            1: IntrinsicColumnWidth()
+          }, children: [
+            if (current != null)
+              TableRow(children: [
+                Text(s.t('currentPrice')),
+                Text(dh(current),
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(color: AppColors.muted, decoration: TextDecoration.lineThrough)),
+              ]),
+            TableRow(children: [
+              Text('${s.t('newPrice')} · ${next.title}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(dh(next.priceMad),
+                  key: const ValueKey('newPrice'),
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.moroccoGreen)),
+            ]),
+            TableRow(children: [
+              Text(s.t('newEta')),
+              Text('${_clock(eta)} · ${(drive.inSeconds / 60).ceil()} ${s.t('minutes')}',
+                  textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.w700)),
+            ]),
+          ]),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.t('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.t('confirmChange'))),
+        ],
+      ),
+    );
+    if (ok == true && mounted) await _retarget(p, computed: route);
+  }
+
   /// Change la destination : avant la prise en charge, pendant le trajet, ou pour une nouvelle course.
-  Future<void> _retarget(Place p) async {
+  Future<void> _retarget(Place p, {List<LatLng>? computed}) async {
     if (_step == RiderStep.done) {
       _finish();
       await _chooseDestination(p);
       return;
     }
     final from = _step == RiderStep.onTrip ? (_taxiPos ?? _me) : _me;
-    final route = await fetchRoute(from, LatLng(p.lat, p.lng));
+    final route = computed ?? await fetchRoute(from, LatLng(p.lat, p.lng));
     if (!mounted) return;
     final routeM = routeLengthM(route);
     final options = rideOptions(destination: p, routeM: routeM);
@@ -525,8 +593,10 @@ class _RiderHomeState extends State<RiderHome> {
       _selected = options.firstWhere((o) => o.id == _selected?.id, orElse: () => options.first);
     });
     if (_step == RiderStep.onTrip) {
+      final speed = _speed;
       _startLeg(route, Duration(seconds: (routeM / _cityMps).round()), RiderStep.onTrip,
           onEnd: () => setState(() => _step = RiderStep.done));
+      _speed = speed;
       _fit(route);
     }
     if (mounted) {
@@ -1383,10 +1453,13 @@ class _RiderHomeState extends State<RiderHome> {
             const Spacer(),
             Flexible(
               child: TextButton.icon(
-                onPressed: () => setState(() => _speed = _speed == 1 ? 10 : 1),
-                icon: Icon(_speed == 1 ? Icons.fast_forward : Icons.play_arrow, size: 18, color: AppColors.muted),
-                label: Text(s.t('fastForward'),
-                    overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted)),
+                onPressed: _nextSpeed,
+                icon: Icon(Icons.fast_forward, size: 18, color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen),
+                label: Text('${s.t('fastForward')} ×$_speed',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen,
+                        fontWeight: _speed == 1 ? null : FontWeight.w900)),
               ),
             ),
           ]),
@@ -1642,6 +1715,8 @@ class _RiderHomeState extends State<RiderHome> {
               ),
             ),
             const SizedBox(height: 8),
+            _menuItem(accountStore.account == null ? Icons.person_add_alt : Icons.account_circle_outlined,
+                accountStore.account == null ? s.t('createAccount') : s.t('myAccount'), () => const AccountScreen()),
             _menuItem(Icons.receipt_long, s.t('history'), () => const HistoryScreen()),
             _menuItem(Icons.local_offer_outlined, s.t('myOffers'), () => const MyOffersScreen()),
             _menuItem(Icons.people_alt_outlined, s.t('trustedContacts'), () => const TrustedContactsScreen()),
@@ -1788,7 +1863,8 @@ class _RiderHomeState extends State<RiderHome> {
           countdownLabel: _step == RiderStep.onTrip ? '${s.t('arrivalAt')} ${_clock(_arrivalTime)}' : null,
           onStart: _step == RiderStep.arrived ? _startTrip : null,
           onSos: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
-          onFastForward: _step == RiderStep.arrived ? null : () => setState(() => _speed = _speed == 1 ? 10 : 1),
+          onFastForward: _step == RiderStep.arrived ? null : _nextSpeed,
+          speed: _speed,
           // Mode senior : pas de publicité pendant la course, sauf si le passager la demande.
           extra: _promo == null
               ? null

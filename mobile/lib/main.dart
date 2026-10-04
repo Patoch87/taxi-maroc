@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/strings.dart';
+import 'screens/account_screen.dart';
 import 'screens/rider_home.dart';
+import 'services/account.dart';
 import 'theme.dart';
 
 /// Langue choisie par l'utilisateur (voir S.supported).
@@ -25,10 +27,13 @@ void main() {
 }
 
 class TaxiMarocApp extends StatelessWidget {
-  const TaxiMarocApp({super.key, this.locate = true});
+  const TaxiMarocApp({super.key, this.locate = true, this.onboarding = true});
 
   /// Désactivé dans les tests (pas de GPS).
   final bool locate;
+
+  /// Inscription au premier lancement (désactivée dans la plupart des tests).
+  final bool onboarding;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +50,14 @@ class TaxiMarocApp extends StatelessWidget {
         ],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: buildTheme(),
+        // Premier lancement : création du compte, ou « Continuer en démo ».
         // La clé force la reconstruction de l'accueil quand la langue change.
-        home: RiderHome(key: ValueKey(lang), locate: locate),
+        home: ListenableBuilder(
+          listenable: accountStore,
+          builder: (context, _) => onboarding && accountStore.account == null && !accountStore.skipped
+              ? const AccountScreen(firstLaunch: true)
+              : RiderHome(key: ValueKey(lang), locate: locate),
+        ),
       ),
     );
   }

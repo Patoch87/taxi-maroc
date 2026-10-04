@@ -25,8 +25,13 @@ Future<void> rideToTheEnd(WidgetTester tester) async {
   await tester.ensureVisible(find.text('Je suis dans le taxi'));
   await tester.tap(find.text('Je suis dans le taxi'));
   await tester.pump();
-  await tester.ensureVisible(find.text('Accélérer (démo)'));
-  await tester.tap(find.text('Accélérer (démo)'));
+  // Démo : ×1 → ×2 → ×3 → ×4, la vitesse est affichée sur le bouton.
+  for (final x in [2, 3, 4]) {
+    await tester.ensureVisible(find.textContaining('Accélérer (démo)'));
+    await tester.tap(find.textContaining('Accélérer (démo)'));
+    await tester.pump();
+    expect(find.text('Accélérer (démo) ×$x'), findsOneWidget);
+  }
   for (var i = 0; i < 200 && find.text('Vous êtes arrivé 🎉').evaluate().isEmpty; i++) {
     await tester.pump(const Duration(seconds: 1));
   }
@@ -43,7 +48,7 @@ void main() {
   testWidgets('fin de course : note, avis rapides, commentaire, pourboire par carte, historique', (tester) async {
     phone(tester);
     final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await rideToTheEnd(tester);
 
@@ -105,7 +110,7 @@ void main() {
 
   testWidgets('mauvaise note : avis négatifs, raccourci vers la réclamation, autre montant', (tester) async {
     phone(tester);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await rideToTheEnd(tester);
 

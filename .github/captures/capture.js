@@ -28,6 +28,26 @@ const { chromium } = require('playwright');
     // Active l'arbre d'accessibilité de Flutter pour cliquer sur les boutons par leur nom.
     await page.evaluate(() => document.querySelector('flt-semantics-placeholder')?.click());
     await page.waitForTimeout(1500);
+    // Premier lancement : création du compte proposée ; les captures continuent en démo.
+    if (!keepSignUp && (await target('Continuer en démo').count())) {
+      await tap('Continuer en démo');
+      await page.waitForTimeout(1500);
+    }
+  };
+  let keepSignUp = false;
+  // Accélère la démo jusqu'à ×4 (×1 → ×2 → ×3 → ×4).
+  const fast = async () => {
+    for (let i = 0; i < 3; i++) {
+      await tap('Accélérer');
+      await page.waitForTimeout(300);
+    }
+  };
+  // Attend qu'un élément apparaisse (jusqu'à [max] secondes).
+  const waitFor = async (label, max = 120) => {
+    for (let i = 0; i < max; i += 2) {
+      if (await target(label).count()) return;
+      await page.waitForTimeout(2000);
+    }
   };
 
   // Passager
@@ -159,8 +179,8 @@ const { chromium } = require('playwright');
     await shot('24-options-valises-siege-bebe', 1500);
     await tap('Commander');
     await page.waitForTimeout(9000);
-    await tap('Accélérer');
-    await page.waitForTimeout(12000);
+    await fast();
+    await waitFor('Je suis dans le taxi');
     await tap('Je suis dans le taxi');
     await page.waitForTimeout(2000);
     // Passager à bord : l'offre apparaît en bas du panneau.
@@ -185,15 +205,22 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(3500);
     await tap('Commander');
     await page.waitForTimeout(9000);
-    await tap('Accélérer');
-    await page.waitForTimeout(12000);
+    await fast();
+    await waitFor('Je suis dans le taxi');
     await tap('Je suis dans le taxi');
     await page.waitForTimeout(1500);
-    await tap('Accélérer');
-    for (let i = 0; i < 80; i++) {
-      await page.waitForTimeout(3000);
-      if (await target('5 étoiles sur 5').count()) break;
+    await fast();
+    await shot('28-acceleration-x4', 1500);
+    // Restaurant : confirmation avec le nouveau prix avant de changer de destination.
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
     }
+    await tap('Y aller en taxi');
+    await shot('29-restaurant-confirmation-prix', 2500);
+    await tap('Annuler');
+    await waitFor('5 étoiles sur 5', 240);
     await page.waitForTimeout(1500);
     await tap('5 étoiles sur 5');
     await page.waitForTimeout(600);
@@ -204,6 +231,22 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(500);
     await tap('10 DH');
     await shot('26-notation-pourboire', 1500);
+  });
+
+  // Création du compte au premier lancement : nationalité avec drapeaux et recherche.
+  await step('compte', async () => {
+    keepSignUp = true;
+    await open();
+    keepSignUp = false;
+    await typeInto('Prénom', 'Lucía');
+    await typeInto('Nom', 'García');
+    await typeInto('Téléphone', '612345678');
+    await tap('Recevoir le code');
+    await page.waitForTimeout(800);
+    await typeInto('Code reçu', '1234');
+    await tap('Nationalité');
+    await page.waitForTimeout(1500);
+    await shot('27-creation-compte', 1500);
   });
 
   // Chauffeur de taxi électrique : batterie et bornes de recharge

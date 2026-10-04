@@ -15,7 +15,7 @@ void main() {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     // Les langues ne sont pas listées à l'écran : seulement le drapeau de la langue actuelle.
     expect(find.text('Español'), findsNothing);
@@ -40,7 +40,7 @@ void main() {
 
   testWidgets('persan : écriture de droite à gauche', (tester) async {
     langNotifier.value = 'fa';
-    await tester.pumpWidget(const TaxiMarocApp(locate: false));
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     expect(find.text('کجا می‌روید؟'), findsOneWidget);
     expect(Directionality.of(tester.element(find.text('کجا می‌روید؟'))), TextDirection.rtl);

@@ -595,6 +595,68 @@ class S {
     ],
     'stars': ['étoiles sur 5', 'نجوم من 5', 'نجوم من 5', 'stars out of 5'],
     'tipsReceived': ['pourboires', 'إكراميات', 'البوربوار', 'tips'],
+    // Compte passager, changement de destination
+    'createAccount': ['Créer un compte', 'إنشاء حساب', 'صايب حساب', 'Create an account'],
+    'myAccount': ['Mon compte', 'حسابي', 'الحساب ديالي', 'My account'],
+    'signUpIntro': [
+      'Quelques informations pour commander vos taxis en toute sécurité.',
+      'بعض المعلومات لطلب سيارات الأجرة بأمان.',
+      'شي معلومات باش تطلب الطاكسي بأمان.',
+      'A few details to book your taxis safely.'
+    ],
+    'firstName': ['Prénom', 'الاسم الشخصي', 'السمية', 'First name'],
+    'lastName': ['Nom', 'الاسم العائلي', 'الكنية', 'Last name'],
+    'emailOptional': ['E-mail (facultatif)', 'البريد الإلكتروني (اختياري)', 'الإيميل (إلا بغيتي)', 'Email (optional)'],
+    'nationality': ['Nationalité', 'الجنسية', 'الجنسية', 'Nationality'],
+    'chooseNationality': ['Choisir votre nationalité', 'اختر جنسيتك', 'ختار الجنسية ديالك', 'Choose your nationality'],
+    'searchCountry': ['Rechercher un pays', 'ابحث عن بلد', 'قلب على شي بلاد', 'Search for a country'],
+    'privacyNationality': [
+      'Votre nationalité sert uniquement à choisir la langue et à mieux aider les touristes. Elle n\'est jamais utilisée pour la publicité (loi 09-08).',
+      'تستعمل جنسيتك فقط لاختيار اللغة ومساعدة السياح بشكل أفضل. لا تستعمل أبدا للإشهار (القانون 09-08).',
+      'الجنسية ديالك كتستعمل غير باش نختارو اللغة ونعاونو السياح. عمرها ما كتستعمل للإشهار (القانون 09-08).',
+      'Your nationality is only used to choose the language and to better assist tourists. It is never used for advertising (law 09-08).'
+    ],
+    'appLanguage': ['Langue de l\'application', 'لغة التطبيق', 'اللغة ديال التطبيق', 'App language'],
+    'sendCode': ['Recevoir le code par SMS', 'استلام الرمز عبر SMS', 'توصل بالكود فـ SMS', 'Get the code by SMS'],
+    'smsCode': ['Code reçu par SMS', 'الرمز المستلم عبر SMS', 'الكود اللي جاك فـ SMS', 'Code received by SMS'],
+    'codeSentDemo': [
+      'SMS simulé (démo), code :',
+      'رسالة تجريبية (محاكاة)، الرمز:',
+      'SMS تجريبي (ديمو)، الكود:',
+      'Simulated SMS (demo), code:'
+    ],
+    'wrongCode': ['Code incorrect', 'رمز غير صحيح', 'الكود غالط', 'Wrong code'],
+    'requiredField': ['Champ obligatoire', 'حقل إلزامي', 'خاصك تعمرها', 'Required field'],
+    'invalidPhone': [
+      'Numéro de téléphone invalide',
+      'رقم هاتف غير صالح',
+      'النمرة ديال التيليفون غالطة',
+      'Invalid phone number'
+    ],
+    'invalidEmail': ['Adresse e-mail invalide', 'بريد إلكتروني غير صالح', 'الإيميل غالط', 'Invalid email address'],
+    'verifyPhoneFirst': [
+      'Vérifiez d\'abord votre numéro par SMS',
+      'تحقق أولا من رقمك عبر SMS',
+      'تأكد من النمرة ديالك بـ SMS قبل',
+      'Verify your number by SMS first'
+    ],
+    'phoneVerified': ['Numéro vérifié', 'تم التحقق من الرقم', 'النمرة تأكدات', 'Number verified'],
+    'saveAccount': ['Enregistrer', 'حفظ', 'سجل', 'Save'],
+    'continueDemo': ['Continuer en démo', 'المتابعة في الوضع التجريبي', 'كمل فالديمو', 'Continue in demo mode'],
+    'accountCreated': ['Compte créé', 'تم إنشاء الحساب', 'الحساب تصايب', 'Account created'],
+    'accountSaved': ['Compte mis à jour', 'تم تحديث الحساب', 'الحساب تبدل', 'Account updated'],
+    'accountId': ['Identifiant du compte', 'معرف الحساب', 'الرقم ديال الحساب', 'Account ID'],
+    'changeDestTitle': ['Changer de destination ?', 'تغيير الوجهة؟', 'نبدلو البلاصة؟', 'Change destination?'],
+    'fromCurrentPosition': [
+      'Depuis votre position actuelle, même type de taxi',
+      'من موقعك الحالي، نفس نوع الطاكسي',
+      'من فين نتا دابا، نفس نوع الطاكسي',
+      'From your current position, same type of taxi'
+    ],
+    'currentPrice': ['Prix actuel', 'السعر الحالي', 'الثمن دابا', 'Current price'],
+    'newPrice': ['Nouveau prix', 'السعر الجديد', 'الثمن الجديد', 'New price'],
+    'newEta': ['Nouvelle arrivée', 'الوصول الجديد', 'الوصول الجديد', 'New arrival'],
+    'confirmChange': ['Confirmer', 'تأكيد', 'أكد', 'Confirm'],
     'toggleDetails': [
       'Afficher ou masquer les détails',
       'إظهار التفاصيل أو إخفاؤها',

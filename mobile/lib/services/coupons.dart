@@ -1,7 +1,11 @@
+import 'account.dart';
 import 'promos.dart';
 
-/// Compte de démonstration : identifiant stable du passager (en production, celui de son compte).
+/// Compte de démonstration (« Continuer en démo ») : identifiant fixe quand aucun compte n'a été créé.
 const demoUserId = 'U7Q3K9';
+
+/// Identifiant du compte du passager, ou celui de la démo.
+String get currentUserId => accountStore.account?.id ?? demoUserId;
 
 /// Durée de validité d'un bon.
 const couponValidity = Duration(hours: 24);
@@ -38,7 +42,8 @@ bool isValidCouponCode(String code) {
 
 /// Bon de réduction lié au compte du passager, à une offre et à une course.
 class Coupon {
-  Coupon({required this.promo, required this.tripId, required this.issuedAt, this.userId = demoUserId});
+  Coupon({required this.promo, required this.tripId, required this.issuedAt, String? userId})
+      : userId = userId ?? currentUserId;
   final Promo promo;
   final String tripId;
   final DateTime issuedAt;
