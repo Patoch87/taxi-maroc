@@ -94,7 +94,7 @@ void main() {
     expect((bytes.length - 44) / byteRate, lessThan(1));
   });
 
-  testWidgets('menu chauffeur : interrupteur « Son des demandes »', (tester) async {
+  testWidgets('menu chauffeur : son des demandes activé, annonce vocale en option', (tester) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -104,6 +104,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Son des demandes'), findsOneWidget);
     expect(find.text('Annonce vocale de la destination'), findsOneWidget);
+    // L'annonce vocale est une option : désactivée tant que le chauffeur ne l'active pas.
+    expect(settings.requestVoice, isFalse);
+    await tester.tap(find.text('Annonce vocale de la destination'));
+    await tester.pump();
     expect(settings.requestVoice, isTrue);
     await tester.tap(find.text('Son des demandes'));
     await tester.pump();

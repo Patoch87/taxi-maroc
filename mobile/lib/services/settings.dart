@@ -18,7 +18,7 @@ class AppSettings extends ChangeNotifier {
   bool _lowVision = false;
   bool _voiceAnnounce = false;
   bool _requestSound = true;
-  bool _requestVoice = true;
+  bool _requestVoice = false;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
 
@@ -76,7 +76,7 @@ class AppSettings extends ChangeNotifier {
         _lowVision = false;
         _voiceAnnounce = false;
         _requestSound = true;
-        _requestVoice = true;
+        _requestVoice = false;
         _autoShare = AutoShare.night;
         _contacts.clear();
       });
