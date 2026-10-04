@@ -110,4 +110,26 @@ void main() {
     expect(settings.requestSound, isFalse);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('en conduisant : rappel des feux de détresse à l\'approche du passager, puis il disparaît seul',
+      (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    settings.requestSound = false; // pas de son dans le test
+    await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: const DriverHome()));
+    await tester.pump();
+    await tester.tap(find.text('Passer en ligne'));
+    var shown = false;
+    for (var i = 0; i < 1500 && !shown; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.text('Accepter').evaluate().isNotEmpty) await tester.tap(find.text('Accepter'), warnIfMissed: false);
+      shown = find.byKey(const ValueKey('hazardBanner')).evaluate().isNotEmpty;
+    }
+    expect(shown, isTrue);
+    expect(find.text('Allumez vos feux de détresse'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 7));
+    expect(find.byKey(const ValueKey('hazardBanner')), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

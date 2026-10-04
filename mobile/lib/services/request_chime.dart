@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -38,6 +40,7 @@ class RequestChime {
   final Duration speechDelay;
   Object? _last;
   Object? _speaking;
+  Timer? _speechTimer;
 
   /// À appeler quand une demande s'affiche. Renvoie true si le son a été joué.
   /// [speakText] : texte lu à voix haute si [voice] est activé et que le taxi est vide ([empty]).
@@ -63,7 +66,8 @@ class RequestChime {
     _haptic().catchError((_) {});
     if (voice && empty && speakText != null) {
       _speaking = key;
-      Future.delayed(speechDelay, () {
+      _speechTimer?.cancel();
+      _speechTimer = Timer(speechDelay, () {
         if (identical(_speaking, key) && !sosActive) _speak(speakText).catchError((_) {});
       });
     }
@@ -72,6 +76,7 @@ class RequestChime {
 
   /// Demande acceptée, refusée ou expirée : on arrête de parler.
   void cancel() {
+    _speechTimer?.cancel();
     if (_speaking == null) return;
     _speaking = null;
     _stopSpeech().catchError((_) {});

@@ -265,9 +265,10 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(2500);
     await tap('Passer en ligne');
     await target('Accepter').waitFor({ timeout: 40000 });
-    await tap('Accepter');
-    for (let i = 0; i < 120; i++) {
-      if (await page.locator('[aria-label*="Allumez vos feux"]').count()) break;
+    // Accepte les demandes jusqu'à approcher d'un passager (moins de 50 m) : le rappel s'affiche.
+    for (let i = 0; i < 240; i++) {
+      if (await target('Allumez vos feux').count()) break;
+      if (await target('Accepter').count()) await tap('Accepter').catch(() => {});
       await page.waitForTimeout(500);
     }
     await shot('30-chauffeur-feux-detresse', 300);

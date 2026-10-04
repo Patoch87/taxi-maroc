@@ -140,6 +140,9 @@ class _DriverHomeState extends State<DriverHome> {
 
   double _metersTo(int idx) => idx <= _pos ? 0 : routeLengthM(_route.sublist(_pos, idx + 1));
 
+  /// Distance exacte jusqu'au point [idx] : la partie déjà parcourue du segment en cours est retirée.
+  double _exactMetersTo(int idx) => idx <= _pos ? 0 : max(0, _metersTo(idx) - _carry);
+
   // ---------------------------------------------------------------- Simulation
 
   bool _routing = false;
@@ -190,7 +193,7 @@ class _DriverHomeState extends State<DriverHome> {
     // Le taxi ralentit en approchant d'un passager à prendre (démo : environ 5 s pour les 50 derniers mètres).
     final nextPickup = _shift.riders
         .where((r) => !r.onBoard)
-        .map((r) => _metersTo(r.pickupIdx))
+        .map((r) => _exactMetersTo(r.pickupIdx))
         .fold<double?>(null, (m, v) => m == null || v < m ? v : m);
     _carry += nextPickup != null && nextPickup <= 60 ? 1.0 : _metersPerTick;
     const d = Distance();
@@ -239,7 +242,7 @@ class _DriverHomeState extends State<DriverHome> {
 
     // Bientôt chez le passager : rappel des feux de détresse.
     for (final r in _shift.riders.where((r) => !r.onBoard)) {
-      if (_pickupAlerts.check(r, _metersTo(r.pickupIdx))) _showHazard(r);
+      if (_pickupAlerts.check(r, _exactMetersTo(r.pickupIdx))) _showHazard(r);
     }
 
     // Fin de la route : nouvelle direction si plus personne à déposer.
