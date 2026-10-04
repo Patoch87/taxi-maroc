@@ -780,7 +780,7 @@ class _DriverHomeState extends State<DriverHome> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
             ),
-            Text(distanceText(_metersTo(st.idx)), style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(distanceText(_exactMetersTo(st.idx)), style: const TextStyle(fontWeight: FontWeight.w700)),
           ]),
         ),
     ]);
@@ -876,7 +876,7 @@ class _DriverHomeState extends State<DriverHome> {
             ],
             const SizedBox(height: 12),
             _infoLine(Icons.person_pin_circle, AppColors.moroccoGreen,
-                '${distanceText(_metersTo(r.rider.pickupIdx))} ${s.t('pickupAhead')}'),
+                '${distanceText(_exactMetersTo(r.rider.pickupIdx))} ${s.t('pickupAhead')}'),
             const SizedBox(height: 6),
             _infoLine(Icons.flag, AppColors.ink, r.destination),
             const SizedBox(height: 6),
