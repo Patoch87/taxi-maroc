@@ -47,6 +47,8 @@ const Map<String, String> de = {
   'acceptedFirst': 'hat zuerst angenommen',
   'declined': 'hat abgelehnt',
   'blocked': 'nicht ausgewählt',
+  'answerAccepted': 'angenommen',
+  'answerPending': 'wartet',
   'noTaxi': 'Derzeit kein Taxi auf Ihrer Strecke.',
   'arrivingIn': 'Ihr Taxi kommt in',
   'arrived': 'Ihr Taxi ist da',

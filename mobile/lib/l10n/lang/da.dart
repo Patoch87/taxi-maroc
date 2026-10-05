@@ -47,6 +47,8 @@ const Map<String, String> da = {
   'acceptedFirst': 'accepterede først',
   'declined': 'afviste',
   'blocked': 'ikke valgt',
+  'answerAccepted': 'accepteret',
+  'answerPending': 'venter',
   'noTaxi': 'Ingen taxa på din rute lige nu.',
   'arrivingIn': 'Din taxa er der om',
   'arrived': 'Din taxa er ankommet',

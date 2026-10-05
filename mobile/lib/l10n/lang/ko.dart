@@ -47,6 +47,8 @@ const Map<String, String> ko = {
   'acceptedFirst': '기사가 먼저 수락했습니다',
   'declined': '거절함',
   'blocked': '선택 안 됨',
+  'answerAccepted': '수락함',
+  'answerPending': '대기 중',
   'noTaxi': '지금은 경로 위에 택시가 없습니다.',
   'arrivingIn': '택시 도착까지',
   'arrived': '택시가 도착했습니다',

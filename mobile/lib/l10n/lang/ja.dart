@@ -47,6 +47,8 @@ const Map<String, String> ja = {
   'acceptedFirst': 'が最初に承諾しました',
   'declined': 'が断りました',
   'blocked': '選ばれず',
+  'answerAccepted': '承諾',
+  'answerPending': '待機中',
   'noTaxi': '現在ルート上にタクシーがいません。',
   'arrivingIn': 'タクシー到着まで',
   'arrived': 'タクシーが到着しました',

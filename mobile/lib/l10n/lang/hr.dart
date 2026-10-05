@@ -47,6 +47,8 @@ const Map<String, String> hr = {
   'acceptedFirst': 'prihvatio je prvi',
   'declined': 'odbio je',
   'blocked': 'nije odabran',
+  'answerAccepted': 'prihvatio',
+  'answerPending': 'na čekanju',
   'noTaxi': 'Trenutačno nema taksija na vašoj ruti.',
   'arrivingIn': 'Vaš taksi stiže za',
   'arrived': 'Vaš taksi je stigao',

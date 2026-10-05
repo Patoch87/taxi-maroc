@@ -47,6 +47,8 @@ const Map<String, String> fa = {
   'acceptedFirst': 'اول پذیرفت',
   'declined': 'رد کرد',
   'blocked': 'انتخاب نشد',
+  'answerAccepted': 'پذیرفت',
+  'answerPending': 'در انتظار',
   'noTaxi': 'اکنون هیچ تاکسی‌ای در مسیر شما نیست.',
   'arrivingIn': 'تاکسی شما می‌رسد تا',
   'arrived': 'تاکسی شما رسید',

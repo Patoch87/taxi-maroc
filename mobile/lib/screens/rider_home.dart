@@ -1365,9 +1365,9 @@ class _RiderHomeState extends State<RiderHome> {
 
   Widget _answerChip(_Answer a) {
     final (label, color) = switch (a) {
-      _Answer.waiting => ('…', AppColors.muted),
+      _Answer.waiting => (s.t('answerPending'), AppColors.muted),
       _Answer.declined => (s.t('declined'), AppColors.muted),
-      _Answer.accepted => ('✓ ${s.t('accept')}', AppColors.moroccoGreen),
+      _Answer.accepted => ('✓ ${s.t('answerAccepted')}', AppColors.moroccoGreen),
       _Answer.blocked => (s.t('blocked'), AppColors.muted),
     };
     return Container(

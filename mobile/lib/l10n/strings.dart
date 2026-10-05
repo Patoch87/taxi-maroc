@@ -206,6 +206,8 @@ class S {
     'acceptedFirst': ['a accepté en premier', 'قبل أولا', 'قبل هو اللول', 'accepted first'],
     'declined': ['a refusé', 'رفض', 'رفض', 'declined'],
     'blocked': ['non retenu', 'لم يتم اختياره', 'ما تختارش', 'not selected'],
+    'answerAccepted': ['accepté', 'قبل', 'قبل', 'accepted'],
+    'answerPending': ['en attente', 'في الانتظار', 'كيتسنى', 'waiting'],
     'noTaxi': [
       'Aucun taxi sur votre route pour le moment.',
       'لا يوجد طاكسي في طريقك حاليا.',
