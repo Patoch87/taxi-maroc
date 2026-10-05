@@ -1368,7 +1368,7 @@ class _RiderHomeState extends State<RiderHome> {
       _Answer.waiting => ('…', AppColors.muted),
       _Answer.declined => (s.t('declined'), AppColors.muted),
       _Answer.accepted => ('✓ ${s.t('accept')}', AppColors.moroccoGreen),
-      _Answer.blocked => ('🔒 ${s.t('blocked')}', AppColors.taxiRed),
+      _Answer.blocked => (s.t('blocked'), AppColors.muted),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

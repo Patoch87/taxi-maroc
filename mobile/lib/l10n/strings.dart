@@ -198,14 +198,14 @@ class S {
     'sentTo': ['Demande envoyée à', 'تم إرسال الطلب إلى', 'الطلب تصيفط ل', 'Request sent to'],
     'drivers': ['chauffeurs sur votre route', 'سائقين في طريقك', 'شيفورات فطريقك', 'drivers on your route'],
     'firstWins': [
-      'Le premier qui accepte prend la course, les autres sont bloqués',
-      'أول سائق يقبل يأخذ الرحلة والباقي يتوقف',
-      'اللي قبل اللول هو اللي غادي يجي، والباقين يتبلوكاو',
-      'The first to accept gets the ride, the others are blocked'
+      'Le premier qui accepte prend la course, les autres ne sont pas retenus',
+      'أول سائق يقبل يأخذ الرحلة، ولا يتم اختيار الباقين',
+      'اللي قبل اللول هو اللي غادي يجي، والباقين ما تختاروش',
+      'The first to accept gets the ride, the others are not selected'
     ],
     'acceptedFirst': ['a accepté en premier', 'قبل أولا', 'قبل هو اللول', 'accepted first'],
     'declined': ['a refusé', 'رفض', 'رفض', 'declined'],
-    'blocked': ['bloqué', 'محظور', 'تبلوكا', 'blocked'],
+    'blocked': ['non retenu', 'لم يتم اختياره', 'ما تختارش', 'not selected'],
     'noTaxi': [
       'Aucun taxi sur votre route pour le moment.',
       'لا يوجد طاكسي في طريقك حاليا.',
