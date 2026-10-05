@@ -497,7 +497,7 @@ class _RiderHomeState extends State<RiderHome> {
   }
 
   /// Pour tous les passagers : 3 restaurants près de la destination.
-  bool get _showRestaurants => _dest != null && !_dest!.intercity;
+  bool get _showRestaurants => settings.restaurantSuggestions && _dest != null && !_dest!.intercity;
 
   List<Widget> _restaurantBlock() => _showRestaurants
       ? [
@@ -701,9 +701,7 @@ class _RiderHomeState extends State<RiderHome> {
             ),
             const SizedBox(width: 10),
             FilledButton(
-                style: _rowButton,
-                onPressed: _request,
-                child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}')),
+                style: _rowButton, onPressed: _request, child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}')),
           ]),
         RiderStep.dispatching => Row(key: const ValueKey('mini-dispatch'), children: [
             const SizedBox.square(

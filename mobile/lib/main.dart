@@ -7,6 +7,7 @@ import 'l10n/strings.dart';
 import 'screens/account_screen.dart';
 import 'screens/rider_home.dart';
 import 'services/account.dart';
+import 'services/settings.dart';
 import 'theme.dart';
 
 /// Langue choisie par l'utilisateur (voir S.supported).
@@ -24,13 +25,17 @@ Locale materialLocale(String lang) => switch (lang) {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
-  // Version web : « ?demo=1 » ouvre directement l'accueil en démo (vidéo de démonstration).
-  if (kIsWeb && skipOnboardingFromUrl(Uri.base)) accountStore.skip();
+  if (kIsWeb) applyWebDemoOptions(Uri.base);
   runApp(const TaxiMarocApp());
 }
 
-/// Vrai si l'adresse demande la démo directe (`?demo=1`), sans écran d'inscription.
-bool skipOnboardingFromUrl(Uri uri) => uri.queryParameters['demo'] == '1';
+/// Options de la version web pour la vidéo de démonstration :
+/// « ?demo=1 » ouvre directement l'accueil en démo (sans inscription),
+/// « ?video=1 » masque les suggestions de restaurants.
+void applyWebDemoOptions(Uri uri) {
+  if (uri.queryParameters['demo'] == '1') accountStore.skip();
+  if (uri.queryParameters['video'] == '1') settings.restaurantSuggestions = false;
+}
 
 class TaxiMarocApp extends StatelessWidget {
   const TaxiMarocApp({super.key, this.locate = true, this.onboarding = true});

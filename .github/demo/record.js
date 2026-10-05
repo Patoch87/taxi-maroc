@@ -67,7 +67,7 @@ const VIEW = { width: 390, height: 634 };
   let skipStart = null;
   const skip = (on) => {
     paused = on;
-    if (on) skipStart = now();
+    if (on) skipStart ??= now();
     else if (skipStart !== null) {
       marks.skips.push({ start: skipStart, end: now() });
       skipStart = null;
@@ -75,7 +75,12 @@ const VIEW = { width: 390, height: 634 };
   };
   const wait = (ms) => page.waitForTimeout(ms);
   const target = (label) =>
-    page.locator(`[role][aria-label*="${label}"], flt-semantics[role]:has-text("${label}")`).last();
+    page
+      .locator(
+        `[role][aria-label*="${label}"], input[aria-label*="${label}"], textarea[aria-label*="${label}"], ` +
+          `flt-semantics[role]:has-text("${label}")`,
+      )
+      .last();
   // Texte présent à l'écran (respecte les majuscules) : libellés d'accessibilité, champs, textes.
   const present = (text) =>
     page
@@ -165,190 +170,293 @@ const VIEW = { width: 390, height: 634 };
       await wait(250);
     }
   };
-  const card = (title, line) =>
-    `${url}demo-card.html?title=${encodeURIComponent(title)}&line=${encodeURIComponent(line)}`;
-  const app = `${url}?demo=1`;
+  const card = (q) => `${url}demo-card.html?${new URLSearchParams(q)}`;
+  // Carte de chapitre posée par-dessus l'application (l'état de l'application est conservé).
+  const chapterCard = async (chapter, title, line, ms = 4000) => {
+    caption(null);
+    skip(true);
+    await page.evaluate((src) => {
+      const f = document.createElement('iframe');
+      f.id = 'demo-chapter';
+      f.src = src;
+      f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483647;background:#FFF8E7';
+      document.body.appendChild(f);
+      return new Promise((r) => (f.onload = r));
+    }, card({ chapter, title, line }));
+    await wait(500);
+    skip(false);
+    await wait(ms);
+    skip(true);
+    await page.evaluate(() => document.getElementById('demo-chapter')?.remove());
+    await wait(600);
+    skip(false);
+  };
+  // Saisie dans un champ de texte Flutter : touche le champ puis tape au clavier.
+  const fill = async (label, text, delay = 90) => {
+    await tap(label);
+    await wait(400);
+    await page.keyboard.type(text, { delay });
+    await wait(400);
+    if (!(await present(text))) throw new Error(`saisie « ${text} » dans « ${label} » non prise en compte`);
+  };
+  const ONLY = process.env.DEMO_ONLY; // tests : « signup », « client » ou « driver » seulement
 
-  // 1. Carte de titre
-  await page.goto(card('Taxi Maroc — démo', 'Le taxi marocain, simple et sûr'));
-  await wait(3200);
+  // Carte de titre
+  await page.goto(card({ title: 'Taxi Maroc — démo', line: 'Le taxi marocain, simple et sûr' }));
+  await wait(3500);
 
-  // Chargement de l'application en démo directe (?demo=1) : coupé au montage.
+  // Chargement de l'application (premier lancement, écran d'inscription) : coupé au montage.
   skip(true);
-  await page.goto(app, { waitUntil: 'load' });
+  // « video=1 » : sans suggestions de restaurants ; « demo=1 » : sans inscription (tests d'un seul chapitre).
+  await page.goto(ONLY && ONLY !== 'signup' ? `${url}?demo=1&video=1` : `${url}?video=1`, { waitUntil: 'load' });
   await wait(5000);
   await semantics();
-  await expectScreen('accueil', 'Rechercher une destination', 60);
-  await wait(1000);
-  skip(false);
 
-  // 2. Accueil et recherche
-  caption('Où allez-vous ? Recherche ou voix');
-  await wait(1500);
-  await tap('Rechercher une destination');
-  await wait(1200);
-  await page.keyboard.type('mall', { delay: 120 });
-  await wait(1000);
-  await expectScreen('recherche', 'Morocco Mall');
-  await tap('Morocco Mall');
+  // ---------------------------------------------------------------- Chapitre 1 : inscription
+  if (!ONLY || ONLY === 'signup') {
+    await expectScreen('inscription', 'Prénom', 60);
+    await wait(800);
+    skip(false);
+    await chapterCard('1/3', 'Inscription', 'Créer son compte : nom, téléphone vérifié par SMS, nationalité');
 
-  // 3. Choix du taxi, valises et siège bébé
-  await expectScreen('options', 'Commander');
-  caption('Prix affiché à l\'avance, sans négociation');
-  await wait(2500);
-  await tap('Une valise de plus');
-  await wait(500);
-  await tap('Une valise de plus');
-  await wait(500);
-  await tap('Siège bébé');
-  await wait(1200);
-  await tap('Petit taxi seul');
-  await wait(1500);
-  await tap('Commander');
+    caption('Prénom et nom');
+    await wait(800);
+    await fill('Prénom', 'Claire');
+    await fill('Nom', 'Martin');
+    await wait(600);
 
-  // 4. Envoi aux chauffeurs, puis chauffeur trouvé
-  caption('La demande part aux taxis les plus proches');
-  await wait(4000);
-  await expectScreen('chauffeur', 'Accélérer', 40);
-  caption('Chauffeur identifié, trajet traçable');
-  await wait(4000);
+    caption('Indicatif du pays, avec son drapeau');
+    await tapFor('liste des indicatifs', 'Indicatif', 'Rechercher un pays ou un indicatif', 12);
+    await wait(1200);
+    await fill('Rechercher un pays ou un indicatif', 'maroc', 120);
+    await expectScreen('indicatif Maroc', '+212', 10);
+    await wait(1000);
+    await tapFor("choix de l'indicatif", 'Maroc', 'Numéro de téléphone', 12);
+    await expectScreen('indicatif choisi', 'Indicatif : Maroc +212', 5);
+    await wait(800);
 
-  // 5. Panneau à glisser : la carte
-  const handle = target('Afficher ou masquer les détails');
-  const box = await handle.boundingBox({ timeout: 10000 });
-  if (!box) throw new Error('étape « panneau » : poignée introuvable');
-  caption('Glisser le panneau pour voir la carte');
-  const x = box.x + box.width / 2,
-    y = box.y + box.height / 2;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  await page.mouse.move(x, Math.min(VIEW.height - 40, y + 260), { steps: 15 });
-  await page.mouse.up();
-  await wait(3500);
-  await tap('Afficher ou masquer les détails');
-  await wait(1500);
+    caption('Téléphone vérifié par code SMS');
+    await fill('Numéro de téléphone', '612345678');
+    await tapFor('envoi du code', 'Recevoir le code par SMS', 'Code reçu par SMS', 10);
+    await wait(1200);
+    await fill('Code reçu par SMS', '1234', 220);
+    await expectScreen('numéro vérifié', 'Numéro vérifié', 10);
+    await wait(1500);
 
-  // Démo ×4 jusqu'à l'arrivée du taxi (attente coupée).
-  caption('Démo accélérée ×4');
-  await fast();
-  await wait(1500);
-  skip(true);
-  await expectScreen('arrivée du taxi', 'Je suis dans le taxi', 300);
-  skip(false);
-  caption('Le taxi est arrivé');
-  await wait(2000);
-  await tap('Je suis dans le taxi');
-  await wait(1500);
+    caption('Nationalité choisie dans la liste');
+    await tapFor('liste des nationalités', 'Nationalité', 'Rechercher un pays', 12);
+    await wait(1000);
+    await fill('Rechercher un pays', 'fran', 140);
+    await expectScreen('nationalité France', 'France', 10);
+    await wait(900);
+    await tapFor('choix de la nationalité', 'France', 'Nationalité : France', 12);
+    await wait(1800);
 
-  // 6. À bord : offre et bon avec QR code
-  await scrollPanel(300, 4);
-  await expectScreen('offre', 'nouvelle collection', 30);
-  caption('Offres le long du trajet, avec QR code');
-  await wait(1500);
-  await tap('nouvelle collection');
-  await expectScreen('bon QR', 'TM-', 15);
-  await wait(4500);
-  await page.keyboard.press('Escape');
-  await wait(1000);
-  await scrollPanel(-300, 4);
-  await fast();
-
-  // Trajet jusqu'au Morocco Mall : coupé au montage.
-  caption(null);
-  skip(true);
-  await expectScreen('arrivée', '5 étoiles sur 5', 1200);
-  await wait(1000);
-  skip(false);
-
-  // 7. Arrivée : drapeau, note, avis, pourboire
-  caption('Noter, commenter, pourboire par carte');
-  await wait(2000);
-  await tap('5 étoiles sur 5');
-  await wait(700);
-  await tap('Ponctuel');
-  await wait(400);
-  await tap('Conduite prudente');
-  await wait(400);
-  await tap('10 DH');
-  await wait(2500);
-
-  // 8. Restaurant : confirmation du nouveau prix
-  await scrollPanel(300, 3);
-  await expectScreen('restaurant', 'Y aller en taxi', 15);
-  await wait(800);
-  await tap('Y aller en taxi');
-  await expectScreen('confirmation restaurant', 'Annuler', 10);
-  caption('Restaurant proche : nouveau prix confirmé avant');
-  await wait(4000);
-  await tap('Annuler');
-  await wait(800);
-  caption('Noter, commenter, pourboire par carte');
-  await scrollPanel(-300, 4);
-  await tap('Envoyer');
-  await expectScreen('paiement', 'Payer', 10);
-  await wait(1500);
-  await tap('Payer');
-  await expectScreen('paiement accepté', 'OK', 15);
-  await wait(2000);
-  await tap('OK');
-  await expectScreen('retour accueil', 'Rechercher une destination', 30);
-  await wait(1000);
-
-  // 9. Langues
-  await tapFor('choix de la langue', 'Langue : Français', 'العربية', 12);
-  caption('16 langues');
-  await wait(1500);
-  await tap('العربية');
-  await wait(2500);
-  await semantics();
-  await expectScreen('arabe', 'اللغة', 20);
-  await wait(2000);
-  await tapFor('choix de la langue (arabe)', 'اللغة', 'Français', 12);
-  await wait(1000);
-  await tap('Français');
-  await wait(2000);
-  await semantics();
-  await expectScreen('retour en français', 'Mode senior', 20);
-
-  // 10. Mode senior
-  await wait(1500);
-  await semantics();
-  caption('Mode senior simplifié');
-  await tapFor('mode senior', 'Mode senior', 'Revenir au mode normal', 15);
-  await wait(3500);
-  await tap('Revenir au mode normal');
-  await expectScreen('sortie du mode senior', 'Rechercher une destination', 15);
-  caption(null);
-  await wait(1000);
-
-  // 11. Mode chauffeur
-  caption(null);
-  await tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
-  await tapFor('mode chauffeur', 'Mode chauffeur', 'Passer en ligne', 15);
-  caption('Mode chauffeur : passagers sur le chemin, feux de détresse');
-  await wait(2000);
-  await tapFor('en ligne', 'Passer en ligne', 'En ligne', 15);
-  skip(true);
-  await expectScreen('demande de course', 'Accepter', 90);
-  skip(false);
-  await wait(3000);
-  await tap('Accepter');
-  await wait(2000);
-  // Approche du passager : attente coupée, puis rappel des feux de détresse.
-  skip(true);
-  let hazard = false;
-  for (let i = 0; i < 600 && !hazard; i++) {
-    hazard = await present('Allumez vos feux');
-    if (!hazard && (await target('Accepter').count())) await tap('Accepter').catch(() => {});
-    if (!hazard) await wait(500);
+    caption('Compte créé en quelques secondes');
+    await tapFor('création du compte', 'Créer un compte', 'Rechercher une destination', 15);
+    await wait(2500);
+  } else {
+    await expectScreen('accueil', 'Rechercher une destination', 60);
+    skip(false);
   }
-  skip(false);
-  await expectScreen('feux de détresse', 'Allumez vos feux', 5);
-  await wait(4500);
 
-  // 12. Carte de fin
+  // ---------------------------------------------------------------- Chapitre 2 : expérience client
+  if (!ONLY || ONLY === 'client') {
+    await chapterCard('2/3', 'Expérience client', 'Le passager commande, voit son chauffeur et paie le prix affiché');
+
+    caption('Où allez-vous ? Recherche ou voix');
+    await wait(1200);
+    await tap('Rechercher une destination');
+    await wait(1200);
+    await page.keyboard.type('mall', { delay: 120 });
+    await expectScreen('recherche', 'Morocco Mall');
+    await wait(800);
+    await tap('Morocco Mall');
+
+    await expectScreen('options', 'Commander');
+    caption("Prix affiché à l'avance, sans négociation");
+    await wait(3000);
+    caption('Valises et siège bébé en option');
+    await tap('Une valise de plus');
+    await wait(600);
+    await tap('Une valise de plus');
+    await wait(600);
+    await tap('Siège bébé');
+    await wait(1200);
+    await tap('Petit taxi seul');
+    await wait(1500);
+    await tap('Commander');
+
+    caption("Envoyée aux taxis proches : le premier qui accepte l'emporte");
+    await expectScreen('envoi aux chauffeurs', 'Demande envoyée', 15);
+    await expectScreen('chauffeur trouvé', 'a accepté en premier', 30);
+    await wait(2500);
+    await expectScreen('chauffeur', 'Accélérer', 40);
+    caption('Chauffeur identifié : photo, plaque, langues');
+    await wait(4500);
+
+    const handle = target('Afficher ou masquer les détails');
+    const box = await handle.boundingBox({ timeout: 10000 });
+    if (!box) throw new Error('étape « panneau » : poignée introuvable');
+    caption('Panneau glissé : la carte, le partage et le SOS');
+    const x = box.x + box.width / 2,
+      y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, Math.min(VIEW.height - 40, y + 300), { steps: 15 });
+    await page.mouse.up();
+    await expectScreen('carte', 'SOS', 10);
+    await wait(3500);
+    await tap('Afficher ou masquer les détails');
+    await wait(1200);
+
+    // Attente du taxi en ×4 : coupée au montage.
+    await fast();
+    skip(true);
+    await expectScreen('arrivée du taxi', 'Je suis dans le taxi', 300);
+    skip(false);
+    caption('Le taxi est arrivé');
+    await wait(2500);
+    // Montée à bord : l'offre affichée pendant la course est fermée hors caméra.
+    skip(true);
+    await tap('Je suis dans le taxi');
+    for (let i = 0; i < 20 && !(await present('Masquer la publicité')); i++) await wait(500);
+    if (await present('Masquer la publicité')) await tap('Masquer la publicité');
+    await wait(800);
+    if (await present('Masquer la publicité')) throw new Error('étape « à bord » : offre toujours affichée');
+    await fast();
+    // Panneau replié : la carte et le trajet.
+    await tap('Afficher ou masquer les détails');
+    await wait(1500);
+    if (await present('Masquer la publicité')) throw new Error('étape « à bord » : offre affichée sur la carte');
+    skip(false);
+    caption('À bord, démo accélérée ×4');
+    await wait(4000);
+
+    // Trajet jusqu'au Morocco Mall : coupé au montage.
+    caption(null);
+    skip(true);
+    await tap('Afficher ou masquer les détails');
+    await expectScreen('arrivée', '5 étoiles sur 5', 1200);
+    await wait(1000);
+    skip(false);
+
+    caption('Arrivé : on note le chauffeur');
+    await wait(1500);
+    await tap('5 étoiles sur 5');
+    await wait(700);
+    await tap('Ponctuel');
+    await wait(400);
+    await tap('Conduite prudente');
+    await wait(800);
+    caption('Un commentaire, et le pourboire par carte');
+    await fill('Un commentaire', 'Très bon chauffeur, merci !', 60);
+    await wait(500);
+    await tap('10 DH');
+    await wait(1500);
+    await tapFor('paiement', 'Envoyer', 'Payer', 10);
+    await wait(1500);
+    await tapFor('paiement accepté', 'Payer', 'Merci', 15);
+    caption('Avis envoyé, merci !');
+    await wait(2500);
+    await tap('OK');
+    await expectScreen('retour accueil', 'Rechercher une destination', 30);
+    await wait(800);
+  }
+
+  // ---------------------------------------------------------------- Chapitre 3 : expérience chauffeur
+  if (!ONLY || ONLY === 'driver') {
+    caption(null);
+    skip(true);
+    await tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
+    await tapFor('mode chauffeur', 'Mode chauffeur', 'Passer en ligne', 15);
+    await wait(1500);
+    skip(false);
+    await chapterCard(
+      '3/3',
+      'Expérience chauffeur',
+      'Le chauffeur reçoit les courses sur son chemin, en toute sécurité',
+    );
+
+    caption('Hors ligne : le chauffeur choisit quand il travaille');
+    await expectScreen('hors ligne', 'Hors ligne', 5);
+    await wait(3000);
+    await tapFor('en ligne', 'Passer en ligne', 'En ligne', 15);
+    caption('En ligne : les courses arrivent sur son chemin');
+    await wait(2500);
+    // Montre un écran tant que « still » reste vrai (au plus « ms ») ; renvoie la durée montrée (s).
+    const hold = async (ms, still) => {
+      const t = now();
+      while (now() - t < ms / 1000 && (await still())) await wait(150);
+      return now() - t;
+    };
+    // Coupe après coup le passage montré depuis « from » (écran disparu trop tôt) : on recommence.
+    const cutSince = (from) => {
+      caption(null);
+      marks.skips.push({ start: from, end: now() });
+    };
+
+    // Demande de course : montrée 3 s puis acceptée ; si elle disparaît avant (prise par un autre
+    // chauffeur, expirée), le passage est coupé et on attend la suivante.
+    let accepted = false;
+    for (let attempt = 0; attempt < 6 && !accepted; attempt++) {
+      skip(true);
+      await expectScreen('demande de course', 'Accepter', 90);
+      skip(false);
+      const from = now();
+      caption('Nouvelle demande : son doux, annonce en arabe (option)');
+      await hold(3000, () => present('Accepter'));
+      if (await present('Accepter')) {
+        await tap('Accepter');
+        accepted = true;
+      } else cutSince(from);
+    }
+    if (!accepted) throw new Error('étape « demande de course » : aucune demande acceptée');
+    await expectScreen('prochains arrêts', 'Prochains arrêts', 10);
+    await wait(800);
+    caption('Passagers à bord et prochains arrêts');
+    await hold(3000, async () => !(await present('Accepter')));
+    caption(null);
+
+    // Approche du passager : attente coupée ; les autres demandes sont acceptées. Le rappel des feux
+    // de détresse est montré au moins 2,5 s sans demande par-dessus, sinon on attend le suivant.
+    let hazardShown = false;
+    for (let attempt = 0; attempt < 8 && !hazardShown; attempt++) {
+      skip(true);
+      let hazard = false;
+      for (let i = 0; i < 600 && !hazard; i++) {
+        hazard = (await present('Allumez vos feux')) && !(await present('Accepter'));
+        if (!hazard && (await present('Accepter'))) await tap('Accepter').catch(() => {});
+        if (!hazard) await wait(300);
+      }
+      if (!hazard) break;
+      skip(false);
+      const from = now();
+      caption('À 50 m du passager : feux de détresse');
+      const shown = await hold(4000, async () => (await present('Allumez vos feux')) && !(await present('Accepter')));
+      if (shown >= 2.5) hazardShown = true;
+      else cutSince(from);
+    }
+    if (!hazardShown) throw new Error('étape « feux de détresse » : rappel non montré');
+    skip(true);
+    if (await present('Allumez vos feux')) await tap('OK').catch(() => {});
+    // Trajet jusqu'à la dépose : coupé.
+    caption(null);
+    let dropped = false;
+    for (let i = 0; i < 600 && !dropped; i++) {
+      dropped = await present('Passager déposé');
+      if (!dropped && (await present('Accepter'))) await tap('Accepter').catch(() => {});
+      if (!dropped) await wait(250);
+    }
+    skip(false);
+    await expectScreen('dépose', 'Passager déposé', 2);
+    caption('Course terminée : gains et pourboires du jour');
+    await wait(4500);
+  }
+
+  // Carte de fin
   caption(null);
-  await page.goto(card('Taxi Maroc', END_LINE));
+  await page.goto(card({ title: 'Taxi Maroc', line: END_LINE }));
   await wait(3500);
   marks.duration = now();
 

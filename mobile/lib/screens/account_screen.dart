@@ -319,6 +319,8 @@ class _AccountScreenState extends State<AccountScreen> {
                   button: true,
                   label: '${s.t('dialCode')} : ${_dial.name(s.lang)} ${_dial.code}',
                   excludeSemantics: true,
+                  // Action d'accessibilité (lecteur d'écran, version web) : excludeSemantics retire celle du bouton.
+                  onTap: _pickDial,
                   child: Material(
                     color: Colors.white,
                     shape: RoundedRectangleBorder(
@@ -401,6 +403,7 @@ class _AccountScreenState extends State<AccountScreen> {
               button: true,
               label: '${s.t('nationality')} : ${_country?.name(s.lang) ?? s.t('chooseNationality')}',
               excludeSemantics: true,
+              onTap: _pickCountry,
               child: Material(
                 color: Colors.white,
                 shape: RoundedRectangleBorder(

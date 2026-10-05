@@ -19,6 +19,7 @@ class AppSettings extends ChangeNotifier {
   bool _voiceAnnounce = false;
   bool _requestSound = true;
   bool _requestVoice = false;
+  bool _restaurantSuggestions = true;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
 
@@ -45,6 +46,11 @@ class AppSettings extends ChangeNotifier {
   /// Chauffeur : destination lue en arabe quand le taxi est vide (activé par défaut).
   bool get requestVoice => _requestVoice;
   set requestVoice(bool v) => _set(() => _requestVoice = v);
+
+  /// Restaurants proposés près de la destination (toujours affichés ; désactivés seulement pour la
+  /// vidéo de démonstration, version web « ?video=1 »).
+  bool get restaurantSuggestions => _restaurantSuggestions;
+  set restaurantSuggestions(bool v) => _set(() => _restaurantSuggestions = v);
 
   AutoShare get autoShare => _autoShare;
   set autoShare(AutoShare v) => _set(() => _autoShare = v);
@@ -77,6 +83,7 @@ class AppSettings extends ChangeNotifier {
         _voiceAnnounce = false;
         _requestSound = true;
         _requestVoice = false;
+        _restaurantSuggestions = true;
         _autoShare = AutoShare.night;
         _contacts.clear();
       });

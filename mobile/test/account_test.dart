@@ -150,9 +150,15 @@ void main() {
     langNotifier.value = 'fr';
   });
 
-  test('« ?demo=1 » ouvre la démo sans inscription (version web)', () {
-    expect(skipOnboardingFromUrl(Uri.parse('http://localhost:8765/?demo=1')), isTrue);
-    expect(skipOnboardingFromUrl(Uri.parse('http://localhost:8765/')), isFalse);
-    expect(skipOnboardingFromUrl(Uri.parse('http://localhost:8765/?demo=0')), isFalse);
+  test('version web : « ?demo=1 » sans inscription, « ?video=1 » sans restaurants', () {
+    applyWebDemoOptions(Uri.parse('http://localhost:8765/'));
+    expect(accountStore.skipped, isFalse);
+    expect(settings.restaurantSuggestions, isTrue);
+    applyWebDemoOptions(Uri.parse('http://localhost:8765/?demo=0&video=0'));
+    expect(accountStore.skipped, isFalse);
+    expect(settings.restaurantSuggestions, isTrue);
+    applyWebDemoOptions(Uri.parse('http://localhost:8765/?demo=1&video=1'));
+    expect(accountStore.skipped, isTrue);
+    expect(settings.restaurantSuggestions, isFalse);
   });
 }
