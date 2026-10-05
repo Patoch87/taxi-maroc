@@ -14,8 +14,11 @@ const END_LINE = 'Casablanca 2026 → Mondial 2030';
 // la légende (110 px) est ajoutée dessous.
 const VIEW = { width: 390, height: 634 };
 
+// Page en cours, pour la capture d'écran en cas d'échec.
+let failPage = null;
+const [url, out] = process.argv.slice(2);
+
 (async () => {
-  const [url, out] = process.argv.slice(2);
   const framesDir = path.join(out, 'frames');
   fs.mkdirSync(framesDir, { recursive: true });
   const browser = await chromium.launch();
@@ -28,6 +31,7 @@ const VIEW = { width: 390, height: 634 };
   // Réseau particulier (tests locaux derrière un proxy) : module facultatif.
   if (process.env.DEMO_NET) await require(path.resolve(process.env.DEMO_NET))(context);
   const page = await context.newPage();
+  failPage = page;
   const t0 = Date.now() / 1000;
   const now = () => Date.now() / 1000 - t0;
   const marks = { frames: [], captions: [], skips: [] };
@@ -465,7 +469,17 @@ const VIEW = { width: 390, height: 634 };
   fs.writeFileSync(path.join(out, 'marks.json'), JSON.stringify(marks, null, 2));
   await browser.close();
   console.log('enregistrement :', marks.duration.toFixed(1), 's,', marks.frames.length, 'images');
-})().catch((e) => {
-  console.error(e.message || e);
+})().catch(async (e) => {
+  const msg = String(e.message || e)
+    .split('\n')[0]
+    .slice(0, 1500);
+  // Annotation GitHub Actions (lisible sans les journaux) + capture de l'écran fautif.
+  console.log(`::error title=Vidéo de démo::${msg}`);
+  try {
+    if (failPage && !fs.existsSync(path.join(out, 'echec.png')))
+      await failPage.screenshot({ path: path.join(out, 'echec.png'), timeout: 5000 });
+  } catch (_) {
+    // pas de capture possible
+  }
   process.exit(1);
 });
