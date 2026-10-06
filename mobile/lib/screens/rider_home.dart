@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/strings.dart';
 import '../main.dart';
+import '../services/navigation_apps.dart';
 import '../services/location.dart';
 import '../services/places.dart';
 import '../services/promos.dart';
@@ -1453,6 +1454,16 @@ class _RiderHomeState extends State<RiderHome> {
             Text(dh(_selected!.priceMad), style: const TextStyle(fontWeight: FontWeight.w900)),
           ]),
         ),
+        if (_dest != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const ValueKey('seeInGoogleMaps'),
+              onPressed: () => urlOpener(googleMapsPlaceUri(LatLng(_dest!.lat, _dest!.lng)), appOnly: false),
+              icon: const Icon(Icons.map_outlined, size: 18),
+              label: Text(s.t('seeInGoogleMaps')),
+            ),
+          ),
         if (_step == RiderStep.arrived) ...[
           const SizedBox(height: 10),
           FilledButton(onPressed: _startTrip, child: Text(s.t('startTrip'))),

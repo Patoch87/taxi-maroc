@@ -681,6 +681,18 @@ class S {
       'قراية الوجهة بالصوت',
       'Spoken destination'
     ],
+    'navigate': ['Naviguer', 'التنقل', 'الطريق', 'Navigate'],
+    'navigateTo': ['Naviguer vers', 'التوجه إلى', 'سير عند', 'Navigate to'],
+    'navStayInApp': ['Rester dans l\'application', 'البقاء في التطبيق', 'بقى فالتطبيق', 'Stay in the app'],
+    'navStayInAppDesc': ['Itinéraire sur la carte, sans quitter Taxi Maroc', 'المسار على الخريطة دون مغادرة التطبيق', 'الطريق فالخريطة بلا ما تخرج', 'Route on the map, without leaving Taxi Maroc'],
+    'navOpenIn': ['Ouvrir dans', 'فتح في', 'حل ف', 'Open in'],
+    'navAsk': ['Demander à chaque fois', 'السؤال في كل مرة', 'سولني كل مرة', 'Ask every time'],
+    'navSetting': ['Navigation vers les passagers', 'التنقل نحو الركاب', 'الطريق للزبناء', 'Navigation to passengers'],
+    'navRemember': ['Toujours utiliser ce choix', 'استخدام هذا الاختيار دائما', 'ديما هاد الاختيار', 'Always use this choice'],
+    'navWebFallback': ['Application non installée : itinéraire ouvert dans le navigateur', 'التطبيق غير مثبت: تم فتح المسار في المتصفح', 'التطبيق ماكاينش: تحل الطريق فالمتصفح', 'App not installed: route opened in the browser'],
+    'navFailed': ['Impossible d\'ouvrir la navigation', 'تعذر فتح التنقل', 'ما قدرناش نحلو الطريق', 'Could not open navigation'],
+    'navGuiding': ['Guidage vers', 'التوجيه نحو', 'الطريق عند', 'Guiding to'],
+    'seeInGoogleMaps': ['Voir dans Google Maps', 'عرض في Google Maps', 'شوف ف Google Maps', 'View in Google Maps'],
     'requestVoiceDesc': [
       'Lue en arabe, seulement quand le taxi est vide',
       'تقرأ بالعربية، فقط عندما تكون سيارة الأجرة فارغة',

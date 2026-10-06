@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'navigation_apps.dart';
 
 /// Proche de confiance : appelé en un geste depuis la sécurité, et prévenu des trajets.
 class TrustedContact {
@@ -20,6 +21,7 @@ class AppSettings extends ChangeNotifier {
   bool _requestSound = true;
   bool _requestVoice = false;
   bool _restaurantSuggestions = true;
+  NavApp _navApp = NavApp.ask;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
 
@@ -51,6 +53,10 @@ class AppSettings extends ChangeNotifier {
   /// vidéo de démonstration, version web « ?video=1 »).
   bool get restaurantSuggestions => _restaurantSuggestions;
   set restaurantSuggestions(bool v) => _set(() => _restaurantSuggestions = v);
+
+  /// Chauffeur : application d'itinéraire vers les passagers (« Demander » à chaque fois par défaut).
+  NavApp get navApp => _navApp;
+  set navApp(NavApp v) => _set(() => _navApp = v);
 
   AutoShare get autoShare => _autoShare;
   set autoShare(AutoShare v) => _set(() => _autoShare = v);
@@ -84,6 +90,7 @@ class AppSettings extends ChangeNotifier {
         _requestSound = true;
         _requestVoice = false;
         _restaurantSuggestions = true;
+        _navApp = NavApp.ask;
         _autoShare = AutoShare.night;
         _contacts.clear();
       });

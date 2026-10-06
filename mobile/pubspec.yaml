@@ -21,6 +21,7 @@ dependencies:
   geolocator: ^14.1.1
   qr_flutter: ^4.1.0
   audioplayers: ^6.8.1
+  google_maps_flutter: ^2.18.2
 
 dev_dependencies:
   flutter_test:

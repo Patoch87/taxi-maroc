@@ -45,7 +45,10 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       # APK en mode démo (sans API_URL) : installable directement sur un téléphone Android.
-      - run: flutter build apk --release
+      # Clé Google Maps facultative (secret MAPS_API_KEY) : sans elle, l'APK garde la carte OpenStreetMap.
+      - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
       - uses: actions/upload-artifact@v4
         with:

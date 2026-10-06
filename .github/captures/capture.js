@@ -274,6 +274,22 @@ const { chromium } = require('playwright');
     await shot('30-chauffeur-feux-detresse', 300);
   });
 
+  // Chauffeur : « Naviguer vers » le prochain passager, rester dans l'application ou ouvrir Waze.
+  await step('naviguer', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Mode chauffeur');
+    await page.waitForTimeout(2500);
+    await tap('Passer en ligne');
+    await target('Accepter').waitFor({ timeout: 40000 });
+    await tap('Accepter');
+    await page.waitForTimeout(1500);
+    await tap('Naviguer vers');
+    await target('Ouvrir dans Waze').waitFor({ timeout: 10000 });
+    await shot('31-chauffeur-naviguer-waze-google', 800);
+  });
+
   // Chauffeur de taxi électrique : batterie et bornes de recharge
   await step('bornes', async () => {
     await open();

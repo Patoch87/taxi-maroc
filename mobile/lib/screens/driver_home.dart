@@ -4,18 +4,21 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gm;
 import 'package:latlong2/latlong.dart';
 
 import '../main.dart';
 import '../services/demo.dart';
 import '../services/driver_shift.dart';
 import '../services/location.dart';
+import '../services/navigation_apps.dart';
 import '../services/places.dart';
 import '../services/rides.dart';
 import '../services/routing.dart';
 import '../services/request_chime.dart';
 import '../services/settings.dart';
 import '../theme.dart';
+import '../widgets/google_driver_map.dart';
 import '../widgets/map_parts.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
@@ -60,6 +63,11 @@ class _DriverHomeState extends State<DriverHome> {
   final _shift = DriverShift();
   bool _mapReady = false;
   bool _follow = true;
+  gm.GoogleMapController? _gmap;
+  DateTime _programmaticMoveAt = DateTime(0);
+
+  /// Guidage dans l'application vers ce passager (prise en charge ou dépose), sinon rien.
+  ShiftRider? _guideRider;
 
   bool _online = false;
   TaxiKind _kind = TaxiKind.petit;
@@ -111,7 +119,7 @@ class _DriverHomeState extends State<DriverHome> {
     currentLatLng().then((p) {
       if (!mounted) return;
       setState(() => _me = p);
-      if (_mapReady) _map.move(p, 16);
+      _moveCamera(p, 16);
     });
   }
 
@@ -137,6 +145,20 @@ class _DriverHomeState extends State<DriverHome> {
 
   /// Le taxi est placé dans le haut de l'écran pour rester visible au-dessus des panneaux.
   static const _followOffset = Offset(0, -170);
+
+  /// Centre la carte (OpenStreetMap ou Google Maps) sur [p] ; [zoom] nul garde le zoom actuel.
+  void _moveCamera(LatLng p, double? zoom) {
+    if (useGoogleMaps) {
+      final c = _gmap;
+      if (c == null) return;
+      _programmaticMoveAt = DateTime.now();
+      c.moveCamera(zoom == null
+          ? gm.CameraUpdate.newLatLng(toGoogle(p))
+          : gm.CameraUpdate.newLatLngZoom(toGoogle(p), zoom));
+      return;
+    }
+    if (_mapReady) _map.move(p, zoom ?? _map.camera.zoom, offset: _followOffset);
+  }
 
   double _metersTo(int idx) => idx <= _pos ? 0 : routeLengthM(_route.sublist(_pos, idx + 1));
 
@@ -216,7 +238,7 @@ class _DriverHomeState extends State<DriverHome> {
       for (final r in events.dropped) {
         _toast(Icons.check_circle, '${s.t('riderDropped')} : ${r.name} · +${dh(r.fare)}');
       }
-      if (_follow && _mapReady) _map.move(_taxi, _map.camera.zoom, offset: _followOffset);
+      if (_follow) _moveCamera(_taxi, null);
     }
 
     // Un autre chauffeur a accepté en premier : la demande est bloquée, puis disparaît.
@@ -459,6 +481,31 @@ class _DriverHomeState extends State<DriverHome> {
   Widget _buildMap() {
     final pending = _shift.riders.where((r) => !r.onBoard);
     final req = _request?.rider;
+    if (useGoogleMaps) {
+      return GoogleDriverMap(
+        taxi: _taxi,
+        bearingDeg: _bearing() * 180 / pi,
+        route: _route.length > 1 && _pos < _route.length - 1 ? _route.sublist(_pos) : const [],
+        pins: [
+          for (final r in _shift.riders)
+            GooglePin('drop-${r.name}', _route[min(r.dropIdx, _route.length - 1)], '${s.t('dropAt')} ${r.name}',
+                gm.BitmapDescriptor.hueRed),
+          for (final r in pending)
+            GooglePin('pick-${r.name}', _route[r.pickupIdx], '${s.t('pickUp')} ${r.name}', gm.BitmapDescriptor.hueGreen),
+          if (req != null)
+            GooglePin('req-${req.name}', _route[req.pickupIdx], req.name, gm.BitmapDescriptor.hueYellow),
+        ],
+        onCreated: (c) {
+          _gmap = c;
+          _moveCamera(_taxi, 16);
+        },
+        onUserMove: () {
+          // Google Maps ne distingue pas les gestes : on ignore les déplacements faits par l'application.
+          if (DateTime.now().difference(_programmaticMoveAt) < const Duration(milliseconds: 400)) return;
+          if (_follow) setState(() => _follow = false);
+        },
+      );
+    }
     return FlutterMap(
       mapController: _map,
       options: MapOptions(
@@ -590,7 +637,7 @@ class _DriverHomeState extends State<DriverHome> {
               icon: _follow ? Icons.navigation : Icons.navigation_outlined,
               onTap: () {
                 setState(() => _follow = true);
-                if (_mapReady) _map.move(_taxi, 16, offset: _followOffset);
+                _moveCamera(_taxi, 16);
               },
             ),
           ]),
@@ -783,7 +830,182 @@ class _DriverHomeState extends State<DriverHome> {
             Text(distanceText(_exactMetersTo(st.idx)), style: const TextStyle(fontWeight: FontWeight.w700)),
           ]),
         ),
+      const SizedBox(height: 6),
+      OutlinedButton.icon(
+        key: const ValueKey('navigate'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF1A73E8),
+          side: const BorderSide(color: Color(0xFF1A73E8), width: 1.5),
+        ),
+        onPressed: () => _navigate(stops.first),
+        icon: const Icon(Icons.navigation),
+        label: Text('${s.t('navigateTo')} ${stops.first.rider.name}', overflow: TextOverflow.ellipsis),
+      ),
     ]);
+  }
+
+  // ---------------------------------------------------------------- Navigation
+
+  String _stopLabel(({bool pickup, ShiftRider rider, int idx}) st) =>
+      '${st.pickup ? s.t('pickUp') : s.t('dropAt')} ${st.rider.name}';
+
+  /// Guidage vers l'arrêt : selon le réglage du chauffeur, ou en lui demandant.
+  Future<void> _navigate(({bool pickup, ShiftRider rider, int idx}) st) async {
+    var app = settings.navApp;
+    if (app == NavApp.ask) {
+      final picked = await _pickNavApp(st);
+      if (picked == null || !mounted) return;
+      app = picked;
+    }
+    if (app == NavApp.inApp) {
+      setState(() {
+        _guideRider = st.rider;
+        _follow = true;
+      });
+      _moveCamera(_taxi, 17);
+      return;
+    }
+    final result = await openNavigation(app, _route[min(st.idx, _route.length - 1)]);
+    if (!mounted) return;
+    if (result == NavOpenResult.web) _toast(Icons.public, s.t('navWebFallback'));
+    if (result == NavOpenResult.failed) _toast(Icons.error_outline, s.t('navFailed'));
+  }
+
+  /// Choix : rester dans l'application, ouvrir Waze, ou Google Maps ; « toujours » l'enregistre.
+  Future<NavApp?> _pickNavApp(({bool pickup, ShiftRider rider, int idx}) st) {
+    var remember = false;
+    return showModalBottomSheet<NavApp>(
+      context: context,
+      backgroundColor: AppColors.sand,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          void pick(NavApp a) {
+            if (remember) settings.navApp = a;
+            Navigator.pop(ctx, a);
+          }
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('${s.t('navigateTo')} : ${_stopLabel(st)}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 14),
+                _navChoice(
+                  key: const ValueKey('nav-inApp'),
+                  badge: _navBadge('TM', AppColors.moroccoGreen),
+                  title: s.t('navStayInApp'),
+                  subtitle: s.t('navStayInAppDesc'),
+                  onTap: () => pick(NavApp.inApp),
+                ),
+                _navChoice(
+                  key: const ValueKey('nav-waze'),
+                  badge: _navBadge('W', const Color(0xFF33CCFF)),
+                  title: '${s.t('navOpenIn')} Waze',
+                  onTap: () => pick(NavApp.waze),
+                ),
+                _navChoice(
+                  key: const ValueKey('nav-google'),
+                  badge: _navBadge('G', const Color(0xFF1A73E8)),
+                  title: '${s.t('navOpenIn')} Google Maps',
+                  small: true,
+                  onTap: () => pick(NavApp.googleMaps),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: remember,
+                  onChanged: (v) => setSheet(() => remember = v ?? false),
+                  title: Text(s.t('navRemember')),
+                ),
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Pastille dessinée (pas de logo de marque).
+  Widget _navBadge(String text, Color color) => Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+        child: Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
+      );
+
+  Widget _navChoice({
+    required Key key,
+    required Widget badge,
+    required String title,
+    String? subtitle,
+    bool small = false,
+    required VoidCallback onTap,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            key: key,
+            borderRadius: BorderRadius.circular(14),
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.all(small ? 10 : 14),
+              child: Row(children: [
+                badge,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(title, style: TextStyle(fontSize: small ? 15 : 17, fontWeight: FontWeight.w800)),
+                    if (subtitle != null)
+                      Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                  ]),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.muted),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+  /// Bandeau du guidage dans l'application : prochain arrêt de ce passager et distance.
+  Widget _guideBanner() {
+    final st = _shift.nextStops().where((x) => identical(x.rider, _guideRider)).firstOrNull;
+    if (st == null) return const SizedBox.shrink();
+    return Container(
+      key: const ValueKey('guideBanner'),
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      padding: const EdgeInsets.fromLTRB(16, 10, 6, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A73E8),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+      ),
+      child: Row(children: [
+        const Icon(Icons.navigation, color: Colors.white, size: 30),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${s.t('navGuiding')} : ${_stopLabel(st)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+            Text(distanceText(_exactMetersTo(st.idx)),
+                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
+          ]),
+        ),
+        IconButton(
+          tooltip: s.t('close'),
+          onPressed: () => setState(() => _guideRider = null),
+          icon: const Icon(Icons.close, color: Colors.white),
+        ),
+      ]),
+    );
   }
 
   Widget _requestCard() {
@@ -1013,6 +1235,29 @@ class _DriverHomeState extends State<DriverHome> {
                 onChanged: (v) => settings.requestVoice = v,
               ),
             ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: Text(s.t('navSetting'), style: const TextStyle(fontWeight: FontWeight.w800)),
+            ),
+            ListenableBuilder(
+              listenable: settings,
+              builder: (_, __) => RadioGroup<NavApp>(
+                groupValue: settings.navApp,
+                onChanged: (v) => settings.navApp = v ?? NavApp.ask,
+                child: Column(children: [
+                  for (final a in NavApp.values)
+                    RadioListTile<NavApp>(
+                      value: a,
+                      title: Text(switch (a) {
+                        NavApp.ask => s.t('navAsk'),
+                        NavApp.inApp => s.t('navStayInApp'),
+                        _ => '${s.t('navOpenIn')} ${navAppName(a)}',
+                      }),
+                    ),
+                ]),
+              ),
+            ),
           ]),
         ),
       ),
@@ -1021,6 +1266,7 @@ class _DriverHomeState extends State<DriverHome> {
         Column(children: [
           _topBar(),
           if (_online) _earningsCard(),
+          if (_online && _guideRider != null) _guideBanner(),
           if (_hazardFor != null) _hazardBanner(),
         ]),
         Align(
