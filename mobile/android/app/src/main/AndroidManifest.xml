@@ -17,7 +17,7 @@
     </queries>
 
     <application
-        android:label="Taxi Maroc"
+        android:label="Bab Taxi"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

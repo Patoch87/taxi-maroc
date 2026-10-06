@@ -1,6 +1,6 @@
 // Textes en italien. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> it = {
-  'appTitle': 'Taxi Marocco',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: taxi simulati',
   'error': 'Errore di connessione',
   'cancel': 'Annulla',
@@ -61,7 +61,7 @@ const Map<String, String> it = {
   'message': 'Messaggio',
   'share': 'Condividi',
   'safety': 'Sicurezza',
-  'shareText': 'Sono in taxi con Taxi Marocco',
+  'shareText': 'Sono in taxi con Bab Taxi',
   'myPosition': 'La mia posizione',
   'sos': 'SOS emergenza',
   'sosDesc': 'Avvisa i tuoi contatti e la piattaforma con la tua posizione',
@@ -113,7 +113,7 @@ const Map<String, String> it = {
   'sendToPassenger': 'Invia i dettagli a',
   'passengerInformed': 'Dettagli della corsa inviati a',
   'helloName': 'Ciao',
-  'bookedForYou': 'è stato prenotato un taxi per te con Taxi Marocco.',
+  'bookedForYou': 'è stato prenotato un taxi per te con Bab Taxi.',
   'pickupPoint': 'Punto di ritiro',
   'bookedBy': 'Prenotato da',
   'forPerson': 'per',

@@ -1,6 +1,6 @@
 // Textes en espagnol. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> es = {
-  'appTitle': 'Taxi Marruecos',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: taxis simulados',
   'error': 'Error de conexión',
   'cancel': 'Cancelar',
@@ -61,7 +61,7 @@ const Map<String, String> es = {
   'message': 'Mensaje',
   'share': 'Compartir',
   'safety': 'Seguridad',
-  'shareText': 'Voy en un taxi con Taxi Marruecos',
+  'shareText': 'Voy en un taxi con Bab Taxi',
   'myPosition': 'Mi ubicación',
   'sos': 'SOS emergencia',
   'sosDesc': 'Avisa a tus contactos y a la plataforma con tu ubicación',
@@ -113,7 +113,7 @@ const Map<String, String> es = {
   'sendToPassenger': 'Enviar los datos a',
   'passengerInformed': 'Datos del viaje enviados a',
   'helloName': 'Hola',
-  'bookedForYou': 'te han pedido un taxi con Taxi Marruecos.',
+  'bookedForYou': 'te han pedido un taxi con Bab Taxi.',
   'pickupPoint': 'Punto de recogida',
   'bookedBy': 'Pedido por',
   'forPerson': 'para',

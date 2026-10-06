@@ -206,7 +206,7 @@ const [url, out] = process.argv.slice(2);
   const ONLY = process.env.DEMO_ONLY; // tests : « signup », « client » ou « driver » seulement
 
   // Carte de titre
-  await page.goto(card({ title: 'Taxi Maroc — démo', line: 'Le taxi marocain, simple et sûr' }));
+  await page.goto(card({ title: 'Bab Taxi — démo', line: 'Le taxi marocain, simple et sûr' }));
   await wait(3500);
 
   // Chargement de l'application (premier lancement, écran d'inscription) : coupé au montage.
@@ -460,7 +460,7 @@ const [url, out] = process.argv.slice(2);
 
   // Carte de fin
   caption(null);
-  await page.goto(card({ title: 'Taxi Maroc', line: END_LINE }));
+  await page.goto(card({ title: 'Bab Taxi', line: END_LINE }));
   await wait(3500);
   marks.duration = now();
 

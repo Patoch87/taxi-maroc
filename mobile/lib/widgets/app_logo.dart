@@ -20,7 +20,7 @@ Path khatamPath(Offset c, double r) {
   return path;
 }
 
-/// Logo de Taxi Maroc « Bab, la porte » : arc de porte rouge, route qui s'enfonce vers l'horizon,
+/// Logo de Bab Taxi « Bab, la porte » : arc de porte rouge, route qui s'enfonce vers l'horizon,
 /// petit losange vert au sommet. Dessiné sur une grille de 100 x 100.
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 40});
@@ -28,7 +28,7 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: 'Taxi Maroc',
+        label: 'Bab Taxi',
         image: true,
         child: SizedBox.square(dimension: size, child: const CustomPaint(painter: AppLogoPainter())),
       );

@@ -1,6 +1,6 @@
 // Textes en serbe (alphabet latin). Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> sr = {
-  'appTitle': 'Taksi Maroko',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: simulirani taksiji',
   'error': 'Greška u vezi',
   'cancel': 'Otkaži',
@@ -61,7 +61,7 @@ const Map<String, String> sr = {
   'message': 'Poruka',
   'share': 'Podeli',
   'safety': 'Bezbednost',
-  'shareText': 'U taksiju sam sa Taksi Maroko',
+  'shareText': 'U taksiju sam sa Bab Taxi',
   'myPosition': 'Moja lokacija',
   'sos': 'SOS hitno',
   'sosDesc': 'Upozorava vaše kontakte i platformu sa vašom lokacijom',
@@ -113,7 +113,7 @@ const Map<String, String> sr = {
   'sendToPassenger': 'Pošalji podatke',
   'passengerInformed': 'Podaci o vožnji poslati',
   'helloName': 'Zdravo',
-  'bookedForYou': 'za vas je naručen taksi preko Taksi Maroko.',
+  'bookedForYou': 'za vas je naručen taksi preko Bab Taxi.',
   'pickupPoint': 'Mesto preuzimanja',
   'bookedBy': 'Naručio',
   'forPerson': 'za',

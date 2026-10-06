@@ -1,6 +1,6 @@
 // Textes en néerlandais. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> nl = {
-  'appTitle': 'Taxi Marokko',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: gesimuleerde taxi\'s',
   'error': 'Verbindingsfout',
   'cancel': 'Annuleren',
@@ -61,7 +61,7 @@ const Map<String, String> nl = {
   'message': 'Bericht',
   'share': 'Delen',
   'safety': 'Veiligheid',
-  'shareText': 'Ik zit in een taxi van Taxi Marokko',
+  'shareText': 'Ik zit in een taxi van Bab Taxi',
   'myPosition': 'Mijn locatie',
   'sos': 'SOS noodgeval',
   'sosDesc': 'Waarschuwt je contacten en het platform met je locatie',
@@ -113,7 +113,7 @@ const Map<String, String> nl = {
   'sendToPassenger': 'Gegevens sturen naar',
   'passengerInformed': 'Ritgegevens verstuurd naar',
   'helloName': 'Hallo',
-  'bookedForYou': 'er is een taxi voor je besteld bij Taxi Marokko.',
+  'bookedForYou': 'er is een taxi voor je besteld bij Bab Taxi.',
   'pickupPoint': 'Ophaalpunt',
   'bookedBy': 'Besteld door',
   'forPerson': 'voor',

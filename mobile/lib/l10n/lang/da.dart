@@ -1,6 +1,6 @@
 // Textes en danois. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> da = {
-  'appTitle': 'Taxi Marokko',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: simulerede taxaer',
   'error': 'Forbindelsesfejl',
   'cancel': 'Annuller',
@@ -61,7 +61,7 @@ const Map<String, String> da = {
   'message': 'Besked',
   'share': 'Del',
   'safety': 'Sikkerhed',
-  'shareText': 'Jeg kører i taxa med Taxi Marokko',
+  'shareText': 'Jeg kører i taxa med Bab Taxi',
   'myPosition': 'Min placering',
   'sos': 'SOS nødsituation',
   'sosDesc': 'Advarer dine kontakter og platformen med din placering',
@@ -113,7 +113,7 @@ const Map<String, String> da = {
   'sendToPassenger': 'Send oplysningerne til',
   'passengerInformed': 'Turoplysninger sendt til',
   'helloName': 'Hej',
-  'bookedForYou': 'der er bestilt en taxa til dig hos Taxi Marokko.',
+  'bookedForYou': 'der er bestilt en taxa til dig hos Bab Taxi.',
   'pickupPoint': 'Afhentningssted',
   'bookedBy': 'Bestilt af',
   'forPerson': 'til',

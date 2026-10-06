@@ -113,7 +113,7 @@ class S {
 
   static const Map<String, List<String>> _t = {
     // Général
-    'appTitle': ['Taxi Maroc', 'طاكسي المغرب', 'طاكسي المغرب', 'Taxi Morocco'],
+    'appTitle': ['Bab Taxi', 'باب طاكسي', 'باب طاكسي', 'Bab Taxi'],
     'demoBanner': [
       'Démo : taxis fictifs',
       'تجريبي: طاكسيات وهمية',
@@ -228,10 +228,10 @@ class S {
     'share': ['Partager', 'مشاركة', 'بارطاجي', 'Share'],
     'safety': ['Sécurité', 'الأمان', 'الأمان', 'Safety'],
     'shareText': [
-      'Je suis en taxi avec Taxi Maroc',
-      'أنا في طاكسي مع طاكسي المغرب',
-      'راني فطاكسي مع طاكسي المغرب',
-      'I\'m in a taxi with Taxi Morocco'
+      'Je suis en taxi avec Bab Taxi',
+      'أنا في طاكسي مع باب طاكسي',
+      'راني فطاكسي مع باب طاكسي',
+      'I\'m in a taxi with Bab Taxi'
     ],
     'myPosition': ['Ma position', 'موقعي', 'فين أنا', 'My location'],
 
@@ -321,10 +321,10 @@ class S {
     ],
     'helloName': ['Bonjour', 'مرحبا', 'السلام', 'Hello'],
     'bookedForYou': [
-      'un taxi a été commandé pour vous avec Taxi Maroc.',
-      'تم طلب طاكسي لك عبر طاكسي المغرب.',
-      'طلبنا ليك طاكسي مع طاكسي المغرب.',
-      'a taxi has been booked for you with Taxi Morocco.'
+      'un taxi a été commandé pour vous avec Bab Taxi.',
+      'تم طلب طاكسي لك عبر باب طاكسي.',
+      'طلبنا ليك طاكسي مع باب طاكسي.',
+      'a taxi has been booked for you with Bab Taxi.'
     ],
     'pickupPoint': ['Lieu de prise en charge', 'مكان الركوب', 'البلاصة فين غادي تركب', 'Pickup point'],
     'bookedBy': ['Commandé par', 'طلبه', 'طلبو', 'Booked by'],
@@ -686,10 +686,10 @@ class S {
     'navigateTo': ['Naviguer vers', 'التوجه إلى', 'سير عند', 'Navigate to'],
     'navStayInApp': ['Rester dans l\'application', 'البقاء في التطبيق', 'بقى فالتطبيق', 'Stay in the app'],
     'navStayInAppDesc': [
-      'Itinéraire sur la carte, sans quitter Taxi Maroc',
+      'Itinéraire sur la carte, sans quitter Bab Taxi',
       'المسار على الخريطة دون مغادرة التطبيق',
       'الطريق فالخريطة بلا ما تخرج',
-      'Route on the map, without leaving Taxi Maroc'
+      'Route on the map, without leaving Bab Taxi'
     ],
     'navOpenIn': ['Ouvrir dans', 'فتح في', 'حل ف', 'Open in'],
     'driverDest': ['Ma destination (facultatif)', 'وجهتي (اختياري)', 'فين غادي (اختياري)', 'My destination (optional)'],

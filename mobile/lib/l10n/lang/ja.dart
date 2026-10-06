@@ -1,6 +1,6 @@
 // Textes en japonais. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> ja = {
-  'appTitle': 'タクシー・モロッコ',
+  'appTitle': 'バブ・タクシー',
   'demoBanner': 'デモ：架空のタクシー',
   'error': '接続エラー',
   'cancel': 'キャンセル',
@@ -61,7 +61,7 @@ const Map<String, String> ja = {
   'message': 'メッセージ',
   'share': '共有',
   'safety': '安全',
-  'shareText': 'タクシー・モロッコでタクシーに乗っています',
+  'shareText': 'バブ・タクシーでタクシーに乗っています',
   'myPosition': '現在地',
   'sos': 'SOS 緊急',
   'sosDesc': '位置情報とともに連絡先とプラットフォームに通知します',
@@ -113,7 +113,7 @@ const Map<String, String> ja = {
   'sendToPassenger': '詳細を送る：',
   'passengerInformed': '乗車情報を送信しました：',
   'helloName': 'こんにちは',
-  'bookedForYou': 'タクシー・モロッコであなたのためにタクシーが手配されました。',
+  'bookedForYou': 'バブ・タクシーであなたのためにタクシーが手配されました。',
   'pickupPoint': '乗車場所',
   'bookedBy': '手配した人：',
   'forPerson': '乗客：',

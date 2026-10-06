@@ -1,6 +1,6 @@
 // Textes en croate. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> hr = {
-  'appTitle': 'Taxi Maroko',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: simulirani taksiji',
   'error': 'Pogreška veze',
   'cancel': 'Odustani',
@@ -61,7 +61,7 @@ const Map<String, String> hr = {
   'message': 'Poruka',
   'share': 'Podijeli',
   'safety': 'Sigurnost',
-  'shareText': 'U taksiju sam s Taxi Maroko',
+  'shareText': 'U taksiju sam s Bab Taxi',
   'myPosition': 'Moja lokacija',
   'sos': 'SOS hitno',
   'sosDesc': 'Upozorava vaše kontakte i platformu s vašom lokacijom',
@@ -113,7 +113,7 @@ const Map<String, String> hr = {
   'sendToPassenger': 'Pošalji podatke',
   'passengerInformed': 'Podaci o vožnji poslani',
   'helloName': 'Pozdrav',
-  'bookedForYou': 'za vas je naručen taksi preko Taxi Maroko.',
+  'bookedForYou': 'za vas je naručen taksi preko Bab Taxi.',
   'pickupPoint': 'Mjesto preuzimanja',
   'bookedBy': 'Naručio',
   'forPerson': 'za',

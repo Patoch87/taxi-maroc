@@ -1,6 +1,6 @@
 // Textes en persan (farsi). Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> fa = {
-  'appTitle': 'تاکسی مراکش',
+  'appTitle': 'باب تاکسی',
   'demoBanner': 'نسخه نمایشی: تاکسی‌های شبیه‌سازی‌شده',
   'error': 'خطا در اتصال',
   'cancel': 'لغو',
@@ -61,7 +61,7 @@ const Map<String, String> fa = {
   'message': 'پیام',
   'share': 'اشتراک‌گذاری',
   'safety': 'ایمنی',
-  'shareText': 'با تاکسی مراکش در تاکسی هستم',
+  'shareText': 'با باب تاکسی در تاکسی هستم',
   'myPosition': 'موقعیت من',
   'sos': 'اس‌اواس اضطراری',
   'sosDesc': 'مخاطبان شما و سامانه را با موقعیت شما آگاه می‌کند',
@@ -113,7 +113,7 @@ const Map<String, String> fa = {
   'sendToPassenger': 'ارسال اطلاعات به',
   'passengerInformed': 'اطلاعات سفر ارسال شد به',
   'helloName': 'سلام',
-  'bookedForYou': 'یک تاکسی با تاکسی مراکش برای شما درخواست شده است.',
+  'bookedForYou': 'یک تاکسی با باب تاکسی برای شما درخواست شده است.',
   'pickupPoint': 'محل سوار شدن',
   'bookedBy': 'درخواست‌شده توسط',
   'forPerson': 'برای',

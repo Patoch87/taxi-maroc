@@ -86,5 +86,5 @@ jobs:
           gh release delete demo --yes --cleanup-tag || true
           gh release create demo build/app/outputs/flutter-apk/taxi-maroc.apk $(ls /tmp/keep/taxi-maroc-demo.mp4 2>/dev/null) \
             --target "$GITHUB_SHA" \
-            --title "Taxi Maroc - version de démo" \
+            --title "Bab Taxi - version de démo" \
             --notes "APK de démo (taxis fictifs, sans serveur) fabriqué depuis le commit $GITHUB_SHA."

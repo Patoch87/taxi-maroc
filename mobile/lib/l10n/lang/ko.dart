@@ -1,6 +1,6 @@
 // Textes en coréen. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> ko = {
-  'appTitle': '택시 모로코',
+  'appTitle': '바브 택시',
   'demoBanner': '데모: 가상 택시',
   'error': '연결 오류',
   'cancel': '취소',
@@ -61,7 +61,7 @@ const Map<String, String> ko = {
   'message': '메시지',
   'share': '공유',
   'safety': '안전',
-  'shareText': '택시 모로코로 택시를 타고 있어요',
+  'shareText': '바브 택시로 택시를 타고 있어요',
   'myPosition': '내 위치',
   'sos': 'SOS 긴급',
   'sosDesc': '내 위치와 함께 연락처와 플랫폼에 알립니다',
@@ -113,7 +113,7 @@ const Map<String, String> ko = {
   'sendToPassenger': '정보 보내기:',
   'passengerInformed': '이동 정보를 보냈습니다:',
   'helloName': '안녕하세요',
-  'bookedForYou': '택시 모로코에서 회원님을 위한 택시가 호출되었습니다.',
+  'bookedForYou': '바브 택시에서 회원님을 위한 택시가 호출되었습니다.',
   'pickupPoint': '탑승 위치',
   'bookedBy': '호출한 사람:',
   'forPerson': '승객:',

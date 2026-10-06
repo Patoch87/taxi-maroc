@@ -1,6 +1,6 @@
 // Textes en polonais. Traduction à faire relire par un locuteur natif avant le lancement.
 const Map<String, String> pl = {
-  'appTitle': 'Taxi Maroko',
+  'appTitle': 'Bab Taxi',
   'demoBanner': 'Demo: symulowane taksówki',
   'error': 'Błąd połączenia',
   'cancel': 'Anuluj',
@@ -61,7 +61,7 @@ const Map<String, String> pl = {
   'message': 'Wiadomość',
   'share': 'Udostępnij',
   'safety': 'Bezpieczeństwo',
-  'shareText': 'Jadę taksówką z Taxi Maroko',
+  'shareText': 'Jadę taksówką z Bab Taxi',
   'myPosition': 'Moja lokalizacja',
   'sos': 'SOS alarm',
   'sosDesc': 'Powiadamia twoje kontakty i platformę, podając twoją lokalizację',
@@ -113,7 +113,7 @@ const Map<String, String> pl = {
   'sendToPassenger': 'Wyślij szczegóły do',
   'passengerInformed': 'Szczegóły kursu wysłane do',
   'helloName': 'Cześć',
-  'bookedForYou': 'zamówiono dla ciebie taksówkę w Taxi Maroko.',
+  'bookedForYou': 'zamówiono dla ciebie taksówkę w Bab Taxi.',
   'pickupPoint': 'Miejsce odbioru',
   'bookedBy': 'Zamówione przez',
   'forPerson': 'dla',

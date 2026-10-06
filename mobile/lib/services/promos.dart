@@ -109,7 +109,7 @@ const allPromos = [fashionPromo, koolsmoothiePromo, portCafePromo, sportPromo, l
 /// Bandeau générique, non personnalisé (quand aucune offre ne correspond au trajet).
 const genericPromo = Promo(
   id: 'GEN',
-  brand: 'Taxi Maroc',
+  brand: 'Bab Taxi',
   initials: 'TM',
   titleKey: 'promoGeneric',
   detailKey: 'promoGenericDetail',
