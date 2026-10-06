@@ -53,7 +53,7 @@ jobs:
           flutter test 2>&1 | tee test.log
           status=${PIPESTATUS[0]}
           if [ $status -ne 0 ]; then
-            grep -E "\[E\]|Expected:|Actual:|Which:|Exception|test/.*\.dart [0-9]+:[0-9]+" test.log | head -30 | while IFS= read -r l; do echo "::error title=Test::$l"; done
+            grep -v "^#" test.log | grep -E -A4 "\[E\]|EXCEPTION CAUGHT|overflowed|Expected:" | grep -v "^--$" | head -40 | while IFS= read -r l; do echo "::error title=Test::$l"; done
           fi
           exit $status
       # APK en mode démo (sans API_URL) : installable directement sur un téléphone Android.
