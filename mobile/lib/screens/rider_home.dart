@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gm;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -23,6 +24,7 @@ import '../services/voice.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/driver_card.dart';
+import '../widgets/google_taxi_map.dart';
 import '../widgets/language_sheet.dart';
 import '../widgets/map_parts.dart';
 import '../widgets/promo_card.dart';
@@ -70,6 +72,7 @@ class _RiderHomeState extends State<RiderHome> {
   final _map = MapController();
   final _rnd = Random();
   bool _mapReady = false;
+  gm.GoogleMapController? _gmap;
 
   LatLng _me = casablancaCenter;
   late List<LatLng> _ambient = ambientTaxis(_me, _rnd);
@@ -169,11 +172,28 @@ class _RiderHomeState extends State<RiderHome> {
       _me = p;
       _ambient = ambientTaxis(p, _rnd);
     });
-    if (_mapReady) _map.move(p, 15);
+    _moveCamera(p, 15);
+  }
+
+  /// Centre la carte (OpenStreetMap ou Google Maps) sur [p] ; [zoom] nul garde le zoom actuel.
+  void _moveCamera(LatLng p, double? zoom) {
+    if (useGoogleMaps) {
+      _gmap?.moveCamera(
+          zoom == null ? gm.CameraUpdate.newLatLng(toGoogle(p)) : gm.CameraUpdate.newLatLngZoom(toGoogle(p), zoom));
+      return;
+    }
+    if (_mapReady) _map.move(p, zoom ?? _map.camera.zoom);
   }
 
   void _fit(List<LatLng> pts) {
-    if (!_mapReady || pts.length < 2) return;
+    if (pts.length < 2) return;
+    if (useGoogleMaps) {
+      final b = LatLngBounds.fromPoints(pts);
+      _gmap?.animateCamera(gm.CameraUpdate.newLatLngBounds(
+          gm.LatLngBounds(southwest: toGoogle(b.southWest), northeast: toGoogle(b.northEast)), 50));
+      return;
+    }
+    if (!_mapReady) return;
     _map.fitCamera(CameraFit.bounds(
       bounds: LatLngBounds.fromPoints(pts),
       padding: const EdgeInsets.fromLTRB(60, 130, 60, 480),
@@ -399,7 +419,7 @@ class _RiderHomeState extends State<RiderHome> {
       _announceMinute();
       // Vue carte : la caméra suit le taxi.
       final taxi = _taxiPos;
-      if (_collapsed && _inTrip && _mapReady && taxi != null) _map.move(taxi, _map.camera.zoom);
+      if (_collapsed && _inTrip && taxi != null) _moveCamera(taxi, null);
       if (_elapsed >= _legDuration) {
         t.cancel();
         onEnd();
@@ -634,7 +654,7 @@ class _RiderHomeState extends State<RiderHome> {
       _dragDy = 0;
     });
     final taxi = _taxiPos;
-    if (on && _inTrip && _mapReady && taxi != null) _map.move(taxi, 16);
+    if (on && _inTrip && taxi != null) _moveCamera(taxi, 16);
     if (!on && _inTrip) _fit([...?(_path.isEmpty ? null : _path), _me]);
   }
 
@@ -884,7 +904,7 @@ class _RiderHomeState extends State<RiderHome> {
       _adClosed = false;
       _adIndex = 0;
     });
-    if (_mapReady) _map.move(_me, 15);
+    _moveCamera(_me, 15);
   }
 
   // ---------------------------------------------------------------- Carte
@@ -898,6 +918,32 @@ class _RiderHomeState extends State<RiderHome> {
       RiderStep.onTrip => [if (taxi != null) taxi, ..._path.skip(_taxiIndex)],
       _ => <LatLng>[],
     };
+    final showTaxi = taxi != null && _step.index >= RiderStep.arriving.index && _step != RiderStep.done;
+    if (useGoogleMaps) {
+      return GoogleTaxiMap(
+        taxi: showTaxi ? taxi : null,
+        initial: _me,
+        bearingDeg: 0,
+        route: routeToShow,
+        // Les panneaux couvrent le bas de l'écran : le logo Google et le cadrage restent au-dessus.
+        padding: EdgeInsets.only(top: 70, bottom: _collapsed ? 160 : 400),
+        pins: [
+          if (showAmbient)
+            for (final (i, p) in _ambient.indexed)
+              GooglePin('taxi-$i', p, s.t('petitTaxi'), gm.BitmapDescriptor.hueOrange),
+          if (_step == RiderStep.idle) GooglePin('me', _me, s.t('myPosition'), gm.BitmapDescriptor.hueAzure),
+          if (_dest != null && _step != RiderStep.idle) ...[
+            if (_step != RiderStep.onTrip) GooglePin('pickup', _me, s.t('pickupPoint'), gm.BitmapDescriptor.hueGreen),
+            GooglePin('dest', LatLng(_dest!.lat, _dest!.lng), _dest!.name, gm.BitmapDescriptor.hueRed),
+          ],
+        ],
+        onCreated: (c) {
+          _gmap = c;
+          _moveCamera(_me, 15);
+        },
+        onUserMove: () {},
+      );
+    }
     return FlutterMap(
       mapController: _map,
       options: MapOptions(
@@ -919,8 +965,7 @@ class _RiderHomeState extends State<RiderHome> {
             if (_step != RiderStep.onTrip) stopMarker(_me, destination: false),
             stopMarker(LatLng(_dest!.lat, _dest!.lng), destination: true),
           ],
-          if (taxi != null && _step.index >= RiderStep.arriving.index && _step != RiderStep.done)
-            taxiMarker(taxi, _selected!.kind),
+          if (showTaxi) taxiMarker(taxi, _selected!.kind),
         ]),
         mapAttribution(),
       ],

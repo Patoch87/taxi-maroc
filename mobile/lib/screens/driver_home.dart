@@ -15,10 +15,11 @@ import '../services/navigation_apps.dart';
 import '../services/places.dart';
 import '../services/rides.dart';
 import '../services/routing.dart';
+import '../services/driver_notifications.dart';
 import '../services/request_chime.dart';
 import '../services/settings.dart';
 import '../theme.dart';
-import '../widgets/google_driver_map.dart';
+import '../widgets/google_taxi_map.dart';
 import '../widgets/map_parts.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
@@ -97,6 +98,8 @@ class _DriverHomeState extends State<DriverHome> {
         voice: settings.requestVoice,
         empty: _shift.onBoard == 0,
         speakText: hazardAnnouncementAr);
+    // Navigation dans Waze ou Google Maps : le rappel arrive aussi en notification.
+    _notifications.showHazard(title: s.t('hazardLights'), body: '${s.t('hazardNear')} · ${r.name}');
   }
 
   void _hideHazard() {
@@ -113,9 +116,14 @@ class _DriverHomeState extends State<DriverHome> {
   Place? _chargingTarget;
   bool get _electric => _kind == TaxiKind.electrique;
 
+  final _notifications = DriverNotifications.instance;
+  _Request? _notified;
+
   @override
   void initState() {
     super.initState();
+    _notifications.onAction = _onNotificationAction;
+    _notifications.init();
     currentLatLng().then((p) {
       if (!mounted) return;
       setState(() => _me = p);
@@ -128,6 +136,8 @@ class _DriverHomeState extends State<DriverHome> {
     _tick?.cancel();
     _hazardTimer?.cancel();
     _chime.cancel();
+    if (_notifications.onAction == _onNotificationAction) _notifications.onAction = null;
+    _notifications.cancel(DriverNotifications.requestId);
     super.dispose();
   }
 
@@ -152,9 +162,8 @@ class _DriverHomeState extends State<DriverHome> {
       final c = _gmap;
       if (c == null) return;
       _programmaticMoveAt = DateTime.now();
-      c.moveCamera(zoom == null
-          ? gm.CameraUpdate.newLatLng(toGoogle(p))
-          : gm.CameraUpdate.newLatLngZoom(toGoogle(p), zoom));
+      c.moveCamera(
+          zoom == null ? gm.CameraUpdate.newLatLng(toGoogle(p)) : gm.CameraUpdate.newLatLngZoom(toGoogle(p), zoom));
       return;
     }
     if (_mapReady) _map.move(p, zoom ?? _map.camera.zoom, offset: _followOffset);
@@ -261,6 +270,11 @@ class _DriverHomeState extends State<DriverHome> {
     _maybeNewRequest();
     // Demande partie (acceptée, refusée, expirée) : on arrête l'annonce vocale.
     if (_request == null) _chime.cancel();
+    // Demande partie ou prise par un autre chauffeur : la notification disparaît aussi.
+    if (_notified != null && (_request != _notified || _notified!.takenAt != null)) {
+      _notified = null;
+      _notifications.cancel(DriverNotifications.requestId);
+    }
 
     // Bientôt chez le passager : rappel des feux de détresse.
     for (final r in _shift.riders.where((r) => !r.onBoard)) {
@@ -325,6 +339,33 @@ class _DriverHomeState extends State<DriverHome> {
       empty: _shift.onBoard == 0,
       speakText: requestAnnouncementAr(arabicPlaceName(_request!.destination)),
     );
+    _notifyRequest(_request!);
+  }
+
+  /// Chauffeur dans Waze ou Google Maps : la demande arrive en notification, avec Accepter et Refuser.
+  void _notifyRequest(_Request r) {
+    if (!_notifications.inBackground) return;
+    _notified = r;
+    final seats = r.rider.seats > 1 ? ' ×${r.rider.seats}' : '';
+    _notifications.showRequest(
+      key: '${identityHashCode(r)}',
+      title: '${s.t('newRequest')} · ${dh(r.rider.fare)}',
+      body: '${r.rider.name}$seats → ${r.destination} · ${s.t('pickUp')} : '
+          '${_exactMetersTo(r.rider.pickupIdx).round()} m',
+      accept: s.t('accept'),
+      decline: s.t('decline'),
+    );
+  }
+
+  @visibleForTesting
+  String? get debugRequestKey => _request == null ? null : '${identityHashCode(_request)}';
+
+  void _onNotificationAction(String action, String? key) {
+    final r = _request;
+    if (!mounted || r == null || key != '${identityHashCode(r)}') return;
+    _notified = null;
+    if (action == acceptAction) _accept();
+    if (action == declineAction) _decline();
   }
 
   String _nearestPlaceName(LatLng p) {
@@ -482,7 +523,7 @@ class _DriverHomeState extends State<DriverHome> {
     final pending = _shift.riders.where((r) => !r.onBoard);
     final req = _request?.rider;
     if (useGoogleMaps) {
-      return GoogleDriverMap(
+      return GoogleTaxiMap(
         taxi: _taxi,
         bearingDeg: _bearing() * 180 / pi,
         route: _route.length > 1 && _pos < _route.length - 1 ? _route.sublist(_pos) : const [],
@@ -491,9 +532,9 @@ class _DriverHomeState extends State<DriverHome> {
             GooglePin('drop-${r.name}', _route[min(r.dropIdx, _route.length - 1)], '${s.t('dropAt')} ${r.name}',
                 gm.BitmapDescriptor.hueRed),
           for (final r in pending)
-            GooglePin('pick-${r.name}', _route[r.pickupIdx], '${s.t('pickUp')} ${r.name}', gm.BitmapDescriptor.hueGreen),
-          if (req != null)
-            GooglePin('req-${req.name}', _route[req.pickupIdx], req.name, gm.BitmapDescriptor.hueYellow),
+            GooglePin(
+                'pick-${r.name}', _route[r.pickupIdx], '${s.t('pickUp')} ${r.name}', gm.BitmapDescriptor.hueGreen),
+          if (req != null) GooglePin('req-${req.name}', _route[req.pickupIdx], req.name, gm.BitmapDescriptor.hueYellow),
         ],
         onCreated: (c) {
           _gmap = c;
@@ -962,8 +1003,7 @@ class _DriverHomeState extends State<DriverHome> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(title, style: TextStyle(fontSize: small ? 15 : 17, fontWeight: FontWeight.w800)),
-                    if (subtitle != null)
-                      Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                    if (subtitle != null) Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                   ]),
                 ),
                 const Icon(Icons.chevron_right, color: AppColors.muted),
