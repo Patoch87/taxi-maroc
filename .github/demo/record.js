@@ -382,8 +382,8 @@ const [url, out] = process.argv.slice(2);
       'Le chauffeur reçoit les courses sur son chemin, en toute sécurité',
     );
 
-    caption('Hors ligne : le chauffeur choisit quand il travaille');
-    await expectScreen('hors ligne', 'Hors ligne', 5);
+    caption('Indisponible : le chauffeur choisit quand il travaille');
+    await expectScreen('indisponible', 'Indisponible', 5);
     await wait(3000);
     await tapFor('en ligne', 'Commencer le service', 'Disponible', 15);
     caption('En ligne : les courses arrivent sur son chemin');
