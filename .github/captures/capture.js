@@ -290,21 +290,17 @@ const { chromium } = require('playwright');
     await shot('31-chauffeur-naviguer-waze-google', 800);
   });
 
-  // Chauffeur de taxi électrique : batterie et bornes de recharge
-  await step('bornes', async () => {
+  // Chauffeur qui rentre chez lui : seulement les passagers sur son trajet
+  await step('ma-destination', async () => {
     await open();
     await page.mouse.click(32, 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
-    await tap('Électrique');
-    await page.waitForTimeout(500);
+    await tap('Je rentre chez moi');
+    await shot('18-chauffeur-ma-destination', 800);
     await tap('Passer en ligne');
-    await page.waitForTimeout(3000);
-    await tap('Bornes de recharge');
-    await shot('18-chauffeur-bornes-de-recharge', 1500);
-    await tap('Y aller');
-    await shot('19-chauffeur-vers-la-borne', 5000);
+    await shot('19-chauffeur-trajet-maison', 5000);
   });
 
   // Choix de la langue (une seule option, grille de drapeaux), puis restaurants avec note TripAdvisor (démo)

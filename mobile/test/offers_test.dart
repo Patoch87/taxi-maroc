@@ -264,28 +264,26 @@ void main() {
     langNotifier.value = 'fr';
   });
 
-  testWidgets('chauffeur de taxi électrique : batterie et bornes de recharge', (tester) async {
+  testWidgets('chauffeur : plus de taxi électrique ; « je rentre chez moi » = trajet uniquement', (tester) async {
     phone(tester);
+    settings.requestSound = false;
     await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: const DriverHome()));
     await tester.pump();
-    await tester.tap(find.text('Électrique'));
+    expect(find.text('Électrique'), findsNothing);
+    expect(find.text('Ma destination (facultatif)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('myDestHome')));
     await tester.pump();
+    expect(find.text('Vers Maison'), findsOneWidget);
+    expect(find.text('Uniquement les passagers sur votre trajet'), findsOneWidget);
+
     await tester.tap(find.text('Passer en ligne'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.textContaining('Batterie'), findsOneWidget);
+    expect(find.byKey(const ValueKey('myDestBanner')), findsOneWidget);
 
-    await tester.tap(find.text('Bornes de recharge'));
-    await tester.pumpAndSettle();
-    expect(find.text('Borne Anfa'), findsOneWidget);
-    expect(find.text('Borne Aïn Sebaâ'), findsOneWidget);
-    expect(find.text('Y aller'), findsNWidgets(4));
-    await tester.tap(find.text('Y aller').first);
-    for (var i = 0; i < 5; i++) {
-      await tester.pump(const Duration(milliseconds: 200));
-    }
-    expect(find.text('Y aller'), findsNothing);
-    // Bornes affichées sur la carte pendant le trajet vers la recharge.
-    expect(find.byIcon(Icons.ev_station), findsWidgets);
+    await tester.tap(find.byKey(const ValueKey('myDestClear')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('myDestBanner')), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
 }

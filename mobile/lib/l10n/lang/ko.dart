@@ -317,4 +317,12 @@ const Map<String, String> ko = {
   'earned': '수입',
   'passengersShort': '명 승객',
   'ridesShort': '회 운행',
+  'driverDest': "내 목적지 (선택)",
+  'driverDestDesc': "퇴근 중인가요? 경로상의 승객만 받습니다.",
+  'goingHome': "집으로",
+  'otherDest': "다른 주소",
+  'towards': "목적지:",
+  'onMyRouteOnly': "경로상의 승객만",
+  'clearDest': "목적지 삭제",
+  'driverDestReached': "도착, 오프라인 상태입니다",
 };

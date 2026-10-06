@@ -318,4 +318,12 @@ const Map<String, String> es = {
   'earned': 'ganados',
   'passengersShort': 'pasajeros',
   'ridesShort': 'viajes',
+  'driverDest': "Mi destino (opcional)",
+  'driverDestDesc': "¿Vuelve a casa? Reciba solo pasajeros en su trayecto.",
+  'goingHome': "Vuelvo a casa",
+  'otherDest': "Otra dirección",
+  'towards': "Hacia",
+  'onMyRouteOnly': "Solo pasajeros en su trayecto",
+  'clearDest': "Quitar mi destino",
+  'driverDestReached': "Ha llegado, está desconectado",
 };

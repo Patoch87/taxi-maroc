@@ -317,4 +317,12 @@ const Map<String, String> ja = {
   'earned': '売上',
   'passengersShort': '人の乗客',
   'ridesShort': '回の乗車',
+  'driverDest': "自分の目的地（任意）",
+  'driverDestDesc': "帰宅中？ルート上の乗客だけを受けます。",
+  'goingHome': "帰宅する",
+  'otherDest': "別の住所",
+  'towards': "行き先:",
+  'onMyRouteOnly': "ルート上の乗客のみ",
+  'clearDest': "目的地を解除",
+  'driverDestReached': "到着しました。オフラインです",
 };

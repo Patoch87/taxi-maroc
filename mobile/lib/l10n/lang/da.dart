@@ -318,4 +318,12 @@ const Map<String, String> da = {
   'earned': 'tjent',
   'passengersShort': 'passagerer',
   'ridesShort': 'ture',
+  'driverDest': "Min destination (valgfri)",
+  'driverDestDesc': "På vej hjem? Kun passagerer på din rute.",
+  'goingHome': "Hjem",
+  'otherDest': "Anden adresse",
+  'towards': "Mod",
+  'onMyRouteOnly': "Kun passagerer på din rute",
+  'clearDest': "Fjern destination",
+  'driverDestReached': "Ankommet, du er offline",
 };

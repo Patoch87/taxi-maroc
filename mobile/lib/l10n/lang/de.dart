@@ -318,4 +318,12 @@ const Map<String, String> de = {
   'earned': 'verdient',
   'passengersShort': 'Fahrgäste',
   'ridesShort': 'Fahrten',
+  'driverDest': "Mein Ziel (optional)",
+  'driverDestDesc': "Auf dem Heimweg? Nur Fahrgäste auf Ihrer Strecke.",
+  'goingHome': "Nach Hause",
+  'otherDest': "Andere Adresse",
+  'towards': "Nach",
+  'onMyRouteOnly': "Nur Fahrgäste auf Ihrer Strecke",
+  'clearDest': "Ziel entfernen",
+  'driverDestReached': "Angekommen, Sie sind offline",
 };

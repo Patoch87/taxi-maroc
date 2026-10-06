@@ -318,4 +318,12 @@ const Map<String, String> fa = {
   'earned': 'درآمد',
   'passengersShort': 'مسافر',
   'ridesShort': 'سفر',
+  'driverDest': "مقصد من (اختیاری)",
+  'driverDestDesc': "به خانه می‌روید؟ فقط مسافران مسیر شما.",
+  'goingHome': "به خانه",
+  'otherDest': "نشانی دیگر",
+  'towards': "به سوی",
+  'onMyRouteOnly': "فقط مسافران مسیر شما",
+  'clearDest': "حذف مقصد",
+  'driverDestReached': "رسیدید، اکنون آفلاین هستید",
 };

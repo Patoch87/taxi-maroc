@@ -318,4 +318,12 @@ const Map<String, String> sr = {
   'earned': 'zarađeno',
   'passengersShort': 'putnika',
   'ridesShort': 'vožnji',
+  'driverDest': "Moje odredište (opciono)",
+  'driverDestDesc': "Idete kući? Samo putnici na vašoj ruti.",
+  'goingHome': "Idem kući",
+  'otherDest': "Druga adresa",
+  'towards': "Prema",
+  'onMyRouteOnly': "Samo putnici na vašoj ruti",
+  'clearDest': "Ukloni odredište",
+  'driverDestReached': "Stigli ste, niste na mreži",
 };
