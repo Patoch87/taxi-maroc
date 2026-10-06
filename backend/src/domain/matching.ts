@@ -10,6 +10,11 @@ export interface TaxiEnRoute {
   passagersABord: number;
   /** Un passager « seul » a réservé le taxi entier. */
   reserveSeul: boolean;
+  /** Profil affiché au passager (test réel). */
+  nom?: string;
+  plaque?: string;
+  /** Position GPS actuelle (par défaut, le premier point de l'itinéraire). */
+  position?: Point;
 }
 
 export interface DemandePassager {
@@ -18,6 +23,10 @@ export interface DemandePassager {
   mode: RideMode;
   passagers: number;
   categorie?: TaxiCategory;
+  /** Infos affichées au chauffeur (test réel). */
+  passager?: { nom: string };
+  destinationNom?: string;
+  prixMad?: number;
 }
 
 export interface Correspondance {
@@ -34,6 +43,8 @@ export interface Correspondance {
 export const ECART_MAX_DEPART_M = 300;
 /** Distance maximale entre la destination du passager et la route du taxi. */
 export const ECART_MAX_DESTINATION_M = 800;
+/** Taxi sans destination (itinéraire réduit à sa position) : demandes dans ce rayon. */
+export const RAYON_TAXI_LIBRE_M = 3000;
 
 /** Position la plus proche d'un point sur l'itinéraire, exprimée en (segment + t). */
 function locate(route: Point[], p: Point): { distance: number; position: number } {
@@ -68,13 +79,26 @@ function placesLibres(taxi: TaxiEnRoute): number {
 export function trouverTaxis(demande: DemandePassager, taxis: TaxiEnRoute[]): Correspondance[] {
   const resultats: Correspondance[] = [];
   for (const taxi of taxis) {
-    if (taxi.itineraire.length < 2) continue;
+    if (taxi.itineraire.length === 0) continue;
     if (demande.categorie && taxi.categorie !== demande.categorie) continue;
 
     const libres = placesLibres(taxi);
     if (demande.mode === 'seul') {
       if (taxi.passagersABord > 0 || taxi.reserveSeul) continue;
     } else if (libres < demande.passagers) {
+      continue;
+    }
+
+    // Taxi sans destination : il prend les passagers proches, puis suit leur trajet.
+    if (taxi.itineraire.length === 1) {
+      const d = haversine(taxi.itineraire[0], demande.depart);
+      if (d > RAYON_TAXI_LIBRE_M) continue;
+      resultats.push({
+        taxiId: taxi.id,
+        ecartDepartM: Math.round(d),
+        ecartDestinationM: 0,
+        distanceAvantPriseEnChargeM: Math.round(d),
+      });
       continue;
     }
 

@@ -93,3 +93,62 @@ describe('Premier chauffeur qui accepte', () => {
     await request(http).post(`/rides/requests/${demande.body.id}/accept`).send({ taxiId: 'Z' }).expect(409);
   });
 });
+
+describe('Test réel : un chauffeur, deux passagers', () => {
+  let app: INestApplication;
+  const casa = { lat: 33.5731, lng: -7.5898 };
+
+  beforeAll(async () => {
+    const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = mod.createNestApplication();
+    await app.init();
+  });
+  afterAll(() => app.close());
+
+  it('taxi sans destination : demande proche, acceptée, prise en charge, déposée', async () => {
+    const http = app.getHttpServer();
+    // Chauffeur en ligne sans destination : un seul point (sa position).
+    await request(http)
+      .put('/taxis/T1/route')
+      .send({ type: 'petit', categorie: 'standard', passagersABord: 0, reserveSeul: false, itineraire: [casa], nom: 'Youssef', plaque: '12345-A-6' })
+      .expect(200);
+    const autour = await request(http).get('/taxis/nearby').query({ lat: 33.574, lng: -7.59 }).expect(200);
+    expect(autour.body.map((t: { id: string }) => t.id)).toEqual(['T1']);
+
+    const d = await request(http)
+      .post('/rides/requests')
+      .send({ depart: { lat: 33.575, lng: -7.59 }, destination: { lat: 33.59, lng: -7.62 }, passager: { nom: 'Amina' }, destinationNom: 'Maârif' })
+      .expect(201);
+    const offres = (await request(http).get('/taxis/T1/offers').expect(200)).body;
+    expect(offres.map((o: { id: string }) => o.id)).toEqual([d.body.id]);
+    expect(offres[0].demande.passager.nom).toBe('Amina');
+
+    await request(http).post(`/rides/requests/${d.body.id}/accept`).send({ taxiId: 'T1' }).expect(201);
+    const vu = (await request(http).get(`/rides/requests/${d.body.id}`).expect(200)).body;
+    expect(vu.statut).toBe('acceptee');
+    expect(vu.taxi).toMatchObject({ id: 'T1', nom: 'Youssef', plaque: '12345-A-6', position: casa });
+
+    expect((await request(http).get('/taxis/T1/rides').expect(200)).body).toHaveLength(1);
+    await request(http).post(`/rides/requests/${d.body.id}/pickup`).send({ taxiId: 'T2' }).expect(409);
+    await request(http).post(`/rides/requests/${d.body.id}/pickup`).send({ taxiId: 'T1' }).expect(201);
+    expect((await request(http).get(`/rides/requests/${d.body.id}`)).body.statut).toBe('a_bord');
+    await request(http).post(`/rides/requests/${d.body.id}/dropoff`).send({ taxiId: 'T1' }).expect(201);
+    expect((await request(http).get(`/rides/requests/${d.body.id}`)).body.statut).toBe('terminee');
+    expect((await request(http).get('/taxis/T1/rides').expect(200)).body).toHaveLength(0);
+  });
+
+  it('un refus retire la demande ; un taxi trop loin ne la reçoit pas', async () => {
+    const http = app.getHttpServer();
+    const base = { type: 'petit', categorie: 'standard', passagersABord: 0, reserveSeul: false };
+    await request(http).put('/taxis/T3/route').send({ ...base, itineraire: [casa] }).expect(200);
+    await request(http).put('/taxis/LOIN/route').send({ ...base, itineraire: [{ lat: 34.02, lng: -6.84 }] }).expect(200);
+    const d = await request(http)
+      .post('/rides/requests')
+      .send({ depart: { lat: 33.575, lng: -7.59 }, destination: { lat: 33.59, lng: -7.62 } })
+      .expect(201);
+    expect((await request(http).get('/taxis/LOIN/offers')).body).toHaveLength(0);
+    expect((await request(http).get('/taxis/T3/offers')).body.map((o: { id: string }) => o.id)).toContain(d.body.id);
+    await request(http).post(`/rides/requests/${d.body.id}/decline`).send({ taxiId: 'T3' }).expect(201);
+    expect((await request(http).get('/taxis/T3/offers')).body.map((o: { id: string }) => o.id)).not.toContain(d.body.id);
+  });
+});

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { DemandePassager, TaxiEnRoute } from '../domain/matching';
 import { RidesService } from './rides.service';
 
@@ -9,8 +9,9 @@ export class RidesController {
   /** Le chauffeur envoie sa position et son itinéraire (taxi disponible). */
   @Put('taxis/:id/route')
   updateRoute(@Param('id') id: string, @Body() body: Omit<TaxiEnRoute, 'id'>) {
-    if (!Array.isArray(body?.itineraire) || body.itineraire.length < 2) {
-      throw new BadRequestException('itineraire doit contenir au moins 2 points');
+    // Un seul point = taxi sans destination : il reçoit les demandes proches.
+    if (!Array.isArray(body?.itineraire) || body.itineraire.length < 1) {
+      throw new BadRequestException('itineraire doit contenir au moins 1 point');
     }
     this.rides.updateTaxi({ ...body, id });
     return { ok: true };
@@ -21,6 +22,20 @@ export class RidesController {
   remove(@Param('id') id: string) {
     this.rides.removeTaxi(id);
     return { ok: true };
+  }
+
+  /** Taxis en ligne autour du passager (carte). */
+  @Get('taxis/nearby')
+  nearby(@Query('lat') lat: string, @Query('lng') lng: string) {
+    const p = { lat: Number(lat), lng: Number(lng) };
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) throw new BadRequestException('lat et lng sont requis');
+    return this.rides.nearby(p);
+  }
+
+  /** Courses en cours d'un chauffeur. */
+  @Get('taxis/:id/rides')
+  ridesOf(@Param('id') id: string) {
+    return this.rides.ridesOf(id);
   }
 
   /** Le passager indique sa destination finale : liste des taxis qui passent sur sa route. */
@@ -58,5 +73,25 @@ export class RidesController {
   accept(@Param('id') id: string, @Body() body: { taxiId: string }) {
     if (!body?.taxiId) throw new BadRequestException('taxiId est requis');
     return this.rides.accept(id, body.taxiId);
+  }
+
+  @Post('rides/requests/:id/decline')
+  decline(@Param('id') id: string, @Body() body: { taxiId: string }) {
+    if (!body?.taxiId) throw new BadRequestException('taxiId est requis');
+    return this.rides.decline(id, body.taxiId);
+  }
+
+  /** Le chauffeur a pris le passager. */
+  @Post('rides/requests/:id/pickup')
+  pickup(@Param('id') id: string, @Body() body: { taxiId: string }) {
+    if (!body?.taxiId) throw new BadRequestException('taxiId est requis');
+    return this.rides.advance(id, body.taxiId, 'a_bord');
+  }
+
+  /** Le chauffeur a déposé le passager. */
+  @Post('rides/requests/:id/dropoff')
+  dropoff(@Param('id') id: string, @Body() body: { taxiId: string }) {
+    if (!body?.taxiId) throw new BadRequestException('taxiId est requis');
+    return this.rides.advance(id, body.taxiId, 'terminee');
   }
 }
