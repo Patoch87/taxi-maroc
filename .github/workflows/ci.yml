@@ -49,13 +49,13 @@ jobs:
       # Indique (sans la montrer) si la clé est présente : annotation lisible sur l'exécution.
       - name: Clé Google Maps
         env:
-          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
         run: |
           if [ -n "$MAPS_API_KEY" ]; then echo "::notice title=Google Maps::Clé présente (${#MAPS_API_KEY} caractères)"
           else echo "::warning title=Google Maps::Aucune clé MAPS_API_KEY : carte OpenStreetMap"; fi
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
         env:
-          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
       - uses: actions/upload-artifact@v4
         with:
