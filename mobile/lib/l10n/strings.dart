@@ -685,21 +685,62 @@ class S {
     'navigate': ['Naviguer', 'التنقل', 'الطريق', 'Navigate'],
     'navigateTo': ['Naviguer vers', 'التوجه إلى', 'سير عند', 'Navigate to'],
     'navStayInApp': ['Rester dans l\'application', 'البقاء في التطبيق', 'بقى فالتطبيق', 'Stay in the app'],
-    'navStayInAppDesc': ['Itinéraire sur la carte, sans quitter Taxi Maroc', 'المسار على الخريطة دون مغادرة التطبيق', 'الطريق فالخريطة بلا ما تخرج', 'Route on the map, without leaving Taxi Maroc'],
+    'navStayInAppDesc': [
+      'Itinéraire sur la carte, sans quitter Taxi Maroc',
+      'المسار على الخريطة دون مغادرة التطبيق',
+      'الطريق فالخريطة بلا ما تخرج',
+      'Route on the map, without leaving Taxi Maroc'
+    ],
     'navOpenIn': ['Ouvrir dans', 'فتح في', 'حل ف', 'Open in'],
     'driverDest': ['Ma destination (facultatif)', 'وجهتي (اختياري)', 'فين غادي (اختياري)', 'My destination (optional)'],
-    'driverDestDesc': ['Vous rentrez chez vous ? Recevez uniquement les passagers sur votre trajet.', 'راجع إلى المنزل؟ استقبل فقط الركاب الذين في طريقك.', 'راجع للدار؟ غير الكليان اللي فطريقك.', 'Heading home? Only get riders along your route.'],
+    'driverDestDesc': [
+      'Vous rentrez chez vous ? Recevez uniquement les passagers sur votre trajet.',
+      'راجع إلى المنزل؟ استقبل فقط الركاب الذين في طريقك.',
+      'راجع للدار؟ غير الكليان اللي فطريقك.',
+      'Heading home? Only get riders along your route.'
+    ],
     'goingHome': ['Je rentre chez moi', 'أعود إلى المنزل', 'راجع للدار', 'Going home'],
     'otherDest': ['Autre adresse', 'عنوان آخر', 'بلاصة أخرى', 'Other address'],
     'towards': ['Vers', 'نحو', 'لـ', 'To'],
-    'onMyRouteOnly': ['Uniquement les passagers sur votre trajet', 'فقط الركاب الذين في طريقك', 'غير الكليان اللي فطريقك', 'Only riders along your route'],
+    'onMyRouteOnly': [
+      'Uniquement les passagers sur votre trajet',
+      'فقط الركاب الذين في طريقك',
+      'غير الكليان اللي فطريقك',
+      'Only riders along your route'
+    ],
     'clearDest': ['Retirer ma destination', 'إزالة وجهتي', 'حيد الوجهة', 'Remove my destination'],
-    'driverDestReached': ['Arrivé, vous êtes hors ligne', 'وصلت، أنت الآن غير متصل', 'وصلتي، دابا راك مطفي', 'Arrived, you are now offline'],
+    'driverDestReached': [
+      'Arrivé, vous êtes hors ligne',
+      'وصلت، أنت الآن غير متصل',
+      'وصلتي، دابا راك مطفي',
+      'Arrived, you are now offline'
+    ],
+    'navNotInstalled': [
+      "Application non installée, ouverture du Play Store",
+      "التطبيق غير مثبت، فتح متجر Play",
+      "التطبيق ما كاينش، كنحلو Play Store",
+      "App not installed, opening the Play Store"
+    ],
     'navAsk': ['Demander à chaque fois', 'السؤال في كل مرة', 'سولني كل مرة', 'Ask every time'],
     'navSetting': ['Navigation vers les passagers', 'التنقل نحو الركاب', 'الطريق للزبناء', 'Navigation to passengers'],
-    'navRemember': ['Toujours utiliser ce choix', 'استخدام هذا الاختيار دائما', 'ديما هاد الاختيار', 'Always use this choice'],
-    'navWebFallback': ['Application non installée : itinéraire ouvert dans le navigateur', 'التطبيق غير مثبت: تم فتح المسار في المتصفح', 'التطبيق ماكاينش: تحل الطريق فالمتصفح', 'App not installed: route opened in the browser'],
-    'navFailed': ['Impossible d\'ouvrir la navigation', 'تعذر فتح التنقل', 'ما قدرناش نحلو الطريق', 'Could not open navigation'],
+    'navRemember': [
+      'Toujours utiliser ce choix',
+      'استخدام هذا الاختيار دائما',
+      'ديما هاد الاختيار',
+      'Always use this choice'
+    ],
+    'navWebFallback': [
+      'Application non installée : itinéraire ouvert dans le navigateur',
+      'التطبيق غير مثبت: تم فتح المسار في المتصفح',
+      'التطبيق ماكاينش: تحل الطريق فالمتصفح',
+      'App not installed: route opened in the browser'
+    ],
+    'navFailed': [
+      'Impossible d\'ouvrir la navigation',
+      'تعذر فتح التنقل',
+      'ما قدرناش نحلو الطريق',
+      'Could not open navigation'
+    ],
     'navGuiding': ['Guidage vers', 'التوجيه نحو', 'الطريق عند', 'Guiding to'],
     'seeInGoogleMaps': ['Voir dans Google Maps', 'عرض في Google Maps', 'شوف ف Google Maps', 'View in Google Maps'],
     'requestVoiceDesc': [

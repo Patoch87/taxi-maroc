@@ -326,4 +326,5 @@ const Map<String, String> pt = {
   'onMyRouteOnly': "Só passageiros no seu trajeto",
   'clearDest': "Remover o meu destino",
   'driverDestReached': "Chegou, está offline",
+  'navNotInstalled': "Aplicação não instalada, a abrir a Play Store",
 };

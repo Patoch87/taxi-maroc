@@ -325,4 +325,5 @@ const Map<String, String> ja = {
   'onMyRouteOnly': "ルート上の乗客のみ",
   'clearDest': "目的地を解除",
   'driverDestReached': "到着しました。オフラインです",
+  'navNotInstalled': "アプリが未インストールのため Play ストアを開きます",
 };

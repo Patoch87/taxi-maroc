@@ -39,7 +39,6 @@ void _setUpGoogleMapsAndroid() {
   if (defaultTargetPlatform != TargetPlatform.android) return;
   final maps = GoogleMapsFlutterPlatform.instance;
   if (maps is GoogleMapsFlutterAndroid) {
-    maps.useAndroidViewSurface = true;
     maps.initializeWithRenderer(AndroidMapRenderer.latest).catchError((_) => AndroidMapRenderer.platformDefault);
   }
 }

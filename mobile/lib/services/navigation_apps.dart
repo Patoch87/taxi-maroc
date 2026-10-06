@@ -54,31 +54,44 @@ Future<bool> _launch(Uri uri, {required bool appOnly}) async {
 /// Remplaçable dans les tests.
 UrlOpener urlOpener = _launch;
 
-enum NavOpenResult { app, web, failed }
+enum NavOpenResult { app, store, web, failed }
 
-/// Liens à essayer dans l'ordre : d'abord l'application, puis le site.
-({List<Uri> app, Uri web}) navigationLinks(NavApp app, LatLng p, {TargetPlatform? platform}) {
+/// Fiche Play Store de l'application (Android), quand elle n'est pas installée.
+Uri playStoreUri(NavApp app) =>
+    Uri.parse('market://details?id=${app == NavApp.waze ? 'com.waze' : 'com.google.android.apps.maps'}');
+
+/// Liens à essayer dans l'ordre : d'abord l'application, puis (Android) le Play Store, puis le site.
+({List<Uri> app, Uri? store, Uri web}) navigationLinks(NavApp app, LatLng p, {TargetPlatform? platform}) {
   final os = platform ?? defaultTargetPlatform;
+  final android = !kIsWeb && os == TargetPlatform.android;
   return switch (app) {
-    NavApp.waze => (app: [Uri.parse('waze://?ll=${_ll(p)}&navigate=yes')], web: wazeUri(p)),
+    NavApp.waze => (
+        // Le lien universel waze.com/ul est celui que Waze recommande ; le schéma « waze:// » en secours.
+        app: kIsWeb ? <Uri>[] : [wazeUri(p), Uri.parse('waze://?ll=${_ll(p)}&navigate=yes')],
+        store: android ? playStoreUri(app) : null,
+        web: wazeUri(p),
+      ),
     _ => (
         app: kIsWeb
             ? <Uri>[]
             : os == TargetPlatform.iOS
                 ? [googleMapsIosUri(p)]
                 : [googleNavigationUri(p)],
+        store: android ? playStoreUri(app) : null,
         web: googleMapsWebUri(p),
       ),
   };
 }
 
-/// Ouvre l'itinéraire vers [p] dans Waze ou Google Maps ; si l'application n'est pas installée,
-/// ouvre le site (le chauffeur en est averti).
+/// Ouvre l'itinéraire vers [p] dans Waze ou Google Maps. Application absente : le Play Store sur
+/// Android (le site de Waze ne guide pas), sinon le site (le chauffeur en est averti).
 Future<NavOpenResult> openNavigation(NavApp app, LatLng p, {TargetPlatform? platform}) async {
   final links = navigationLinks(app, p, platform: platform);
   for (final uri in links.app) {
     if (await urlOpener(uri, appOnly: true)) return NavOpenResult.app;
   }
+  final store = links.store;
+  if (store != null && await urlOpener(store, appOnly: true)) return NavOpenResult.store;
   if (await urlOpener(links.web, appOnly: false)) return NavOpenResult.web;
   return NavOpenResult.failed;
 }

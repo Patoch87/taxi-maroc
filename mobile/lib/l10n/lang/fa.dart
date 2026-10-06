@@ -326,4 +326,5 @@ const Map<String, String> fa = {
   'onMyRouteOnly': "فقط مسافران مسیر شما",
   'clearDest': "حذف مقصد",
   'driverDestReached': "رسیدید، اکنون آفلاین هستید",
+  'navNotInstalled': "برنامه نصب نیست، باز کردن Play Store",
 };

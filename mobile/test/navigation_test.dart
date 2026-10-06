@@ -31,17 +31,30 @@ void main() {
     expect(android.app.single.scheme, 'google.navigation');
     final ios = navigationLinks(NavApp.googleMaps, p, platform: TargetPlatform.iOS);
     expect(ios.app.single.scheme, 'comgooglemaps');
-    expect(navigationLinks(NavApp.waze, p).app.single.scheme, 'waze');
+    final waze = navigationLinks(NavApp.waze, p, platform: TargetPlatform.android);
+    expect(waze.app.map((u) => u.scheme), ['https', 'waze']);
+    expect(waze.store.toString(), 'market://details?id=com.waze');
   });
 
   test('application installée : ouverte directement ; sinon repli sur le site', () async {
+    installed = {'https'};
+    expect(await openNavigation(NavApp.waze, p, platform: TargetPlatform.android), NavOpenResult.app);
+    expect(opened.single.$1.host, 'waze.com');
+
+    opened.clear();
     installed = {'waze'};
-    expect(await openNavigation(NavApp.waze, p), NavOpenResult.app);
-    expect(opened.single.$1.scheme, 'waze');
+    expect(await openNavigation(NavApp.waze, p, platform: TargetPlatform.android), NavOpenResult.app);
+    expect(opened.last.$1.scheme, 'waze');
+
+    // Waze absent : Play Store plutôt que le site, qui ne guide pas.
+    opened.clear();
+    installed = {'market'};
+    expect(await openNavigation(NavApp.waze, p, platform: TargetPlatform.android), NavOpenResult.store);
+    expect(opened.last.$1.toString(), 'market://details?id=com.waze');
 
     opened.clear();
     installed = {};
-    expect(await openNavigation(NavApp.waze, p), NavOpenResult.web);
+    expect(await openNavigation(NavApp.waze, p, platform: TargetPlatform.iOS), NavOpenResult.web);
     expect(opened.last.$1.host, 'waze.com');
     expect(opened.last.$2, isFalse);
   });
@@ -101,7 +114,7 @@ void main() {
     opened.clear();
     await tapNavigate(tester);
     expect(find.text("Rester dans l'application"), findsNothing);
-    expect(opened.single.$1.scheme, 'waze');
+    expect(opened.last.$1.scheme, 'waze');
     await tester.pumpWidget(const SizedBox());
   });
 }

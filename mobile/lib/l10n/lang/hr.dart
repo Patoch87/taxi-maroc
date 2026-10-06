@@ -326,4 +326,5 @@ const Map<String, String> hr = {
   'onMyRouteOnly': "Samo putnici na vašoj ruti",
   'clearDest': "Ukloni odredište",
   'driverDestReached': "Stigli ste, niste na mreži",
+  'navNotInstalled': "Aplikacija nije instalirana, otvaranje Trgovine Play",
 };

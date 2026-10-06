@@ -927,10 +927,9 @@ class _RiderHomeState extends State<RiderHome> {
         route: routeToShow,
         // Les panneaux couvrent le bas de l'écran : le logo Google et le cadrage restent au-dessus.
         padding: EdgeInsets.only(top: 70, bottom: _collapsed ? 160 : 400),
+        taxiKind: _selected?.kind ?? TaxiKind.petit,
+        nearbyTaxis: showAmbient ? _ambient : const [],
         pins: [
-          if (showAmbient)
-            for (final (i, p) in _ambient.indexed)
-              GooglePin('taxi-$i', p, s.t('petitTaxi'), gm.BitmapDescriptor.hueOrange),
           if (_step == RiderStep.idle) GooglePin('me', _me, s.t('myPosition'), gm.BitmapDescriptor.hueAzure),
           if (_dest != null && _step != RiderStep.idle) ...[
             if (_step != RiderStep.onTrip) GooglePin('pickup', _me, s.t('pickupPoint'), gm.BitmapDescriptor.hueGreen),

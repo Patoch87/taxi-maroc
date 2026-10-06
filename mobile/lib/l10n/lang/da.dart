@@ -326,4 +326,5 @@ const Map<String, String> da = {
   'onMyRouteOnly': "Kun passagerer på din rute",
   'clearDest': "Fjern destination",
   'driverDestReached': "Ankommet, du er offline",
+  'navNotInstalled': "Appen er ikke installeret, åbner Play Butik",
 };

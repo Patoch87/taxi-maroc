@@ -160,9 +160,15 @@ class _DriverHomeState extends State<DriverHome> {
     if (useGoogleMaps) {
       final c = _gmap;
       if (c == null) return;
-      _programmaticMoveAt = DateTime.now();
-      c.moveCamera(
-          zoom == null ? gm.CameraUpdate.newLatLng(toGoogle(p)) : gm.CameraUpdate.newLatLngZoom(toGoogle(p), zoom));
+      // Suivi du taxi : au plus 3 fois par seconde, la carte Google ne suit pas plus vite.
+      final now = DateTime.now();
+      if (zoom == null && now.difference(_programmaticMoveAt) < const Duration(milliseconds: 350)) return;
+      _programmaticMoveAt = now;
+      if (zoom == null) {
+        c.animateCamera(gm.CameraUpdate.newLatLng(toGoogle(p)), duration: const Duration(milliseconds: 350));
+      } else {
+        c.moveCamera(gm.CameraUpdate.newLatLngZoom(toGoogle(p), zoom));
+      }
       return;
     }
     if (_mapReady) _map.move(p, zoom ?? _map.camera.zoom, offset: _followOffset);
@@ -417,6 +423,7 @@ class _DriverHomeState extends State<DriverHome> {
     if (useGoogleMaps) {
       return GoogleTaxiMap(
         taxi: _taxi,
+        taxiKind: _kind,
         bearingDeg: _bearing() * 180 / pi,
         route: _route.length > 1 && _pos < _route.length - 1 ? _route.sublist(_pos) : const [],
         pins: [
@@ -784,6 +791,7 @@ class _DriverHomeState extends State<DriverHome> {
     }
     final result = await openNavigation(app, _route[min(st.idx, _route.length - 1)]);
     if (!mounted) return;
+    if (result == NavOpenResult.store) _toast(Icons.download, '${navAppName(app)} : ${s.t('navNotInstalled')}');
     if (result == NavOpenResult.web) _toast(Icons.public, s.t('navWebFallback'));
     if (result == NavOpenResult.failed) _toast(Icons.error_outline, s.t('navFailed'));
   }

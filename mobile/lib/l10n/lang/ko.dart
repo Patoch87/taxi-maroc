@@ -325,4 +325,5 @@ const Map<String, String> ko = {
   'onMyRouteOnly': "경로상의 승객만",
   'clearDest': "목적지 삭제",
   'driverDestReached': "도착, 오프라인 상태입니다",
+  'navNotInstalled': "앱이 설치되지 않아 Play 스토어를 엽니다",
 };
