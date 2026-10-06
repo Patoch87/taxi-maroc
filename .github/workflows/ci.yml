@@ -25,6 +25,8 @@ jobs:
 
   android-apk:
     runs-on: ubuntu-latest
+    # La clé Google Maps est un secret de l'environnement GitHub « MAPS_API_KEY ».
+    environment: MAPS_API_KEY
     permissions:
       contents: write
     defaults:
