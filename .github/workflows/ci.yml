@@ -45,7 +45,17 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test
+      # Les journaux des tâches ne sont pas lisibles partout : les échecs sont aussi publiés en annotations.
+      - name: flutter test
+        shell: bash
+        run: |
+          set +e
+          flutter test 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          if [ $status -ne 0 ]; then
+            grep -E "\[E\]|Expected:|Actual:|Which:|Exception|test/.*\.dart [0-9]+:[0-9]+" test.log | head -30 | while IFS= read -r l; do echo "::error title=Test::$l"; done
+          fi
+          exit $status
       # APK en mode démo (sans API_URL) : installable directement sur un téléphone Android.
       # Clé Google Maps facultative (secret MAPS_API_KEY) : sans elle, l'APK garde la carte OpenStreetMap.
       # Indique (sans la montrer) si la clé est présente : annotation lisible sur l'exécution.
