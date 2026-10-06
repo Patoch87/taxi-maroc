@@ -11,9 +11,11 @@ void main() {
   final opened = <(Uri, bool)>[];
   var installed = <String>{};
 
+  tearDown(() => DriverHome.requestGap = const Duration(seconds: 7));
   setUp(() {
     settings.reset();
     opened.clear();
+    DriverHome.requestGap = Duration.zero;
     installed = {};
     urlOpener = (uri, {required appOnly}) async {
       opened.add((uri, appOnly));

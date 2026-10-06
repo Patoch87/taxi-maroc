@@ -52,6 +52,11 @@ class _Request {
 class DriverHome extends StatefulWidget {
   const DriverHome({super.key});
 
+  /// Écart minimum entre deux demandes (horloge réelle). Les tests le mettent à zéro pour ne pas
+  /// dépendre de la vitesse de la machine.
+  @visibleForTesting
+  static Duration requestGap = const Duration(seconds: 7);
+
   @override
   State<DriverHome> createState() => _DriverHomeState();
 }
@@ -208,7 +213,7 @@ class _DriverHomeState extends State<DriverHome> {
     _shift.capacity = _kind == TaxiKind.grand ? 6 : 3;
     setState(() => _online = true);
     await _newRoute();
-    _lastRequest = DateTime.now().subtract(const Duration(seconds: 4));
+    _lastRequest = DateTime.now().subtract(DriverHome.requestGap * 4 ~/ 7);
     _tick?.cancel();
     _tick = Timer.periodic(const Duration(milliseconds: 100), (_) => _onTick());
   }
@@ -302,7 +307,7 @@ class _DriverHomeState extends State<DriverHome> {
 
   void _maybeNewRequest() {
     if (_request != null || _shift.isFull) return;
-    if (DateTime.now().difference(_lastRequest).inSeconds < 7) return;
+    if (DateTime.now().difference(_lastRequest) < DriverHome.requestGap) return;
     final remaining = _route.length - 1 - _pos;
     if (remaining < 20) return;
     const names = ['Amina', 'Karim', 'Salma', 'Omar', 'Fatima Zahra', 'Mehdi', 'Hajar', 'Anas', 'Imane', 'Yassine'];
@@ -657,11 +662,16 @@ class _DriverHomeState extends State<DriverHome> {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.muted)),
             if (full) ...[
               const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.taxiRed, borderRadius: BorderRadius.circular(8)),
-                child: Text(s.t('taxiFull'),
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+              // Petit écran : le badge « complet » se raccourcit au lieu de déborder.
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: AppColors.taxiRed, borderRadius: BorderRadius.circular(8)),
+                  child: Text(s.t('taxiFull'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                ),
               ),
             ],
           ]),
@@ -1280,7 +1290,7 @@ class _DriverHomeState extends State<DriverHome> {
           alignment: Alignment.bottomCenter,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             if (_request != null) _requestCard(),
-            BottomPanel(child: _online ? _onlinePanel() : _offlinePanel()),
+            Flexible(child: BottomPanel(child: _online ? _onlinePanel() : _offlinePanel())),
           ]),
         ),
       ]),

@@ -9,10 +9,12 @@ void main() {
   final n = DriverNotifications.instance;
   final shown = <(int, String, String, bool)>[];
 
+  tearDown(() => DriverHome.requestGap = const Duration(seconds: 7));
   setUp(() {
     settings.reset();
     settings.requestSound = false;
     shown.clear();
+    DriverHome.requestGap = Duration.zero;
     n.debugShow = (id, title, body, actions) => shown.add((id, title, body, actions));
   });
   tearDown(() => n.debugState = null);

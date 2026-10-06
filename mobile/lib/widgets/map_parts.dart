@@ -148,12 +148,15 @@ class BottomPanel extends StatelessWidget {
                         ),
                       ),
                   // Le panneau ne dépasse pas 70 % de l'écran (par défaut) ; au-delà, son contenu défile.
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * maxHeightFactor),
-                    // Nouvelle étape (clé différente) : le contenu repart du haut.
-                    child: SingleChildScrollView(
-                      key: child.key == null ? null : ValueKey(child.key),
-                      child: AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
+                  // Flexible : avec une demande affichée au-dessus, le panneau rétrécit au lieu de déborder.
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * maxHeightFactor),
+                      // Nouvelle étape (clé différente) : le contenu repart du haut.
+                      child: SingleChildScrollView(
+                        key: child.key == null ? null : ValueKey(child.key),
+                        child: AnimatedSize(duration: const Duration(milliseconds: 250), child: child),
+                      ),
                     ),
                   ),
                 ],
