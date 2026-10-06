@@ -123,7 +123,7 @@ void main() {
     settings.requestSound = false; // pas de son dans le test
     await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: const DriverHome()));
     await tester.pump();
-    await tester.tap(find.text('Passer en ligne'));
+    await tester.tap(find.text('Commencer le service'));
     var shown = false;
     for (var i = 0; i < 1500 && !shown; i++) {
       await tester.pump(const Duration(milliseconds: 100));

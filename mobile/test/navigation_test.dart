@@ -74,7 +74,7 @@ void main() {
     settings.requestSound = false;
     await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: const DriverHome()));
     await tester.pump();
-    await tester.tap(find.text('Passer en ligne'));
+    await tester.tap(find.text('Commencer le service'));
     for (var i = 0; i < 600 && find.byKey(const ValueKey('navigate')).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       if (find.text('Accepter').evaluate().isNotEmpty) await tester.tap(find.text('Accepter'), warnIfMissed: false);

@@ -68,12 +68,12 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('premier lancement : « Continuer en démo » mène à l\'accueil', (tester) async {
+  testWidgets('premier lancement : « Plus tard » mène à l\'accueil', (tester) async {
     phone(tester);
     await tester.pumpWidget(const TaxiMarocApp(locate: false));
     await tester.pump();
     expect(find.text('Créer un compte'), findsWidgets);
-    await tester.tap(find.text('Continuer en démo'));
+    await tester.tap(find.text('Plus tard'));
     await tester.pumpAndSettle();
     expect(find.text('Où allez-vous ?'), findsOneWidget);
     expect(accountStore.account, isNull);
@@ -105,7 +105,7 @@ void main() {
     await tester.ensureVisible(find.text('Recevoir le code par SMS'));
     await tester.tap(find.text('Recevoir le code par SMS'));
     await tester.pump();
-    expect(find.textContaining('SMS simulé (démo)'), findsOneWidget);
+    expect(find.textContaining('Code de vérification'), findsOneWidget);
     await tester.enterText(find.byKey(const ValueKey('smsCode')), '0000');
     await tester.pump();
     expect(find.text('Code incorrect'), findsOneWidget);

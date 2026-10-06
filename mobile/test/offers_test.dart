@@ -38,23 +38,25 @@ void main() {
     final opt = options.first;
     final noon = DateTime(2026, 10, 5, 12); // lundi
 
-    expect(promosFor(destination: mall, option: opt, now: noon), [fashionPromo, koolsmoothiePromo]);
-    expect(promosFor(destination: mall, option: opt, now: DateTime(2026, 10, 5, 19)), [fashionPromo]);
-    expect(pickPromo(destination: place('Gare Casa Port'), option: opt, now: DateTime(2026, 10, 5, 8)), portCafePromo);
-    expect(pickPromo(destination: place('Anfa Place'), option: opt, now: noon), sportPromo);
-    expect(pickPromo(destination: place('Twin Center'), option: opt, now: noon), lunchPromo);
-    expect(
-        pickPromo(destination: place('Twin Center'), option: opt, now: DateTime(2026, 10, 4, 12)), // dimanche
-        koolsmoothiePromo);
-    expect(pickPromo(destination: place('Ain Diab'), option: opt, now: DateTime(2026, 10, 5, 21)), teaPromo);
-    expect(pickPromo(destination: place('Habous'), option: opt, now: noon), isNull);
+    // Caribou Coffee, annonceur principal, passe en premier sur tous les trajets ; puis les offres du contexte.
+    Promo? ctx(String name, DateTime now, [List<TripRecord> history = const []]) =>
+        promosFor(destination: place(name), option: opt, now: now, history: history).skip(1).firstOrNull;
+    expect(promosFor(destination: mall, option: opt, now: noon), [caribouPromo, fashionPromo, koolsmoothiePromo]);
+    expect(promosFor(destination: mall, option: opt, now: DateTime(2026, 10, 5, 19)), [caribouPromo, fashionPromo]);
+    expect(pickPromo(destination: place('Habous'), option: opt, now: noon), caribouPromo);
+    expect(ctx('Gare Casa Port', DateTime(2026, 10, 5, 8)), portCafePromo);
+    expect(ctx('Anfa Place', noon), sportPromo);
+    expect(ctx('Twin Center', noon), lunchPromo);
+    expect(ctx('Twin Center', DateTime(2026, 10, 4, 12)), koolsmoothiePromo); // dimanche
+    expect(ctx('Ain Diab', DateTime(2026, 10, 5, 21)), teaPromo);
+    expect(ctx('Habous', noon), isNull);
     final history = [
       for (var i = 0; i < 2; i++) TripRecord(destination: 'Ain Diab', option: 'Petit taxi', price: 15, date: noon),
     ];
-    expect(pickPromo(destination: place('Habous'), option: opt, now: noon, history: history), koolsmoothiePromo);
-    // Chaque annonceur a un badge (initiales), jamais un logo de marque.
+    expect(ctx('Habous', noon, history), koolsmoothiePromo);
+    // Chaque annonceur a un logo fourni ou un badge à initiales, et une adresse.
     for (final p in allPromos) {
-      expect(p.initials.length, inInclusiveRange(1, 3));
+      expect(p.logoAsset != null || p.initials.length <= 3, isTrue);
       expect(p.address, isNotEmpty);
     }
   });
@@ -139,7 +141,7 @@ void main() {
     await tester.pump();
 
     // Pas d'offre avant le début de la course.
-    expect(find.text('Exemple publicitaire (démo)'), findsNothing);
+    expect(find.text('Publicité'), findsNothing);
 
     // Siège bébé : gratuit, puis visible sur la fiche du chauffeur.
     await tester.ensureVisible(find.text('Siège bébé'));
@@ -172,7 +174,7 @@ void main() {
     }
     // Le taxi arrive : toujours pas d'offre.
     expect(find.text('Votre taxi arrive dans'), findsOneWidget);
-    expect(find.text('Exemple publicitaire (démo)'), findsNothing);
+    expect(find.text('Publicité'), findsNothing);
     for (var i = 0; i < 90 && find.text('Je suis dans le taxi').evaluate().isEmpty; i++) {
       await tester.pump(const Duration(seconds: 1));
     }
@@ -181,22 +183,22 @@ void main() {
     await tester.pump();
 
     // Passager à bord : l'offre apparaît, avec le badge de l'annonceur.
-    expect(find.text('Exemple publicitaire (démo)'), findsOneWidget);
-    expect(find.text('-15 % sur la nouvelle collection'), findsOneWidget);
+    expect(find.text('Publicité'), findsOneWidget);
+    expect(find.text('-20 % sur votre café'), findsOneWidget);
     expect(find.byType(BrandBadge), findsOneWidget);
 
-    await tester.ensureVisible(find.text('-15 % sur la nouvelle collection'));
-    await tester.tap(find.text('-15 % sur la nouvelle collection'));
+    await tester.ensureVisible(find.text('-20 % sur votre café'));
+    await tester.tap(find.text('-20 % sur votre café'));
     await tester.pumpAndSettle();
     expect(find.text('Votre bon de réduction'), findsOneWidget);
     expect(find.byType(QrImageView), findsOneWidget);
     final code = tester.widget<QrImageView>(find.byType(QrImageView));
     final text = tester.widget<SelectableText>(find.byType(SelectableText)).data!;
-    expect(text, startsWith('TM-$demoUserId-MODE-T'));
+    expect(text, startsWith('TM-$demoUserId-CARIBOU-T'));
     expect(isValidCouponCode(text), isTrue);
     expect(code.semanticsLabel, isNotNull);
     expect(find.text('Valable 24 h, une fois, sur présentation en caisse'), findsOneWidget);
-    expect(find.textContaining('Morocco Mall, niveau 1'), findsOneWidget);
+    expect(find.textContaining('Cafés Caribou Coffee de Casablanca'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Enregistrer dans mes offres'));
     await tester.tap(find.text('Enregistrer dans mes offres'));
@@ -210,7 +212,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Mes offres'));
     await tester.pumpAndSettle();
-    expect(find.text('-15 % sur la nouvelle collection'), findsOneWidget);
+    expect(find.text('-20 % sur votre café'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -229,7 +231,7 @@ void main() {
     expect(find.text('Your taxi arrives in'), findsOneWidget);
     expect(find.text('Restaurants near Gare Casa Voyageurs'), findsOneWidget);
     expect(find.text('Take a taxi there'), findsNWidgets(3));
-    expect(find.text('TripAdvisor rating (demo)'), findsNWidgets(3));
+    expect(find.text('Customer rating'), findsNWidgets(3));
 
     final first = restaurantsNear(place('Gare Casa Voyageurs')).first.$1;
     // Confirmation : nouveau prix depuis la position actuelle, même type de taxi, et nouvelle arrivée.
@@ -277,7 +279,7 @@ void main() {
     expect(find.text('Vers Maison'), findsOneWidget);
     expect(find.text('Uniquement les passagers sur votre trajet'), findsOneWidget);
 
-    await tester.tap(find.text('Passer en ligne'));
+    await tester.tap(find.text('Commencer le service'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byKey(const ValueKey('myDestBanner')), findsOneWidget);
 

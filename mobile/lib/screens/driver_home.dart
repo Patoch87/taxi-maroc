@@ -22,7 +22,6 @@ import '../services/request_chime.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 import '../widgets/google_taxi_map.dart';
-import '../widgets/live_tile.dart';
 import '../widgets/map_parts.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
@@ -472,7 +471,7 @@ class _DriverHomeState extends State<DriverHome> {
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(s.t('liveMode')),
+        title: Text(s.t('goOnline')),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(s.t('liveDriverIntro')),
           const SizedBox(height: 12),
@@ -1527,7 +1526,6 @@ class _DriverHomeState extends State<DriverHome> {
               ),
             ),
             const Divider(),
-            const LiveModeTile(),
             const Divider(),
             ListTile(
               key: const ValueKey('mapEngine'),

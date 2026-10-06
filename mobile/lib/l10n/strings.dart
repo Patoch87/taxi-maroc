@@ -114,12 +114,6 @@ class S {
   static const Map<String, List<String>> _t = {
     // Général
     'appTitle': ['Bab Taxi', 'باب طاكسي', 'باب طاكسي', 'Bab Taxi'],
-    'demoBanner': [
-      'Démo : taxis fictifs',
-      'تجريبي: طاكسيات وهمية',
-      'تجريبي: طاكسيات ماشي حقيقيين',
-      'Demo: simulated taxis'
-    ],
     'error': ['Erreur de connexion', 'خطأ في الاتصال', 'كاين مشكل فالكونيكسيون', 'Connection error'],
     'cancel': ['Annuler', 'إلغاء', 'لغي', 'Cancel'],
     'done': ['Terminer', 'إنهاء', 'سالينا', 'Done'],
@@ -284,7 +278,7 @@ class S {
     'noHistory': ['Aucune course pour le moment', 'لا توجد رحلات بعد', 'ما زال ما درتي حتى كورصة', 'No rides yet'],
 
     'driverReplyOk': ['D\'accord, j\'arrive', 'حسنا، أنا قادم', 'واخا، جاي', 'OK, on my way'],
-    'fastForward': ['Accélérer (démo)', 'تسريع (تجريبي)', 'زربها (تجريبي)', 'Fast-forward (demo)'],
+    'fastForward': ["Accélérer", "تسريع", "زربها", "Fast-forward"],
     'tripBooked': ['Course réservée pour', 'تم حجز الرحلة على', 'الكورصة تريزيرفات مع', 'Ride booked for'],
     'payment': ['Paiement', 'الدفع', 'الخلاص', 'Payment'],
     'driverInfo': ['Votre chauffeur', 'السائق الخاص بك', 'الشيفور ديالك', 'Your driver'],
@@ -419,15 +413,9 @@ class S {
     'colorRed': ['rouge', 'أحمر', 'حمر', 'red'],
     'colorBlack': ['noire', 'سوداء', 'كحلة', 'black'],
     'colorBeige': ['beige', 'بيج', 'بيج', 'beige'],
-    'demoShort': ['Démo', 'تجريبي', 'تجريبي', 'Demo'],
 
     // Offres contextuelles (exemples de démo)
-    'promoLabel': [
-      'Exemple publicitaire (démo)',
-      'مثال إشهاري (تجريبي)',
-      'مثال ديال الإشهار (تجريبي)',
-      'Ad example (demo)'
-    ],
+    'promoLabel': ["Publicité", "إشهار", "إشهار", "Ad"],
     'seeOffer': ['Voir une offre', 'عرض متاح', 'شوف واحد العرض', 'See an offer'],
 
     // Offres réalistes (démo) et bons de réduction avec QR code
@@ -562,12 +550,7 @@ class S {
       'البوربوار كيتخلص بالكارط',
       'The tip is paid by card'
     ],
-    'simulatedPayment': [
-      'Paiement simulé (démo)',
-      'دفع تجريبي (محاكاة)',
-      'خلاص تجريبي (ديمو)',
-      'Simulated payment (demo)'
-    ],
+    'simulatedPayment': ["Aucun montant n'est débité", "لن يتم خصم أي مبلغ", "ما غادي يتقطع حتى درهم", "No money is charged"],
     'savedCard': ['Carte enregistrée', 'بطاقة محفوظة', 'الكارط المسجلة', 'Saved card'],
     'addCard': ['Ajouter une carte', 'إضافة بطاقة', 'زيد كارط', 'Add a card'],
     'cardNumber': ['Numéro de carte', 'رقم البطاقة', 'نمرة الكارط', 'Card number'],
@@ -621,12 +604,7 @@ class S {
     'appLanguage': ['Langue de l\'application', 'لغة التطبيق', 'اللغة ديال التطبيق', 'App language'],
     'sendCode': ['Recevoir le code par SMS', 'استلام الرمز عبر SMS', 'توصل بالكود فـ SMS', 'Get the code by SMS'],
     'smsCode': ['Code reçu par SMS', 'الرمز المستلم عبر SMS', 'الكود اللي جاك فـ SMS', 'Code received by SMS'],
-    'codeSentDemo': [
-      'SMS simulé (démo), code :',
-      'رسالة تجريبية (محاكاة)، الرمز:',
-      'SMS تجريبي (ديمو)، الكود:',
-      'Simulated SMS (demo), code:'
-    ],
+    'codeSentDemo': ["Code de vérification :", "رمز التحقق:", "كود التأكيد:", "Verification code:"],
     'wrongCode': ['Code incorrect', 'رمز غير صحيح', 'الكود غالط', 'Wrong code'],
     'requiredField': ['Champ obligatoire', 'حقل إلزامي', 'خاصك تعمرها', 'Required field'],
     'invalidPhone': [
@@ -644,7 +622,7 @@ class S {
     ],
     'phoneVerified': ['Numéro vérifié', 'تم التحقق من الرقم', 'النمرة تأكدات', 'Number verified'],
     'saveAccount': ['Enregistrer', 'حفظ', 'سجل', 'Save'],
-    'continueDemo': ['Continuer en démo', 'المتابعة في الوضع التجريبي', 'كمل فالديمو', 'Continue in demo mode'],
+    'continueDemo': ["Plus tard", "لاحقاً", "من بعد", "Later"],
     'accountCreated': ['Compte créé', 'تم إنشاء الحساب', 'الحساب تصايب', 'Account created'],
     'accountSaved': ['Compte mis à jour', 'تم تحديث الحساب', 'الحساب تبدل', 'Account updated'],
     'accountId': ['Identifiant du compte', 'معرف الحساب', 'الرقم ديال الحساب', 'Account ID'],
@@ -709,24 +687,12 @@ class S {
       'Only riders along your route'
     ],
     'clearDest': ['Retirer ma destination', 'إزالة وجهتي', 'حيد الوجهة', 'Remove my destination'],
-    'driverDestReached': [
-      'Arrivé, vous êtes hors ligne',
-      'وصلت، أنت الآن غير متصل',
-      'وصلتي، دابا راك مطفي',
-      'Arrived, you are now offline'
-    ],
+    'driverDestReached': ["Arrivé, fin du service", "وصلت، انتهى العمل", "وصلتي، سالات الخدمة", "Arrived, shift ended"],
     'navNotInstalled': [
       "Application non installée, ouverture du Play Store",
       "التطبيق غير مثبت، فتح متجر Play",
       "التطبيق ما كاينش، كنحلو Play Store",
       "App not installed, opening the Play Store"
-    ],
-    'liveMode': ["Test réel", "تجربة حقيقية", "تجربة بصح", "Live test"],
-    'liveModeDesc': [
-      "Relie les téléphones entre eux : vrais chauffeurs, vrais passagers, vraies positions",
-      "يربط الهواتف ببعضها: سائقون وركاب ومواقع حقيقية",
-      "كيربط التيليفونات: شيفورات وكليان وبلايص بصح",
-      "Connects phones together: real drivers, real riders, real locations"
     ],
     'liveUnreachable': [
       "Serveur injoignable, nouvel essai…",
@@ -740,19 +706,15 @@ class S {
       "حتى شيفور ما قبل. عاود من بعد شوية.",
       "No driver accepted. Try again in a moment."
     ],
-    'liveDriverIntro': [
-      "Votre position GPS est partagée avec les passagers tant que vous êtes en ligne.",
-      "يتم مشاركة موقعك مع الركاب ما دمت متصلا.",
-      "البلاصة ديالك كتبان للكليان ما دام نتا شاعل.",
-      "Your GPS location is shared with riders while you are online."
-    ],
+    'liveDriverIntro': ["Votre position GPS est partagée avec les passagers pendant votre service.", "يتم مشاركة موقعك مع الركاب أثناء العمل.", "الموقع ديالك كيتشارك مع الكليان وانت خدام.", "Your GPS location is shared with riders during your shift."],
     'plateOptional': [
       "Plaque du taxi (facultatif)",
       "لوحة الطاكسي (اختياري)",
       "الماتريكولا (اختياري)",
       "Taxi plate (optional)"
     ],
-    'liveServer': ["Adresse du serveur", "عنوان الخادم", "عنوان السيرفر", "Server address"],
+    'offerCaribou': ["-20 % sur votre café", "تخفيض 20% على قهوتك", "-20% على القهوة ديالك", "20% off your coffee"],
+    'offerCaribouDetail': ["Sur présentation du bon Bab Taxi", "عند تقديم قسيمة باب طاكسي", "ملي تورّي البون ديال باب طاكسي", "Show your Bab Taxi voucher"],
     'navAsk': ['Demander à chaque fois', 'السؤال في كل مرة', 'سولني كل مرة', 'Ask every time'],
     'navSetting': ['Navigation vers les passagers', 'التنقل نحو الركاب', 'الطريق للزبناء', 'Navigation to passengers'],
     'navRemember': [
@@ -804,12 +766,7 @@ class S {
 
     // Touristes : restaurants
     'restaurantsNear': ['Restaurants près de', 'مطاعم قرب', 'ريسطورات قراب من', 'Restaurants near'],
-    'tripadvisorDemo': [
-      'Note TripAdvisor (démo)',
-      'تقييم تريب أدفايزر (تجريبي)',
-      'تقييم تريب أدفايزر (تجريبي)',
-      'TripAdvisor rating (demo)'
-    ],
+    'tripadvisorDemo': ["Avis clients", "آراء الزبناء", "رأي الكليان", "Customer rating"],
     'reviews': ['avis', 'تقييم', 'تقييم', 'reviews'],
     'goByTaxi': ['Y aller en taxi', 'الذهاب بالطاكسي', 'سير ليه بالطاكسي', 'Take a taxi there'],
     'newDestination': ['Nouvelle destination', 'وجهة جديدة', 'بلاصة جديدة', 'New destination'],
@@ -837,9 +794,9 @@ class S {
 
     // Chauffeur
     'driverMode': ['Mode chauffeur', 'وضع السائق', 'وضع الشيفور', 'Driver mode'],
-    'online': ['En ligne', 'متصل', 'خدام', 'Online'],
-    'offline': ['Hors ligne', 'غير متصل', 'ماشي خدام', 'Offline'],
-    'goOnline': ['Passer en ligne', 'ابدأ العمل', 'بدا الخدمة', 'Go online'],
+    'online': ["Disponible", "متاح", "واجد", "Available"],
+    'offline': ["Indisponible", "غير متاح", "ماشي واجد", "Unavailable"],
+    'goOnline': ["Commencer le service", "ابدأ العمل", "بدا الخدمة", "Start shift"],
     'chooseTaxiType': ['Votre taxi', 'الطاكسي الخاص بك', 'الطاكسي ديالك', 'Your taxi'],
     'seats': ['places', 'مقاعد', 'بلايص', 'seats'],
     'seat': ['place', 'مقعد', 'بلاصة', 'seat'],

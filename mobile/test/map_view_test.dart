@@ -79,12 +79,12 @@ void main() {
     await tester.drag(handle, const Offset(0, 300));
     await tester.pump();
     expect(find.byType(AdBanner), findsOneWidget);
-    expect(find.text('Exemple publicitaire (démo)'), findsOneWidget);
+    expect(find.text('Publicité'), findsOneWidget);
     expect(find.byTooltip('SOS urgence'), findsOneWidget);
 
     // Rotation toutes les 15 s, toujours avec la mention.
     await tester.pump(const Duration(seconds: 15));
-    expect(find.text('Exemple publicitaire (démo)'), findsOneWidget);
+    expect(find.text('Publicité'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Masquer la publicité'));
     await tester.pump();

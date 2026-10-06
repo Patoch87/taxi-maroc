@@ -27,7 +27,6 @@ import '../widgets/app_logo.dart';
 import '../widgets/driver_card.dart';
 import '../widgets/google_taxi_map.dart';
 import '../widgets/language_sheet.dart';
-import '../widgets/live_tile.dart';
 import '../widgets/map_parts.dart';
 import '../widgets/promo_card.dart';
 import '../widgets/senior.dart';
@@ -1826,7 +1825,7 @@ class _RiderHomeState extends State<RiderHome> {
         icon: const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 48),
         title: Text(s.t('thanksSent'), textAlign: TextAlign.center),
         content: tip > 0
-            ? Text('${s.t('tipPaid')} : ${dh(tip)} · ${s.t('simulatedPayment')}', textAlign: TextAlign.center)
+            ? Text('${s.t('tipPaid')} : ${dh(tip)}', textAlign: TextAlign.center)
             : null,
         actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
       ),
@@ -1950,7 +1949,7 @@ class _RiderHomeState extends State<RiderHome> {
           const Icon(Icons.credit_card, size: 16, color: AppColors.muted),
           const SizedBox(width: 6),
           Expanded(
-            child: Text('${s.t('tipByCard')} · ${s.t('simulatedPayment')}',
+            child: Text(s.t('tipByCard'),
                 style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ),
         ]),
@@ -2014,7 +2013,6 @@ class _RiderHomeState extends State<RiderHome> {
             _menuItem(Icons.local_offer_outlined, s.t('myOffers'), () => const MyOffersScreen()),
             _menuItem(Icons.people_alt_outlined, s.t('trustedContacts'), () => const TrustedContactsScreen()),
             _menuItem(Icons.drive_eta_outlined, s.t('driverMode'), () => const DriverHome()),
-            const LiveModeTile(),
             ListTile(
               leading: const Icon(Icons.shield_outlined),
               title: Text(s.t('safety')),
@@ -2241,7 +2239,7 @@ class _RiderHomeState extends State<RiderHome> {
                         borderRadius: BorderRadius.circular(26),
                         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
                       ),
-                      child: AppBrand(title: s.t('appTitle'), subtitle: s.t(live.enabled ? 'liveMode' : 'demoShort')),
+                      child: AppBrand(title: s.t('appTitle'), subtitle: null),
                     ),
                   )),
                   const SizedBox(width: 8),

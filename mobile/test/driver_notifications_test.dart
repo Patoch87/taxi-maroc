@@ -25,7 +25,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: const DriverHome()));
     await tester.pump();
-    await tester.tap(find.text('Passer en ligne'));
+    await tester.tap(find.text('Commencer le service'));
     for (var i = 0; i < 600 && shown.isEmpty && find.text('Accepter').evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

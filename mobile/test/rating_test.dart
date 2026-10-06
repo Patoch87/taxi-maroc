@@ -27,8 +27,8 @@ Future<void> rideToTheEnd(WidgetTester tester) async {
   await tester.pump();
   // Démo : ×1 → ×2 → ×3 → ×4, la vitesse est affichée sur le bouton.
   for (final x in [2, 3, 4]) {
-    await tester.ensureVisible(find.textContaining('Accélérer (démo)'));
-    await tester.tap(find.textContaining('Accélérer (démo)'));
+    await tester.ensureVisible(find.textContaining('Accélérer'));
+    await tester.tap(find.textContaining('Accélérer'));
     await tester.pump();
     expect(find.text('×$x'), findsOneWidget);
   }
@@ -77,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Paiement simulé : carte enregistrée, ou nouvelle carte vérifiée au format.
-    expect(find.text('Paiement simulé (démo)'), findsOneWidget);
+    expect(find.text("Aucun montant n'est débité"), findsOneWidget);
     expect(find.text('Visa •••• 4242'), findsOneWidget);
     await tester.tap(find.text('Ajouter une carte'));
     await tester.pump();

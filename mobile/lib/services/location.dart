@@ -38,7 +38,7 @@ Stream<LatLng> positionStream() => Geolocator.getPositionStream(
               accuracy: LocationAccuracy.high,
               distanceFilter: 5,
               foregroundNotificationConfig: const ForegroundNotificationConfig(
-                notificationTitle: 'Bab Taxi : vous êtes en ligne',
+                notificationTitle: 'Bab Taxi : service en cours',
                 notificationText: 'Votre position est partagée avec les passagers.',
                 enableWakeLock: true,
                 setOngoing: true,

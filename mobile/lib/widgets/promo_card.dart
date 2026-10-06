@@ -6,7 +6,7 @@ import '../services/rides.dart';
 import '../services/tourism.dart';
 import '../theme.dart';
 
-/// Carte d'offre discrète, toujours marquée « Exemple publicitaire (démo) ».
+/// Carte d'offre discrète, toujours marquée « Publicité ».
 class PromoCard extends StatelessWidget {
   const PromoCard({super.key, required this.promo, this.big = false, this.onClose, this.onTap});
   final Promo promo;
@@ -76,15 +76,31 @@ class PromoCard extends StatelessWidget {
       );
 }
 
-/// Badge de l'annonceur : initiales sur sa couleur, dans une tuile arrondie.
-/// Aucun logo de marque n'est reproduit ; en production, les vrais logos sont fournis par les annonceurs sous contrat.
+/// Badge de l'annonceur : son logo s'il est fourni, sinon ses initiales sur sa couleur.
 class BrandBadge extends StatelessWidget {
   const BrandBadge({super.key, required this.promo, this.size = 44});
   final Promo promo;
   final double size;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final logo = promo.logoAsset;
+    if (logo == null) return _initials();
+    return Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size * .28),
+        border: Border.all(color: AppColors.line),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)],
+      ),
+      child: Image.asset(logo, fit: BoxFit.contain, errorBuilder: (_, __, ___) => _initials()),
+    );
+  }
+
+  Widget _initials() => Container(
         width: size,
         height: size,
         alignment: Alignment.center,
@@ -98,6 +114,7 @@ class BrandBadge extends StatelessWidget {
         child: FittedBox(
           child: Text(promo.initials,
               textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20, height: 1)),
         ),
       );

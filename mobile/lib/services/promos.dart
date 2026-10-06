@@ -18,6 +18,7 @@ class Promo {
     required this.address,
     required this.icon,
     required this.color,
+    this.logoAsset,
   });
 
   /// Identifiant court, repris dans le code du bon (lettres majuscules).
@@ -35,7 +36,23 @@ class Promo {
   final String address;
   final IconData icon;
   final Color color;
+
+  /// Logo fourni par l'annonceur (assets/ads/…) ; sans fichier, le badge affiche [initials].
+  final String? logoAsset;
 }
+
+/// Annonceur principal : affiché sur tous les trajets, en premier.
+const caribouPromo = Promo(
+  id: 'CARIBOU',
+  brand: 'Caribou Coffee',
+  initials: 'CARIBOU\nCOFFEE',
+  titleKey: 'offerCaribou',
+  detailKey: 'offerCaribouDetail',
+  address: 'Cafés Caribou Coffee de Casablanca',
+  icon: Icons.coffee_outlined,
+  color: Color(0xFF3E2418),
+  logoAsset: 'assets/ads/caribou_coffee.png',
+);
 
 const fashionPromo = Promo(
   id: 'MODE',
@@ -104,7 +121,7 @@ const teaPromo = Promo(
 );
 
 /// Toutes les offres de la démo.
-const allPromos = [fashionPromo, koolsmoothiePromo, portCafePromo, sportPromo, lunchPromo, teaPromo];
+const allPromos = [caribouPromo, fashionPromo, koolsmoothiePromo, portCafePromo, sportPromo, lunchPromo, teaPromo];
 
 /// Bandeau générique, non personnalisé (quand aucune offre ne correspond au trajet).
 const genericPromo = Promo(
@@ -134,6 +151,7 @@ List<Promo> promosFor({
   final regular = history.where((r) => !r.scheduled && _seaPlaces.contains(r.destination)).length >= 2;
   final name = destination.name;
   return [
+    caribouPromo,
     if (name == 'Morocco Mall') fashionPromo,
     if (name == 'Anfa Place') sportPromo,
     if (name == 'Twin Center' && weekday && h >= 11 && h < 15) lunchPromo,
