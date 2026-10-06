@@ -256,6 +256,7 @@ const Map<String, String> ko = {
   'requestSoundDesc': '경로에 승객이 나타나면 부드러운 알림음',
   'driverSettings': '기사 설정',
   'requestVoice': '목적지 음성 안내',
+  'mapLabel': '지도',
   'navigate': '길안내',
   'navigateTo': '길안내:',
   'navStayInApp': '앱에서 계속',

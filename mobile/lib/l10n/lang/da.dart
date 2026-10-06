@@ -257,6 +257,7 @@ const Map<String, String> da = {
   'requestSoundDesc': 'En blid lyd, når en passager dukker op på din rute',
   'driverSettings': 'Chaufførindstillinger',
   'requestVoice': 'Destination læst op',
+  'mapLabel': 'Kort',
   'navigate': 'Navigér',
   'navigateTo': 'Navigér til',
   'navStayInApp': 'Bliv i appen',

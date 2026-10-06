@@ -46,6 +46,13 @@ jobs:
       - run: flutter test
       # APK en mode démo (sans API_URL) : installable directement sur un téléphone Android.
       # Clé Google Maps facultative (secret MAPS_API_KEY) : sans elle, l'APK garde la carte OpenStreetMap.
+      # Indique (sans la montrer) si la clé est présente : annotation lisible sur l'exécution.
+      - name: Clé Google Maps
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: |
+          if [ -n "$MAPS_API_KEY" ]; then echo "::notice title=Google Maps::Clé présente (${#MAPS_API_KEY} caractères)"
+          else echo "::warning title=Google Maps::Aucune clé MAPS_API_KEY : carte OpenStreetMap"; fi
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}

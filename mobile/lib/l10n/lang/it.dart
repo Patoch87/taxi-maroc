@@ -257,6 +257,7 @@ const Map<String, String> it = {
   'requestSoundDesc': 'Un suono leggero quando un passeggero appare sul tuo percorso',
   'driverSettings': 'Impostazioni autista',
   'requestVoice': 'Annuncio vocale della destinazione',
+  'mapLabel': 'Mappa',
   'navigate': 'Naviga',
   'navigateTo': 'Naviga verso',
   'navStayInApp': 'Resta nell\'app',

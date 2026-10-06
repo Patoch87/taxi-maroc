@@ -257,6 +257,7 @@ const Map<String, String> fa = {
   'requestSoundDesc': 'صدای ملایم وقتی مسافری در مسیر شما ظاهر می‌شود',
   'driverSettings': 'تنظیمات راننده',
   'requestVoice': 'اعلام صوتی مقصد',
+  'mapLabel': 'نقشه',
   'navigate': 'مسیریابی',
   'navigateTo': 'مسیریابی به',
   'navStayInApp': 'ماندن در برنامه',

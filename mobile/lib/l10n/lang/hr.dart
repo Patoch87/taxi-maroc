@@ -257,6 +257,7 @@ const Map<String, String> hr = {
   'requestSoundDesc': 'Tihi zvuk kad se putnik pojavi na vašoj ruti',
   'driverSettings': 'Postavke vozača',
   'requestVoice': 'Glasovna najava odredišta',
+  'mapLabel': 'Karta',
   'navigate': 'Navigacija',
   'navigateTo': 'Navigacija do',
   'navStayInApp': 'Ostani u aplikaciji',

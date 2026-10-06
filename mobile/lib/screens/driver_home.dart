@@ -1236,6 +1236,13 @@ class _DriverHomeState extends State<DriverHome> {
               ),
             ),
             const Divider(),
+            ListTile(
+              key: const ValueKey('mapEngine'),
+              leading: const Icon(Icons.map_outlined),
+              title: Text(s.t('mapLabel')),
+              trailing: Text(useGoogleMaps ? 'Google Maps' : 'OpenStreetMap',
+                  style: const TextStyle(fontWeight: FontWeight.w800)),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Text(s.t('navSetting'), style: const TextStyle(fontWeight: FontWeight.w800)),

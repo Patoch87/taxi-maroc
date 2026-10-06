@@ -681,6 +681,7 @@ class S {
       'قراية الوجهة بالصوت',
       'Spoken destination'
     ],
+    'mapLabel': ['Carte', 'الخريطة', 'الخريطة', 'Map'],
     'navigate': ['Naviguer', 'التنقل', 'الطريق', 'Navigate'],
     'navigateTo': ['Naviguer vers', 'التوجه إلى', 'سير عند', 'Navigate to'],
     'navStayInApp': ['Rester dans l\'application', 'البقاء في التطبيق', 'بقى فالتطبيق', 'Stay in the app'],
