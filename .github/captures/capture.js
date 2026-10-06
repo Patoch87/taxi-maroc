@@ -29,8 +29,8 @@ const { chromium } = require('playwright');
     await page.evaluate(() => document.querySelector('flt-semantics-placeholder')?.click());
     await page.waitForTimeout(1500);
     // Premier lancement : création du compte proposée ; les captures continuent en démo.
-    if (!keepSignUp && (await target('Continuer en démo').count())) {
-      await tap('Continuer en démo');
+    if (!keepSignUp && (await target('Plus tard').count())) {
+      await tap('Plus tard');
       await page.waitForTimeout(1500);
     }
   };
@@ -72,7 +72,7 @@ const { chromium } = require('playwright');
   await page.waitForTimeout(1000);
   await tap('Mode chauffeur');
   await shot('6-chauffeur-hors-ligne', 3000);
-  await tap('Passer en ligne');
+  await tap('Commencer le service');
   await target('Accepter').waitFor({ timeout: 40000 });
   await shot('7-chauffeur-demande', 1500);
   await tap('Accepter');
@@ -263,7 +263,7 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
-    await tap('Passer en ligne');
+    await tap('Commencer le service');
     await target('Accepter').waitFor({ timeout: 40000 });
     // Accepte les demandes jusqu'à approcher d'un passager (moins de 50 m) : le rappel s'affiche.
     for (let i = 0; i < 240; i++) {
@@ -281,7 +281,7 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
-    await tap('Passer en ligne');
+    await tap('Commencer le service');
     await target('Accepter').waitFor({ timeout: 40000 });
     await tap('Accepter');
     await page.waitForTimeout(1500);
@@ -299,7 +299,7 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(2500);
     await tap('Je rentre chez moi');
     await shot('18-chauffeur-ma-destination', 800);
-    await tap('Passer en ligne');
+    await tap('Commencer le service');
     await shot('19-chauffeur-trajet-maison', 5000);
   });
 

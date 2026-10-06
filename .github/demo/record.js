@@ -161,11 +161,11 @@ const [url, out] = process.argv.slice(2);
   };
   // Démo accélérée : touche « Accélérer » jusqu'à ×4.
   const fast = async () => {
-    for (let i = 0; i < 4 && !(await present('Accélérer (démo) ×4')); i++) {
+    for (let i = 0; i < 4 && !(await present('Accélérer ×4')); i++) {
       await tap('Accélérer');
       await wait(300);
     }
-    if (!(await present('Accélérer (démo) ×4'))) throw new Error('vitesse ×4 non atteinte');
+    if (!(await present('Accélérer ×4'))) throw new Error('vitesse ×4 non atteinte');
   };
   const scrollPanel = async (dy, times = 4) => {
     await page.mouse.move(VIEW.width / 2, VIEW.height - 80);
@@ -373,7 +373,7 @@ const [url, out] = process.argv.slice(2);
     caption(null);
     skip(true);
     await tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
-    await tapFor('mode chauffeur', 'Mode chauffeur', 'Passer en ligne', 15);
+    await tapFor('mode chauffeur', 'Mode chauffeur', 'Commencer le service', 15);
     await wait(1500);
     skip(false);
     await chapterCard(
@@ -385,7 +385,7 @@ const [url, out] = process.argv.slice(2);
     caption('Hors ligne : le chauffeur choisit quand il travaille');
     await expectScreen('hors ligne', 'Hors ligne', 5);
     await wait(3000);
-    await tapFor('en ligne', 'Passer en ligne', 'En ligne', 15);
+    await tapFor('en ligne', 'Commencer le service', 'Disponible', 15);
     caption('En ligne : les courses arrivent sur son chemin');
     await wait(2500);
     // Montre un écran tant que « still » reste vrai (au plus « ms ») ; renvoie la durée montrée (s).
