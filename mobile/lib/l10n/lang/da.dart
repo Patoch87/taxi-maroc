@@ -327,4 +327,11 @@ const Map<String, String> da = {
   'clearDest': "Fjern destination",
   'driverDestReached': "Ankommet, du er offline",
   'navNotInstalled': "Appen er ikke installeret, åbner Play Butik",
+  'liveMode': "Rigtig test",
+  'liveModeDesc': "Forbinder telefonerne: rigtige chauffører, passagerer og positioner",
+  'liveUnreachable': "Serveren kan ikke nås, prøver igen…",
+  'noTaxiAccepted': "Ingen chauffør accepterede. Prøv igen om lidt.",
+  'liveDriverIntro': "Din GPS-position deles med passagerer, mens du er online.",
+  'plateOptional': "Nummerplade (valgfri)",
+  'liveServer': "Serveradresse",
 };

@@ -721,6 +721,38 @@ class S {
       "التطبيق ما كاينش، كنحلو Play Store",
       "App not installed, opening the Play Store"
     ],
+    'liveMode': ["Test réel", "تجربة حقيقية", "تجربة بصح", "Live test"],
+    'liveModeDesc': [
+      "Relie les téléphones entre eux : vrais chauffeurs, vrais passagers, vraies positions",
+      "يربط الهواتف ببعضها: سائقون وركاب ومواقع حقيقية",
+      "كيربط التيليفونات: شيفورات وكليان وبلايص بصح",
+      "Connects phones together: real drivers, real riders, real locations"
+    ],
+    'liveUnreachable': [
+      "Serveur injoignable, nouvel essai…",
+      "تعذر الوصول إلى الخادم، إعادة المحاولة…",
+      "السيرفر ما جاوبش، كنعاودو…",
+      "Server unreachable, retrying…"
+    ],
+    'noTaxiAccepted': [
+      "Aucun chauffeur n'a accepté. Réessayez dans un instant.",
+      "لم يقبل أي سائق. حاول بعد قليل.",
+      "حتى شيفور ما قبل. عاود من بعد شوية.",
+      "No driver accepted. Try again in a moment."
+    ],
+    'liveDriverIntro': [
+      "Votre position GPS est partagée avec les passagers tant que vous êtes en ligne.",
+      "يتم مشاركة موقعك مع الركاب ما دمت متصلا.",
+      "البلاصة ديالك كتبان للكليان ما دام نتا شاعل.",
+      "Your GPS location is shared with riders while you are online."
+    ],
+    'plateOptional': [
+      "Plaque du taxi (facultatif)",
+      "لوحة الطاكسي (اختياري)",
+      "الماتريكولا (اختياري)",
+      "Taxi plate (optional)"
+    ],
+    'liveServer': ["Adresse du serveur", "عنوان الخادم", "عنوان السيرفر", "Server address"],
     'navAsk': ['Demander à chaque fois', 'السؤال في كل مرة', 'سولني كل مرة', 'Ask every time'],
     'navSetting': ['Navigation vers les passagers', 'التنقل نحو الركاب', 'الطريق للزبناء', 'Navigation to passengers'],
     'navRemember': [

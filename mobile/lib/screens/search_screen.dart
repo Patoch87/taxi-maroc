@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../main.dart';
+import '../services/geocode.dart';
+import '../services/live.dart';
 import '../services/places.dart';
 import '../services/settings.dart';
 import '../services/voice.dart';
@@ -12,9 +17,12 @@ import '../widgets/senior.dart';
 /// La destination dictée est d'abord répétée à voix haute, puis écrite dans la recherche.
 /// En mode senior : très gros texte, gros bouton « Dire ma destination » et grandes lignes de résultats.
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, this.startWithVoice = false, this.senior = false});
+  const SearchScreen({super.key, this.startWithVoice = false, this.senior = false, this.near});
   final bool startWithVoice;
   final bool senior;
+
+  /// Position du téléphone : en test réel, les adresses proches sont proposées en premier.
+  final LatLng? near;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -28,6 +36,28 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   String _heard = '';
   String? _voiceStatus;
 
+  /// Test réel : adresses trouvées partout (OpenStreetMap), en plus des lieux de la démo.
+  List<Place> _addresses = [];
+  Timer? _debounce;
+  String _searched = '';
+
+  void _onQuery() {
+    setState(() {});
+    if (!live.enabled) return;
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 600), () async {
+      final q = _ctrl.text;
+      if (q == _searched) return;
+      _searched = q;
+      try {
+        final found = await searchAddresses(q, near: widget.near, lang: s.lang == 'dr' ? 'ar' : s.lang);
+        if (mounted && _ctrl.text == q) setState(() => _addresses = found);
+      } catch (_) {
+        // Hors ligne : seuls les lieux de la démo restent proposés.
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +66,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _pulse.dispose();
     _voice.stop();
     super.dispose();
@@ -78,6 +109,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     final place = findPlace(words);
     final query = place?.name ?? words;
     _ctrl.text = query;
+    _onQuery();
     setState(() => _voiceStatus = '${s.t('searchingFor')} « $query »');
     if (place != null) await _voice.say('${s.t('searchingFor')} ${place.name}');
   }
@@ -136,7 +168,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
               child: TextField(
                 controller: _ctrl,
                 autofocus: !widget.startWithVoice && !big,
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) => _onQuery(),
                 style: TextStyle(fontSize: big ? 26 : 16, fontWeight: big ? FontWeight.w700 : null),
                 decoration: InputDecoration(
                   hintText: big ? s.t('typeDestination') : s.t('searchPlace'),
@@ -200,6 +232,9 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                   _tile(workPlace, Icons.work_rounded, s.t('work')),
                   const Divider(height: 1, color: AppColors.line),
                 ],
+                // Test réel : les adresses autour du téléphone d'abord.
+                if (live.enabled && _ctrl.text.trim().length >= 3)
+                  for (final p in _addresses) _tile(p, Icons.location_on_outlined, p.name),
                 for (final p in results) _tile(p, p.intercity ? Icons.alt_route : Icons.place_outlined, p.name),
               ],
             ),

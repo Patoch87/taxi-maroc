@@ -327,4 +327,11 @@ const Map<String, String> nl = {
   'clearDest': "Bestemming verwijderen",
   'driverDestReached': "Aangekomen, u bent offline",
   'navNotInstalled': "App niet geïnstalleerd, Play Store wordt geopend",
+  'liveMode': "Echte test",
+  'liveModeDesc': "Verbindt de telefoons: echte chauffeurs, passagiers en posities",
+  'liveUnreachable': "Server onbereikbaar, opnieuw proberen…",
+  'noTaxiAccepted': "Geen chauffeur heeft geaccepteerd. Probeer het zo opnieuw.",
+  'liveDriverIntro': "Uw GPS-locatie wordt gedeeld met passagiers zolang u online bent.",
+  'plateOptional': "Kenteken (optioneel)",
+  'liveServer': "Serveradres",
 };

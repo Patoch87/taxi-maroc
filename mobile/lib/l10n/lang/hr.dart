@@ -327,4 +327,11 @@ const Map<String, String> hr = {
   'clearDest': "Ukloni odredište",
   'driverDestReached': "Stigli ste, niste na mreži",
   'navNotInstalled': "Aplikacija nije instalirana, otvaranje Trgovine Play",
+  'liveMode': "Stvarni test",
+  'liveModeDesc': "Povezuje telefone: stvarni vozači, putnici i položaji",
+  'liveUnreachable': "Poslužitelj nedostupan, ponovni pokušaj…",
+  'noTaxiAccepted': "Nijedan vozač nije prihvatio. Pokušajte ponovno.",
+  'liveDriverIntro': "Vaš GPS položaj dijeli se s putnicima dok ste na mreži.",
+  'plateOptional': "Registracija taksija (neobavezno)",
+  'liveServer': "Adresa poslužitelja",
 };

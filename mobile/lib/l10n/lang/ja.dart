@@ -326,4 +326,11 @@ const Map<String, String> ja = {
   'clearDest': "目的地を解除",
   'driverDestReached': "到着しました。オフラインです",
   'navNotInstalled': "アプリが未インストールのため Play ストアを開きます",
+  'liveMode': "実地テスト",
+  'liveModeDesc': "端末同士をつなぎます：実際の運転手・乗客・位置",
+  'liveUnreachable': "サーバーに接続できません。再試行中…",
+  'noTaxiAccepted': "承諾した運転手はいません。少し後でもう一度お試しください。",
+  'liveDriverIntro': "オンライン中は GPS の位置が乗客に共有されます。",
+  'plateOptional': "ナンバープレート（任意）",
+  'liveServer': "サーバーのアドレス",
 };

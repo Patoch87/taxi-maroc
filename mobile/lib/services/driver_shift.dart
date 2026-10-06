@@ -69,6 +69,21 @@ class DriverShift {
     return true;
   }
 
+  /// Test réel : le passager est monté (le taxi est à son point de prise en charge).
+  void pickUp(ShiftRider r) {
+    if (r.onBoard) return;
+    r.onBoard = true;
+    passengersToday += r.seats;
+  }
+
+  /// Test réel : le passager est descendu.
+  void dropOff(ShiftRider r) {
+    if (!riders.remove(r)) return;
+    ridesToday++;
+    earningsToday += r.fare;
+    tipsToday += r.tip;
+  }
+
   /// Met à jour les montées et descentes quand le taxi atteint la position [pos].
   /// Renvoie les passagers montés et descendus à cette étape.
   ({List<ShiftRider> pickedUp, List<ShiftRider> dropped}) advance(int pos) {

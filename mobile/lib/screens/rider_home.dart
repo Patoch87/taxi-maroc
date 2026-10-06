@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../l10n/strings.dart';
 import '../main.dart';
 import '../services/navigation_apps.dart';
+import '../services/live.dart';
 import '../services/location.dart';
 import '../services/places.dart';
 import '../services/promos.dart';
@@ -26,6 +27,7 @@ import '../widgets/app_logo.dart';
 import '../widgets/driver_card.dart';
 import '../widgets/google_taxi_map.dart';
 import '../widgets/language_sheet.dart';
+import '../widgets/live_tile.dart';
 import '../widgets/map_parts.dart';
 import '../widgets/promo_card.dart';
 import '../widgets/senior.dart';
@@ -100,6 +102,14 @@ class _RiderHomeState extends State<RiderHome> {
   List<_Candidate> _candidates = [];
   final _dispatchTimers = <Timer>[];
 
+  // Test réel : course sur le serveur, taxi et position en direct.
+  final _liveApi = LiveApi();
+  String? _liveRideId;
+  LatLng? _liveTaxiPos;
+  List<LiveTaxi> _liveTaxis = [];
+  Timer? _livePoll;
+  bool _nearbyBusy = false;
+
   // Course
   DemoDriver? _driver;
   List<LatLng> _path = [];
@@ -139,6 +149,10 @@ class _RiderHomeState extends State<RiderHome> {
     if (widget.locate) _locate();
     _ambientTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (!mounted || _step.index >= RiderStep.arriving.index) return;
+      if (live.enabled) {
+        _refreshNearby();
+        return;
+      }
       setState(() {
         _ambient = _ambient
             .map((p) =>
@@ -159,6 +173,7 @@ class _RiderHomeState extends State<RiderHome> {
     _ambientTimer?.cancel();
     _adTimer?.cancel();
     _moveTimer?.cancel();
+    _livePoll?.cancel();
     for (final t in _dispatchTimers) {
       t.cancel();
     }
@@ -203,8 +218,8 @@ class _RiderHomeState extends State<RiderHome> {
   // ---------------------------------------------------------------- Destination
 
   Future<void> _openSearch({bool voice = false}) async {
-    final place = await Navigator.push<Place>(
-        context, MaterialPageRoute(builder: (_) => SearchScreen(startWithVoice: voice, senior: settings.senior)));
+    final place = await Navigator.push<Place>(context,
+        MaterialPageRoute(builder: (_) => SearchScreen(startWithVoice: voice, senior: settings.senior, near: _me)));
     if (place != null) await _chooseDestination(place);
   }
 
@@ -345,6 +360,11 @@ class _RiderHomeState extends State<RiderHome> {
       return;
     }
 
+    if (live.enabled) {
+      _liveRequest();
+      return;
+    }
+
     // La demande part aux taxis les plus proches qui passent sur la route du passager.
     const d = Distance();
     final nearest = [..._ambient]..sort((a, b) => d(a, _me).compareTo(d(b, _me)));
@@ -398,6 +418,169 @@ class _RiderHomeState extends State<RiderHome> {
     if (_forOther != null) _sharePassenger();
   }
 
+  // ---------------------------------------------------------------- Test réel
+
+  /// Taxis en ligne autour du passager, affichés à la place des taxis simulés.
+  Future<void> _refreshNearby() async {
+    if (_nearbyBusy) return;
+    _nearbyBusy = true;
+    try {
+      final taxis = await _liveApi.nearby(_me);
+      if (mounted) {
+        setState(() {
+          _liveTaxis = taxis;
+          _ambient = [for (final t in taxis) t.position];
+        });
+      }
+    } catch (_) {
+      // Réseau coupé : on réessaie au tour suivant.
+    } finally {
+      _nearbyBusy = false;
+    }
+  }
+
+  DemoDriver _liveDriver(LiveTaxi t) => DemoDriver(t.name, s.t(t.grand ? 'grandTaxi' : 'petitTaxi'),
+      t.plate.isEmpty ? '—' : t.plate, 5, '', const [darija, francais], 0);
+
+  void _liveError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('liveUnreachable'))));
+  }
+
+  /// La demande part au serveur, qui la propose aux chauffeurs dont la route passe par le passager.
+  Future<void> _liveRequest() async {
+    final o = _selected!;
+    setState(() {
+      _candidates = [];
+      _step = RiderStep.dispatching;
+    });
+    try {
+      final r = await _liveApi.request(
+        from: _me,
+        to: LatLng(_dest!.lat, _dest!.lng),
+        destinationName: _dest!.name,
+        alone: o.seul,
+        premium: o.kind == TaxiKind.premium,
+        seats: 1,
+        fare: o.priceMad,
+        riderName: _forOther?.name,
+      );
+      if (!mounted || _step != RiderStep.dispatching) {
+        _liveApi.cancel(r.id).ignore();
+        return;
+      }
+      _liveRideId = r.id;
+      setState(() {
+        _candidates = [
+          for (final id in r.proposedTo)
+            if (_liveTaxis.where((t) => t.id == id).firstOrNull case final t?) _Candidate(_liveDriver(t), t.position),
+        ];
+      });
+      _livePoll?.cancel();
+      _livePoll = Timer.periodic(const Duration(seconds: 2), (_) => _pollRide());
+    } catch (_) {
+      _liveError();
+      if (mounted) setState(() => _step = RiderStep.choosing);
+    }
+  }
+
+  void _setPath(List<LatLng> path) {
+    final cum = <double>[0];
+    for (var i = 1; i < path.length; i++) {
+      cum.add(cum.last + const Distance()(path[i - 1], path[i]));
+    }
+    _path = path;
+    _cum = cum;
+  }
+
+  Future<void> _pollRide() async {
+    final id = _liveRideId;
+    if (id == null) return;
+    final LiveRide r;
+    try {
+      r = await _liveApi.ride(id);
+    } catch (_) {
+      return;
+    }
+    if (!mounted || _liveRideId != id) return;
+    final taxi = r.taxi;
+    if (taxi != null) _liveTaxiPos = taxi.position;
+    switch (r.status) {
+      case LiveStatus.waiting:
+        return;
+      case LiveStatus.cancelled || LiveStatus.expired:
+        _stopLive();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('noTaxiAccepted'))));
+        setState(() => _step = RiderStep.choosing);
+        return;
+      case LiveStatus.accepted:
+        if (taxi == null) return;
+        if (_step == RiderStep.dispatching) return _liveAccepted(taxi);
+        if (_step == RiderStep.arriving && const Distance()(taxi.position, _me) < 60) {
+          setState(() => _step = RiderStep.arrived);
+          _announceArrival();
+        }
+      case LiveStatus.onBoard:
+        if (_step != RiderStep.onTrip) return _liveStartTrip();
+      case LiveStatus.done:
+        _stopLive();
+        setState(() => _step = RiderStep.done);
+        return;
+    }
+    setState(() {});
+    final pos = _taxiPos;
+    if (_collapsed && _inTrip && pos != null) _moveCamera(pos, null);
+  }
+
+  Future<void> _liveAccepted(LiveTaxi taxi) async {
+    final driver = _liveDriver(taxi);
+    setState(() {
+      for (final c in _candidates) {
+        c.answer = c.driver.name == taxi.name ? _Answer.accepted : _Answer.blocked;
+      }
+      if (!_candidates.any((c) => c.answer == _Answer.accepted)) {
+        _candidates = [..._candidates, _Candidate(driver, taxi.position)..answer = _Answer.accepted];
+      }
+      _driver = driver;
+    });
+    final path = await fetchRoute(taxi.position, _me);
+    if (!mounted || _step != RiderStep.dispatching) return;
+    setState(() {
+      _setPath(path);
+      _step = RiderStep.arriving;
+    });
+    _fit([...path, _me]);
+    _announceDriver(driver);
+    if (_forOther != null) _sharePassenger();
+  }
+
+  /// Le chauffeur a confirmé la prise en charge (ou le passager a touché « Je suis dans le taxi »).
+  void _liveStartTrip() {
+    _tripId = 'T${(DateTime.now().millisecondsSinceEpoch % 1000000).toString().padLeft(6, '0')}';
+    setState(() {
+      _setPath(_route);
+      _step = RiderStep.onTrip;
+    });
+    _fit(_route);
+    _autoShare();
+  }
+
+  void _stopLive({bool cancel = false}) {
+    _livePoll?.cancel();
+    final id = _liveRideId;
+    if (cancel && id != null) _liveApi.cancel(id).ignore();
+    _liveRideId = null;
+    _liveTaxiPos = null;
+  }
+
+  /// Distance qui reste au taxi sur son trajet (test réel).
+  double get _liveRemainingM {
+    final taxi = _liveTaxiPos;
+    if (taxi == null || _path.isEmpty || _cum.isEmpty) return 0;
+    final i = _taxiIndex;
+    return const Distance()(taxi, _path[i]) + (_cum.last - _cum[i]);
+  }
+
   void _startLeg(List<LatLng> path, Duration duration, RiderStep step, {required VoidCallback onEnd}) {
     _moveTimer?.cancel();
     final cum = <double>[0];
@@ -429,6 +612,7 @@ class _RiderHomeState extends State<RiderHome> {
 
   /// Position du taxi : interpolée le long du trajet selon le temps écoulé.
   LatLng? get _taxiPos {
+    if (live.enabled && _liveTaxiPos != null) return _liveTaxiPos;
     if (_path.length < 2 || _cum.isEmpty) return _path.isEmpty ? null : _path.first;
     final f = (_elapsed.inMilliseconds / max(1, _legDuration.inMilliseconds)).clamp(0.0, 1.0);
     final target = _cum.last * f;
@@ -444,6 +628,16 @@ class _RiderHomeState extends State<RiderHome> {
 
   int get _taxiIndex {
     if (_cum.isEmpty) return 0;
+    final taxi = _liveTaxiPos;
+    if (live.enabled && taxi != null) {
+      // Point de l'itinéraire le plus proche du taxi.
+      const d = Distance();
+      var best = 0;
+      for (var i = 1; i < _path.length; i++) {
+        if (d(taxi, _path[i]) < d(taxi, _path[best])) best = i;
+      }
+      return best;
+    }
     final f = (_elapsed.inMilliseconds / max(1, _legDuration.inMilliseconds)).clamp(0.0, 1.0);
     final target = _cum.last * f;
     var i = 0;
@@ -454,6 +648,7 @@ class _RiderHomeState extends State<RiderHome> {
   }
 
   Duration get _remaining {
+    if (live.enabled && _liveTaxiPos != null) return Duration(seconds: (_liveRemainingM / _cityMps).round());
     final r = _legDuration - _elapsed;
     return r.isNegative ? Duration.zero : r;
   }
@@ -471,6 +666,7 @@ class _RiderHomeState extends State<RiderHome> {
   String _clock(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   void _startTrip() {
+    if (live.enabled) return _liveStartTrip();
     // Identifiant de la course, repris dans le code des bons de réduction.
     _tripId = 'T${(DateTime.now().millisecondsSinceEpoch % 1000000).toString().padLeft(6, '0')}';
     // Durée réelle du trajet à 25 km/h, décomptée en temps réel.
@@ -876,6 +1072,8 @@ class _RiderHomeState extends State<RiderHome> {
 
   void _reset() {
     _moveTimer?.cancel();
+    // Test réel : annuler la demande ou la course pas encore commencée.
+    _stopLive(cancel: _step == RiderStep.dispatching || _step == RiderStep.arriving);
     for (final t in _dispatchTimers) {
       t.cancel();
     }
@@ -1518,38 +1716,39 @@ class _RiderHomeState extends State<RiderHome> {
               TextButton(onPressed: _reset, child: Text(s.t('cancel'), style: const TextStyle(color: AppColors.muted))),
             const Spacer(),
             // Démo : la vitesse (×1 à ×4) reste toujours lisible dans sa pastille, même si le libellé est coupé.
-            Flexible(
-              child: Semantics(
-                button: true,
-                label: '${s.t('fastForward')} ×$_speed',
-                excludeSemantics: true,
-                child: TextButton(
-                  onPressed: _nextSpeed,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.fast_forward, size: 18, color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(s.t('fastForward'),
-                          overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted)),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _speed == 1 ? Colors.white : AppColors.moroccoGreen,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.moroccoGreen, width: 1.5),
+            if (!live.enabled)
+              Flexible(
+                child: Semantics(
+                  button: true,
+                  label: '${s.t('fastForward')} ×$_speed',
+                  excludeSemantics: true,
+                  child: TextButton(
+                    onPressed: _nextSpeed,
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.fast_forward, size: 18, color: _speed == 1 ? AppColors.muted : AppColors.moroccoGreen),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(s.t('fastForward'),
+                            overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted)),
                       ),
-                      child: Text('×$_speed',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 15,
-                              color: _speed == 1 ? AppColors.moroccoGreen : Colors.white)),
-                    ),
-                  ]),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _speed == 1 ? Colors.white : AppColors.moroccoGreen,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.moroccoGreen, width: 1.5),
+                        ),
+                        child: Text('×$_speed',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                color: _speed == 1 ? AppColors.moroccoGreen : Colors.white)),
+                      ),
+                    ]),
+                  ),
                 ),
               ),
-            ),
           ]),
         // Passager à bord : une offre (jamais avant la course, ni dans la sécurité ou une plainte).
         ..._promoBlock(),
@@ -1815,6 +2014,7 @@ class _RiderHomeState extends State<RiderHome> {
             _menuItem(Icons.local_offer_outlined, s.t('myOffers'), () => const MyOffersScreen()),
             _menuItem(Icons.people_alt_outlined, s.t('trustedContacts'), () => const TrustedContactsScreen()),
             _menuItem(Icons.drive_eta_outlined, s.t('driverMode'), () => const DriverHome()),
+            const LiveModeTile(),
             ListTile(
               leading: const Icon(Icons.shield_outlined),
               title: Text(s.t('safety')),
@@ -2041,7 +2241,7 @@ class _RiderHomeState extends State<RiderHome> {
                         borderRadius: BorderRadius.circular(26),
                         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
                       ),
-                      child: AppBrand(title: s.t('appTitle'), subtitle: s.t('demoShort')),
+                      child: AppBrand(title: s.t('appTitle'), subtitle: s.t(live.enabled ? 'liveMode' : 'demoShort')),
                     ),
                   )),
                   const SizedBox(width: 8),

@@ -56,7 +56,8 @@ jobs:
             grep -v "^#" test.log | grep -E -A4 "\[E\]|EXCEPTION CAUGHT|overflowed|Expected:" | grep -v "^--$" | head -40 | while IFS= read -r l; do echo "::error title=Test::$l"; done
           fi
           exit $status
-      # APK en mode démo (sans API_URL) : installable directement sur un téléphone Android.
+      # APK installable directement sur un téléphone Android. API_URL : serveur du test réel
+      # (variable de dépôt API_URL, sinon Render) ; le mode démo reste dans le menu.
       # Clé Google Maps facultative (secret MAPS_API_KEY) : sans elle, l'APK garde la carte OpenStreetMap.
       # Indique (sans la montrer) si la clé est présente : annotation lisible sur l'exécution.
       - name: Clé Google Maps
@@ -65,9 +66,10 @@ jobs:
         run: |
           if [ -n "$MAPS_API_KEY" ]; then echo "::notice title=Google Maps::Clé présente (${#MAPS_API_KEY} caractères)"
           else echo "::warning title=Google Maps::Aucune clé MAPS_API_KEY : carte OpenStreetMap"; fi
-      - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
+      - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL"
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+          API_URL: ${{ vars.API_URL || 'https://bab-taxi.onrender.com' }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
       - uses: actions/upload-artifact@v4
         with:

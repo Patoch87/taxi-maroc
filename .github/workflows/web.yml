@@ -1,0 +1,41 @@
+name: Site web (iPhone)
+
+# Version web de Bab Taxi pour l'iPhone (Safari). Le site construit est poussé sur la branche
+# « web », que Render publie (voir render.yaml). Démo sans serveur : ajouter ?demo=1 à l'adresse.
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/web.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+      - name: Construire
+        working-directory: mobile
+        env:
+          API_URL: ${{ vars.API_URL || 'https://bab-taxi.onrender.com' }}
+        run: |
+          flutter pub get
+          flutter build web --release --dart-define=API_URL="$API_URL"
+      - name: Publier sur la branche web
+        working-directory: mobile/build/web
+        run: |
+          git init -q -b web
+          git add -A
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "Site web ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" web

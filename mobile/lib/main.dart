@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/strings.dart';
 import 'screens/account_screen.dart';
 import 'screens/rider_home.dart';
+import 'services/live.dart';
 import 'services/navigation_apps.dart';
 import 'services/account.dart';
 import 'services/settings.dart';
@@ -47,7 +48,10 @@ void _setUpGoogleMapsAndroid() {
 /// « ?demo=1 » ouvre directement l'accueil en démo (sans inscription),
 /// « ?video=1 » masque les suggestions de restaurants.
 void applyWebDemoOptions(Uri uri) {
-  if (uri.queryParameters['demo'] == '1') accountStore.skip();
+  if (uri.queryParameters['demo'] == '1') {
+    accountStore.skip();
+    live.enabled = false;
+  }
   if (uri.queryParameters['video'] == '1') settings.restaurantSuggestions = false;
 }
 

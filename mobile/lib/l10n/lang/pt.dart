@@ -327,4 +327,11 @@ const Map<String, String> pt = {
   'clearDest': "Remover o meu destino",
   'driverDestReached': "Chegou, está offline",
   'navNotInstalled': "Aplicação não instalada, a abrir a Play Store",
+  'liveMode': "Teste real",
+  'liveModeDesc': "Liga os telemóveis: motoristas, passageiros e posições reais",
+  'liveUnreachable': "Servidor inacessível, a tentar de novo…",
+  'noTaxiAccepted': "Nenhum motorista aceitou. Tente de novo.",
+  'liveDriverIntro': "A sua posição GPS é partilhada com os passageiros enquanto estiver online.",
+  'plateOptional': "Matrícula do táxi (opcional)",
+  'liveServer': "Endereço do servidor",
 };

@@ -1,0 +1,25 @@
+# Test réel Bab Taxi sur Render (offre gratuite) : le serveur partagé et le site web pour l'iPhone.
+# Déploiement : https://render.com/deploy?repo=https://github.com/Patoch87/taxi-maroc
+services:
+  - type: web
+    name: bab-taxi
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+  # Site web (iPhone, Safari), construit par GitHub Actions sur la branche « web ».
+  - type: web
+    name: bab-taxi-web
+    runtime: static
+    branch: web
+    buildCommand: echo "site déjà construit"
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache

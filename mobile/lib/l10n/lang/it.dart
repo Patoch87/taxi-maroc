@@ -327,4 +327,11 @@ const Map<String, String> it = {
   'clearDest': "Rimuovi destinazione",
   'driverDestReached': "Arrivato, ora sei offline",
   'navNotInstalled': "App non installata, apertura del Play Store",
+  'liveMode': "Test reale",
+  'liveModeDesc': "Collega i telefoni: autisti, passeggeri e posizioni reali",
+  'liveUnreachable': "Server non raggiungibile, nuovo tentativo…",
+  'noTaxiAccepted': "Nessun autista ha accettato. Riprova tra poco.",
+  'liveDriverIntro': "La tua posizione GPS è condivisa con i passeggeri finché sei online.",
+  'plateOptional': "Targa del taxi (facoltativa)",
+  'liveServer': "Indirizzo del server",
 };

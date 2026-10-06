@@ -11,6 +11,7 @@ import 'search_screen.dart';
 import '../main.dart';
 import '../services/demo.dart';
 import '../services/driver_shift.dart';
+import '../services/live.dart';
 import '../services/location.dart';
 import '../services/navigation_apps.dart';
 import '../services/places.dart';
@@ -21,6 +22,7 @@ import '../services/request_chime.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 import '../widgets/google_taxi_map.dart';
+import '../widgets/live_tile.dart';
 import '../widgets/map_parts.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
@@ -30,6 +32,9 @@ class _Request {
   final ShiftRider rider;
   final String destination;
   final double rating;
+
+  /// Test réel : identifiant de la demande sur le serveur.
+  String? liveId;
 
   /// Passager malvoyant : le chauffeur se présente et le guide jusqu'à la portière.
   final bool lowVision;
@@ -138,6 +143,7 @@ class _DriverHomeState extends State<DriverHome> {
   @override
   void dispose() {
     _tick?.cancel();
+    _stopLive();
     _hazardTimer?.cancel();
     _chime.cancel();
     if (_notifications.onAction == _onNotificationAction) _notifications.onAction = null;
@@ -145,7 +151,7 @@ class _DriverHomeState extends State<DriverHome> {
     super.dispose();
   }
 
-  LatLng get _taxi => _route.isEmpty ? _me : _route[_pos];
+  LatLng get _taxi => _liveOn || _route.isEmpty ? _me : _route[_pos];
 
   double _bearing() {
     if (_route.length < 2) return 0;
@@ -211,6 +217,7 @@ class _DriverHomeState extends State<DriverHome> {
 
   Future<void> _goOnline() async {
     _shift.capacity = _kind == TaxiKind.grand ? 6 : 3;
+    if (live.enabled) return _goOnlineLive();
     setState(() => _online = true);
     await _newRoute();
     _lastRequest = DateTime.now().subtract(DriverHome.requestGap * 4 ~/ 7);
@@ -220,6 +227,7 @@ class _DriverHomeState extends State<DriverHome> {
 
   void _goOffline() {
     _tick?.cancel();
+    _stopLive();
     setState(() {
       _online = false;
       _request = null;
@@ -391,6 +399,10 @@ class _DriverHomeState extends State<DriverHome> {
   void _accept() {
     final r = _request!;
     if (r.takenAt != null || !_shift.canAccept(r.rider.seats)) return;
+    if (r.liveId != null) {
+      _acceptLive(r);
+      return;
+    }
     _chime.cancel();
     setState(() {
       _shift.accept(r.rider);
@@ -400,7 +412,276 @@ class _DriverHomeState extends State<DriverHome> {
 
   void _decline() {
     _chime.cancel();
+    final id = _request?.liveId;
+    if (id != null) {
+      _declined.add(id);
+      _liveApi.decline(id, live.deviceId).ignore();
+      _dropPreviewRoute();
+    }
     setState(() => _request = null);
+  }
+
+  // ---------------------------------------------------------------- Test réel
+
+  /// Test réel : position GPS du téléphone, demandes du serveur, prise en charge à l'arrivée au point.
+  bool get _liveOn => _online && _liveTimers.isNotEmpty;
+  final _liveApi = LiveApi();
+  final _liveTimers = <Timer>[];
+  StreamSubscription<LatLng>? _gps;
+  final _liveIds = <ShiftRider, String>{};
+  final _declined = <String>{};
+  String _plate = '';
+
+  /// Itinéraire proposé avec une demande quand le taxi n'en avait pas (sans destination) :
+  /// il est retiré si la demande est refusée.
+  bool _previewRoute = false;
+
+  Future<void> _goOnlineLive() async {
+    final plate = await _askPlate();
+    if (plate == null || !mounted) return;
+    _plate = plate;
+    final here = await currentLatLng();
+    if (!mounted) return;
+    setState(() {
+      _online = true;
+      _me = here;
+      _route = [];
+      _pos = 0;
+      _carry = 0;
+    });
+    _moveCamera(here, 16);
+    final dest = _myDest;
+    if (dest != null) {
+      final route = await fetchRoute(here, LatLng(dest.lat, dest.lng));
+      if (!mounted || !_online) return;
+      setState(() {
+        _heading = dest;
+        _route = route;
+      });
+    }
+    _gps = positionStream().listen(_onGps, onError: (_) {});
+    _liveTimers
+      ..add(Timer.periodic(const Duration(seconds: 3), (_) => _publish()))
+      ..add(Timer.periodic(const Duration(seconds: 2), (_) => _pollOffers()))
+      ..add(Timer.periodic(const Duration(milliseconds: 500), (_) => _liveTick()));
+    _publish();
+  }
+
+  Future<String?> _askPlate() {
+    final ctrl = TextEditingController(text: _plate);
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.t('liveMode')),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(s.t('liveDriverIntro')),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey('plate'),
+            controller: ctrl,
+            decoration: InputDecoration(labelText: s.t('plateOptional'), hintText: '12345 | أ | 6'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(s.t('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: Text(s.t('goOnline'))),
+        ],
+      ),
+    );
+  }
+
+  void _stopLive() {
+    for (final t in _liveTimers) {
+      t.cancel();
+    }
+    _liveTimers.clear();
+    _gps?.cancel();
+    _gps = null;
+    _liveIds.clear();
+    _previewRoute = false;
+    if (live.enabled) _liveApi.goOffline(live.deviceId).ignore();
+  }
+
+  Future<void> _publish() async {
+    try {
+      await _liveApi.publishTaxi(
+        id: live.deviceId,
+        position: _me,
+        route: _route.isEmpty || _previewRoute ? const [] : _route.sublist(min(_pos, _route.length - 1)),
+        grand: _kind == TaxiKind.grand,
+        onBoard: _shift.onBoard,
+        plate: _plate,
+      );
+    } catch (_) {
+      // Réseau coupé : nouvel essai dans 3 secondes.
+    }
+  }
+
+  int _nearestIndex(LatLng p, {int from = 0}) {
+    const d = Distance();
+    var best = min(from, max(0, _route.length - 1));
+    for (var i = best + 1; i < _route.length; i++) {
+      if (d(p, _route[i]) < d(p, _route[best])) best = i;
+    }
+    return best;
+  }
+
+  void _onGps(LatLng p) {
+    if (!mounted || !_liveOn) return;
+    const d = Distance();
+    setState(() {
+      _me = p;
+      // Avance sur l'itinéraire : point le plus proche parmi les 80 suivants (jamais en arrière).
+      if (_route.length > 1) {
+        final window = _route.sublist(_pos, min(_route.length, _pos + 80));
+        var best = 0;
+        for (var i = 1; i < window.length; i++) {
+          if (d(p, window[i]) < d(p, window[best])) best = i;
+        }
+        _pos += best;
+      }
+    });
+    if (_follow) _moveCamera(p, null);
+
+    for (final r in _shift.riders.toList()) {
+      final id = _liveIds[r];
+      if (!r.onBoard) {
+        final m = d(p, _route[min(r.pickupIdx, _route.length - 1)]);
+        if (_pickupAlerts.check(r, m)) _showHazard(r);
+        if (m <= 40) {
+          setState(() => _shift.pickUp(r));
+          if (_hazardFor == r) _hideHazard();
+          if (id != null) _liveApi.pickedUp(id, live.deviceId).ignore();
+          _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
+        }
+      } else if (d(p, _route[min(r.dropIdx, _route.length - 1)]) <= 60) {
+        setState(() => _shift.dropOff(r));
+        _liveIds.remove(r);
+        if (id != null) _liveApi.droppedOff(id, live.deviceId).ignore();
+        _toast(Icons.check_circle, '${s.t('riderDropped')} : ${r.name} · +${dh(r.fare)}');
+      }
+    }
+
+    // Plus personne à bord ni attendu : sans destination, le taxi redevient libre (demandes proches).
+    if (_shift.riders.isEmpty && _route.isNotEmpty && !_previewRoute) {
+      final dest = _myDest;
+      if (dest == null) {
+        setState(() {
+          _route = [];
+          _pos = 0;
+        });
+      } else if (d(p, LatLng(dest.lat, dest.lng)) <= 80) {
+        _toast(Icons.flag_rounded, '${s.t('driverDestReached')} : ${dest.name}');
+        _myDest = null;
+        _goOffline();
+      }
+    }
+  }
+
+  /// Une demande proposée sans itinéraire : celui du passager est montré, puis retiré s'il est refusé.
+  void _dropPreviewRoute() {
+    if (!_previewRoute) return;
+    _previewRoute = false;
+    if (_shift.riders.isEmpty) {
+      _route = [];
+      _pos = 0;
+    }
+  }
+
+  bool _offerBusy = false;
+
+  Future<void> _pollOffers() async {
+    if (_offerBusy || !_liveOn) return;
+    _offerBusy = true;
+    try {
+      final offers = await _liveApi.offers(live.deviceId);
+      if (!mounted || !_liveOn) return;
+      final req = _request;
+      if (req != null) {
+        // La demande n'est plus proposée : un autre chauffeur l'a prise, ou le passager a annulé.
+        if (req.takenAt == null && !offers.any((o) => o.id == req.liveId)) setState(() => req.takenAt = DateTime.now());
+        return;
+      }
+      if (_shift.isFull) return;
+      final o = offers.where((o) => !_declined.contains(o.id) && _shift.canAccept(o.seats)).firstOrNull;
+      if (o != null) await _showOffer(o);
+    } catch (_) {
+      // Réseau coupé : nouvel essai dans 2 secondes.
+    } finally {
+      _offerBusy = false;
+    }
+  }
+
+  Future<void> _showOffer(LiveOffer o) async {
+    // Sans itinéraire : celui qui passe par le passager puis par sa destination.
+    if (_route.length < 2) {
+      final toPickup = await fetchRoute(_me, o.pickup);
+      final toDrop = await fetchRoute(o.pickup, o.drop);
+      if (!mounted || !_liveOn || _request != null) return;
+      _route = [...toPickup, ...toDrop.skip(1)];
+      _pos = 0;
+      _previewRoute = true;
+    }
+    final pickupIdx = _nearestIndex(o.pickup, from: _pos);
+    final dropIdx = max(pickupIdx + 1, _nearestIndex(o.drop, from: pickupIdx));
+    setState(() {
+      _request = _Request(
+        ShiftRider(
+          name: o.riderName,
+          pickupIdx: pickupIdx,
+          dropIdx: min(dropIdx, _route.length - 1),
+          fare: o.fare,
+          seats: o.seats,
+        ),
+        o.destinationName,
+        5,
+      )..liveId = o.id;
+    });
+    _chime.onRequest(
+      _request,
+      enabled: settings.requestSound,
+      voice: settings.requestVoice,
+      empty: _shift.onBoard == 0,
+      speakText: requestAnnouncementAr(arabicPlaceName(o.destinationName)),
+    );
+    _notifyRequest(_request!);
+  }
+
+  Future<void> _acceptLive(_Request r) async {
+    _chime.cancel();
+    final ok = await _liveApi.accept(r.liveId!, live.deviceId).catchError((_) => false);
+    if (!mounted || _request != r) return;
+    if (!ok) {
+      setState(() => r.takenAt = DateTime.now());
+      return;
+    }
+    setState(() {
+      _shift.accept(r.rider);
+      _liveIds[r.rider] = r.liveId!;
+      _previewRoute = false;
+      _request = null;
+    });
+    _publish();
+  }
+
+  /// Toutes les 500 ms : demande prise par un autre ou expirée, notification, rafraîchissement.
+  void _liveTick() {
+    if (!mounted) return;
+    final req = _request;
+    if (req != null && req.takenAt != null && DateTime.now().difference(req.takenAt!).inMilliseconds > 2500) {
+      _request = null;
+      _dropPreviewRoute();
+    } else if (req != null && DateTime.now().difference(req.shownAt).inSeconds >= _requestSeconds) {
+      // Sans réponse : refus automatique, la demande part aux autres chauffeurs.
+      _decline();
+      return;
+    }
+    if (_request == null) _chime.cancel();
+    if (_notified != null && (_request != _notified || _notified!.takenAt != null)) {
+      _notified = null;
+      _notifications.cancel(DriverNotifications.requestId);
+    }
+    setState(() {});
   }
 
   void _toast(IconData icon, String text) {
@@ -1132,7 +1413,7 @@ class _DriverHomeState extends State<DriverHome> {
       ]);
 
   Future<void> _searchMyDest() async {
-    final place = await Navigator.push<Place>(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
+    final place = await Navigator.push<Place>(context, MaterialPageRoute(builder: (_) => SearchScreen(near: _me)));
     if (place != null && mounted) setState(() => _myDest = place);
   }
 
@@ -1245,6 +1526,8 @@ class _DriverHomeState extends State<DriverHome> {
                 onChanged: (v) => settings.requestVoice = v,
               ),
             ),
+            const Divider(),
+            const LiveModeTile(),
             const Divider(),
             ListTile(
               key: const ValueKey('mapEngine'),

@@ -23,7 +23,6 @@ jobs:
       - name: Version web de l'application
         working-directory: mobile
         run: |
-          flutter create --platforms web .
           flutter pub get
           flutter build web
       - uses: actions/setup-node@v4

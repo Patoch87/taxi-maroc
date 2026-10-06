@@ -326,4 +326,11 @@ const Map<String, String> ko = {
   'clearDest': "목적지 삭제",
   'driverDestReached': "도착, 오프라인 상태입니다",
   'navNotInstalled': "앱이 설치되지 않아 Play 스토어를 엽니다",
+  'liveMode': "실제 테스트",
+  'liveModeDesc': "휴대폰을 서로 연결: 실제 기사, 승객, 위치",
+  'liveUnreachable': "서버에 연결할 수 없어 다시 시도합니다…",
+  'noTaxiAccepted': "수락한 기사가 없습니다. 잠시 후 다시 시도하세요.",
+  'liveDriverIntro': "온라인 상태에서는 GPS 위치가 승객과 공유됩니다.",
+  'plateOptional': "택시 번호판 (선택)",
+  'liveServer': "서버 주소",
 };

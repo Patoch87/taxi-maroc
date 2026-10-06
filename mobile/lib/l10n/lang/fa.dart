@@ -327,4 +327,11 @@ const Map<String, String> fa = {
   'clearDest': "حذف مقصد",
   'driverDestReached': "رسیدید، اکنون آفلاین هستید",
   'navNotInstalled': "برنامه نصب نیست، باز کردن Play Store",
+  'liveMode': "آزمایش واقعی",
+  'liveModeDesc': "گوشی‌ها را به هم وصل می‌کند: راننده، مسافر و موقعیت واقعی",
+  'liveUnreachable': "سرور در دسترس نیست، تلاش دوباره…",
+  'noTaxiAccepted': "هیچ راننده‌ای نپذیرفت. کمی بعد دوباره امتحان کنید.",
+  'liveDriverIntro': "تا وقتی آنلاین هستید، موقعیت GPS شما با مسافران به اشتراک گذاشته می‌شود.",
+  'plateOptional': "پلاک تاکسی (اختیاری)",
+  'liveServer': "نشانی سرور",
 };
