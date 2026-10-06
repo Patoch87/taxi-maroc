@@ -19,6 +19,7 @@ class Promo {
     required this.icon,
     required this.color,
     this.logoAsset,
+    this.wideLogoAsset,
   });
 
   /// Identifiant court, repris dans le code du bon (lettres majuscules).
@@ -39,6 +40,9 @@ class Promo {
 
   /// Logo fourni par l'annonceur (assets/ads/…) ; sans fichier, le badge affiche [initials].
   final String? logoAsset;
+
+  /// Logo complet (format large), affiché en tête du bon de réduction.
+  final String? wideLogoAsset;
 }
 
 /// Annonceur principal : affiché sur tous les trajets, en premier.
@@ -52,6 +56,7 @@ const caribouPromo = Promo(
   icon: Icons.coffee_outlined,
   color: Color(0xFF3E2418),
   logoAsset: 'assets/ads/caribou_coffee.png',
+  wideLogoAsset: 'assets/ads/caribou_coffee_wide.png',
 );
 
 const fashionPromo = Promo(

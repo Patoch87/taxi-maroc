@@ -1,2 +1,0 @@
-Logos des annonceurs (PNG carré, fond blanc ou transparent, 256 px).
-caribou_coffee.png : logo Caribou Coffee, à fournir par l'annonceur.

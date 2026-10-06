@@ -50,6 +50,11 @@ class _CouponViewState extends State<CouponView> {
                 ]),
               ),
             ]),
+            if (c.promo.wideLogoAsset != null) ...[
+              const SizedBox(height: 12),
+              Image.asset(c.promo.wideLogoAsset!,
+                  height: 56, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ],
             const SizedBox(height: 12),
             Text(s.t(c.promo.titleKey), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             Text('${c.promo.brand} · ${s.t(c.promo.detailKey)}', style: const TextStyle(color: AppColors.muted)),
