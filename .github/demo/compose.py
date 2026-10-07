@@ -1,6 +1,6 @@
 """Montage de la vidéo de démo : images de l'application (720 x 1170) en plein cadre, légende en bas
 (bandeau vert de 110 px, filet rouge, texte crème), passages d'attente coupés, durée ramenée à
-2 min 30 au plus, MP4 H.264 720 x 1280.
+3 min 05 au plus, MP4 H.264 720 x 1280.
 
 Usage : python3 compose.py <dossier> <sortie.mp4>
 """
@@ -14,7 +14,7 @@ folder, output = sys.argv[1], sys.argv[2]
 marks = json.load(open(os.path.join(folder, 'marks.json')))
 FONT = '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf'
 APP_H, BAR_H, W = 1170, 110, 720
-MAX_S = 150.0
+MAX_S = 185.0
 
 duration = marks['duration']
 skips = sorted((s['start'], s['end']) for s in marks['skips'] if s['end'] - s['start'] > 0.3)
@@ -30,7 +30,7 @@ def kept_before(t):
 
 
 kept = kept_before(duration)
-speed = max(1.0, kept / MAX_S)  # vitesse globale si la vidéo dépasse 2 min 30
+speed = max(1.0, kept / MAX_S)  # vitesse globale si la vidéo dépasse 3 min 05
 out_t = lambda t: kept_before(t) / speed  # noqa: E731
 
 # Liste d'images avec leur durée à l'écran (format concat de ffmpeg).
@@ -63,7 +63,7 @@ for i, c in enumerate(marks['captions']):
         f.write('\n'.join(text))
     size = 38 if len(text) == 1 else 33
     filters.append(
-        f"drawtext=fontfile={FONT}:textfile={path}:fontsize={size}:fontcolor=0xFFF8E7:line_spacing=6:"
+        f"drawtext=fontfile={FONT}:expansion=none:textfile={path}:fontsize={size}:fontcolor=0xFFF8E7:line_spacing=6:"
         f"x=(w-text_w)/2:y={APP_H + 6}+({BAR_H - 6}-text_h)/2:enable='between(t,{start:.2f},{end:.2f})'"
     )
 
@@ -78,5 +78,5 @@ size = os.path.getsize(output) / 1e6
 print(f'vidéo : {total:.1f} s, vitesse ×{speed:.2f}, {size:.1f} Mo, {len(frames)} images')
 if size > 30:
     sys.exit('vidéo trop lourde (> 30 Mo)')
-if not 60 <= total <= 155:
+if not 60 <= total <= 190:
     sys.exit(f'durée inattendue ({total:.0f} s)')

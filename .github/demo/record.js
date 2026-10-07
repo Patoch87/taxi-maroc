@@ -176,7 +176,7 @@ const [url, out] = process.argv.slice(2);
   };
   const card = (q) => `${url}demo-card.html?${new URLSearchParams(q)}`;
   // Carte de chapitre posée par-dessus l'application (l'état de l'application est conservé).
-  const chapterCard = async (chapter, title, line, ms = 4000) => {
+  const chapterCard = async (q, ms = 4000) => {
     caption(null);
     skip(true);
     await page.evaluate((src) => {
@@ -186,7 +186,7 @@ const [url, out] = process.argv.slice(2);
       f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483647;background:#FFF8E7';
       document.body.appendChild(f);
       return new Promise((r) => (f.onload = r));
-    }, card({ chapter, title, line }));
+    }, card(q));
     await wait(500);
     skip(false);
     await wait(ms);
@@ -203,70 +203,36 @@ const [url, out] = process.argv.slice(2);
     await wait(400);
     if (!(await present(text))) throw new Error(`saisie « ${text} » dans « ${label} » non prise en compte`);
   };
-  const ONLY = process.env.DEMO_ONLY; // tests : « signup », « client » ou « driver » seulement
+  const ONLY = process.env.DEMO_ONLY; // tests : « client » ou « driver » seulement
 
   // Carte de titre
-  await page.goto(card({ title: 'Bab Taxi — démo', line: 'Le taxi marocain, simple et sûr' }));
+  await page.goto(card({ title: 'Bab Taxi', line: 'Le taxi officiel marocain, simple, juste et sûr' }));
   await wait(3500);
 
-  // Chargement de l'application (premier lancement, écran d'inscription) : coupé au montage.
+  // Chargement de l'application : coupé au montage. « video=1 » : sans suggestions de restaurants ;
+  // « demo=1 » : sans écran d'inscription.
   skip(true);
-  // « video=1 » : sans suggestions de restaurants ; « demo=1 » : sans inscription (tests d'un seul chapitre).
-  await page.goto(ONLY && ONLY !== 'signup' ? `${url}?demo=1&video=1` : `${url}?video=1`, { waitUntil: 'load' });
+  await page.goto(`${url}?demo=1&video=1`, { waitUntil: 'load' });
   await wait(5000);
   await semantics();
-
-  // ---------------------------------------------------------------- Chapitre 1 : inscription
-  if (!ONLY || ONLY === 'signup') {
-    await expectScreen('inscription', 'Prénom', 60);
-    await wait(800);
-    skip(false);
-    await chapterCard('1/3', 'Inscription', 'Créer son compte : nom, téléphone vérifié par SMS, nationalité');
-
-    caption('Prénom et nom');
-    await wait(800);
-    await fill('Prénom', 'Claire');
-    await fill('Nom', 'Martin');
-    await wait(600);
-
-    caption('Indicatif du pays, avec son drapeau');
-    await tapFor('liste des indicatifs', 'Indicatif', 'Rechercher un pays ou un indicatif', 12);
-    await wait(1200);
-    await fill('Rechercher un pays ou un indicatif', 'maroc', 120);
-    await expectScreen('indicatif Maroc', '+212', 10);
-    await wait(1000);
-    await tapFor("choix de l'indicatif", 'Maroc', 'Numéro de téléphone', 12);
-    await expectScreen('indicatif choisi', 'Indicatif : Maroc +212', 5);
-    await wait(800);
-
-    caption('Téléphone vérifié par code SMS');
-    await fill('Numéro de téléphone', '612345678');
-    await tapFor('envoi du code', 'Recevoir le code par SMS', 'Code reçu par SMS', 10);
-    await wait(1200);
-    await fill('Code reçu par SMS', '1234', 220);
-    await expectScreen('numéro vérifié', 'Numéro vérifié', 10);
-    await wait(1500);
-
-    caption('Nationalité choisie dans la liste');
-    await tapFor('liste des nationalités', 'Nationalité', 'Rechercher un pays', 12);
-    await wait(1000);
-    await fill('Rechercher un pays', 'fran', 140);
-    await expectScreen('nationalité France', 'France', 10);
-    await wait(900);
-    await tapFor('choix de la nationalité', 'France', 'Nationalité : France', 12);
-    await wait(1800);
-
-    caption('Compte créé en quelques secondes');
-    await tapFor('création du compte', 'Créer un compte', 'Rechercher une destination', 15);
-    await wait(2500);
-  } else {
-    await expectScreen('accueil', 'Rechercher une destination', 60);
-    skip(false);
-  }
+  await expectScreen('accueil', 'Rechercher une destination', 60);
+  skip(false);
 
   // ---------------------------------------------------------------- Chapitre 2 : expérience client
   if (!ONLY || ONLY === 'client') {
-    await chapterCard('2/3', 'Expérience client', 'Le passager commande, voit son chauffeur et paie le prix affiché');
+    await chapterCard(
+      {
+        kicker: 'Chapitre 1/3 · Passagers',
+        title: 'Pour les passagers',
+        items:
+          'Prix affiché avant de monter~Tarif officiel, plus de négociation ni d’arnaque|' +
+          'Taxi partagé au prix du compteur~Bab Taxi ne prend rien sur les courses partagées|' +
+          'Chauffeur identifié~Photo, plaque, langues parlées, note|' +
+          'Sécurité~SOS, trajet partagé avec ses proches|' +
+          'Pour tous~Commande vocale, darija, 16 langues, mode senior',
+      },
+      8000,
+    );
 
     caption('Où allez-vous ? Recherche ou voix');
     await wait(1200);
@@ -321,11 +287,18 @@ const [url, out] = process.argv.slice(2);
     skip(false);
     caption('Le taxi est arrivé');
     await wait(2500);
-    // Montée à bord : l'offre affichée pendant la course est fermée hors caméra.
+    // Montée à bord : l'offre du commerçant (Caribou Coffee) est montrée, puis fermée.
     skip(true);
     await tap('Je suis dans le taxi');
-    for (let i = 0; i < 20 && !(await present('Masquer la publicité')); i++) await wait(500);
-    if (await present('Masquer la publicité')) await tap('Masquer la publicité');
+    await expectScreen('publicité', 'Masquer la publicité', 10);
+    await scrollPanel(120, 3);
+    await wait(800);
+    skip(false);
+    caption('À bord : bon de réduction des commerces, -20 % chez Caribou Coffee');
+    await wait(4000);
+    skip(true);
+    caption(null);
+    await tap('Masquer la publicité');
     await wait(800);
     if (await present('Masquer la publicité')) throw new Error('étape « à bord » : offre toujours affichée');
     await fast();
@@ -334,7 +307,7 @@ const [url, out] = process.argv.slice(2);
     await wait(1500);
     if (await present('Masquer la publicité')) throw new Error('étape « à bord » : offre affichée sur la carte');
     skip(false);
-    caption('À bord, démo accélérée ×4');
+    caption('À bord : trajet accéléré ×4');
     await wait(4000);
 
     // Trajet jusqu'au Morocco Mall : coupé au montage.
@@ -377,16 +350,24 @@ const [url, out] = process.argv.slice(2);
     await wait(1500);
     skip(false);
     await chapterCard(
-      '3/3',
-      'Expérience chauffeur',
-      'Le chauffeur reçoit les courses sur son chemin, en toute sécurité',
+      {
+        kicker: 'Chapitre 2/3 · Chauffeurs',
+        title: 'Pour les chauffeurs',
+        items:
+          'Il garde 100 % du prix du compteur~Aucune commission sur les courses|' +
+          'Les passagers sur son chemin~Fini les arrêts à répétition|' +
+          '« Je rentre chez moi »~Seulement des passagers sur sa route|' +
+          'Dans Waze ou Google Maps~Les demandes arrivent en notification|' +
+          'Revenus en plus~50 % de la publicité des écrans de son taxi',
+      },
+      8000,
     );
 
     caption('Indisponible : le chauffeur choisit quand il travaille');
     await expectScreen('indisponible', 'Indisponible', 5);
     await wait(3000);
     await tapFor('en ligne', 'Commencer le service', 'Disponible', 15);
-    caption('En ligne : les courses arrivent sur son chemin');
+    caption('Disponible : les courses arrivent sur son chemin');
     await wait(2500);
     // Montre un écran tant que « still » reste vrai (au plus « ms ») ; renvoie la durée montrée (s).
     const hold = async (ms, still) => {
@@ -457,6 +438,26 @@ const [url, out] = process.argv.slice(2);
     caption('Course terminée : gains et pourboires du jour');
     await wait(4500);
   }
+
+  // ---------------------------------------------------------------- Chapitre 3 : rentabilité
+  caption(null);
+  await page.goto(
+    card({
+      kicker: 'Chapitre 3/3 · Rentabilité',
+      title: "D'où vient l'argent",
+      items:
+        'Courses partagées : 0 MAD~Le passager paie le compteur, le chauffeur garde tout|' +
+        'Licences État et villes~Suivi en temps réel pour l’Intérieur et le Transport|' +
+        'Publicité dans l’appli et les taxis~Selon le trajet, jamais selon le revenu|' +
+        'Options payées~Seul (+3 MAD), premium, touristes et aéroport|' +
+        'Données anonymisées et entreprises~Conformes à la loi 09-08 (CNDP)',
+    }),
+  );
+  await wait(8000);
+  await page.goto(card({ kicker: 'Rentabilité', title: 'Rentable dès 2028', slide: 'chart' }));
+  await wait(7000);
+  await page.goto(card({ kicker: 'Rentabilité', title: 'Les chiffres clés', slide: 'kpis' }));
+  await wait(7000);
 
   // Carte de fin
   caption(null);
