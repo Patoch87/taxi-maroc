@@ -922,6 +922,7 @@ class _DriverHomeState extends State<DriverHome> {
       ]);
 
   /// Compteur des personnes à bord : une icône de siège par place.
+  /// Compteur des personnes à bord, sur une seule ligne : chiffre, sièges, boutons + et −.
   Widget _seatCounter() {
     final onBoard = _shift.onBoard;
     final reserved = _shift.reserved;
@@ -929,132 +930,134 @@ class _DriverHomeState extends State<DriverHome> {
     return Row(children: [
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(s.t('onBoard'), style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 2),
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(s.t('onBoard'), style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
               child: Text('$onBoard',
-                  key: ValueKey(onBoard), style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w900, height: 1)),
+                  key: ValueKey(onBoard), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, height: 1)),
             ),
             Text(' / ${_shift.capacity}',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.muted)),
-            if (full) ...[
-              const SizedBox(width: 10),
-              // Petit écran : le badge « complet » se raccourcit au lieu de déborder.
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: AppColors.taxiRed, borderRadius: BorderRadius.circular(8)),
-                  child: Text(s.t('taxiFull'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ],
-          ]),
-          const SizedBox(height: 8),
-          Wrap(spacing: 4, children: [
-            for (var i = 0; i < _shift.capacity; i++)
-              Icon(
-                Icons.event_seat,
-                size: 26,
-                color: i < onBoard
-                    ? AppColors.moroccoGreen
-                    : i < reserved
-                        ? const Color(0xFFF5B301)
-                        : const Color(0xFFD9D9D9),
-              ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.muted)),
+            const SizedBox(width: 8),
+            Flexible(
+              child: full
+                  // Petit écran : le badge « complet » se raccourcit au lieu de déborder.
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppColors.taxiRed, borderRadius: BorderRadius.circular(8)),
+                      child: Text(s.t('taxiFull'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    )
+                  : Wrap(spacing: 2, children: [
+                      for (var i = 0; i < _shift.capacity; i++)
+                        Icon(
+                          Icons.event_seat,
+                          size: 18,
+                          color: i < onBoard
+                              ? AppColors.moroccoGreen
+                              : i < reserved
+                                  ? const Color(0xFFF5B301)
+                                  : const Color(0xFFD9D9D9),
+                        ),
+                    ]),
+            ),
           ]),
         ]),
       ),
       // Boutons pour les passagers pris dans la rue, sans l'application.
-      Column(children: [
-        _roundBtn(
-            Icons.add,
-            _shift.isFull
-                ? null
-                : () => setState(() {
-                      if (_shift.addHail()) {
-                        _toast(
-                            Icons.person_add_alt_1, '${s.t('riderPickedUp')} · ${_shift.onBoard}/${_shift.capacity}');
-                      }
-                    }),
-            filled: true),
-        const SizedBox(height: 8),
-        _roundBtn(Icons.remove, _shift.hailOnBoard == 0 ? null : () => setState(_shift.removeHail)),
-      ]),
+      _roundBtn(Icons.remove, _shift.hailOnBoard == 0 ? null : () => setState(_shift.removeHail)),
+      const SizedBox(width: 8),
+      _roundBtn(
+          Icons.add,
+          _shift.isFull
+              ? null
+              : () => setState(() {
+                    if (_shift.addHail()) {
+                      _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} · ${_shift.onBoard}/${_shift.capacity}');
+                    }
+                  }),
+          filled: true),
     ]);
   }
 
   Widget _roundBtn(IconData icon, VoidCallback? onTap, {bool filled = false}) => SizedBox(
-        width: 52,
-        height: 52,
+        width: 44,
+        height: 44,
         child: IconButton.filled(
           style: IconButton.styleFrom(
             backgroundColor: filled ? AppColors.ink : const Color(0xFFF1F1F1),
             foregroundColor: filled ? Colors.white : AppColors.ink,
             disabledBackgroundColor: const Color(0xFFF5F5F5),
           ),
-          iconSize: 28,
+          iconSize: 24,
           onPressed: onTap,
           icon: Icon(icon),
         ),
       );
 
   Widget _stops() {
-    final stops = _shift.nextStops().take(3).toList();
+    final stops = _shift.nextStops().take(2).toList();
     if (stops.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(children: [
-          const Icon(Icons.radar, color: AppColors.muted),
-          const SizedBox(width: 10),
-          Expanded(child: Text(s.t('noStops'), style: const TextStyle(color: AppColors.muted))),
-        ]),
-      );
+      return Row(children: [
+        const Icon(Icons.radar, color: AppColors.muted, size: 20),
+        const SizedBox(width: 10),
+        Expanded(child: Text(s.t('noStops'), style: const TextStyle(color: AppColors.muted, fontSize: 13))),
+      ]);
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(s.t('nextStops'), style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 6),
+      Text(s.t('nextStops'), style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
       for (final st in stops)
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
+          padding: const EdgeInsets.only(top: 6),
           child: Row(children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: st.pickup ? AppColors.moroccoGreen : AppColors.ink,
                 shape: st.pickup ? BoxShape.circle : BoxShape.rectangle,
-                borderRadius: st.pickup ? null : BorderRadius.circular(8),
+                borderRadius: st.pickup ? null : BorderRadius.circular(7),
               ),
-              child: Icon(st.pickup ? Icons.person_add_alt_1 : Icons.logout, color: Colors.white, size: 18),
+              child: Icon(st.pickup ? Icons.person_add_alt_1 : Icons.logout, color: Colors.white, size: 15),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 '${st.pickup ? s.t('pickUp') : s.t('dropAt')} ${st.rider.name}'
                 '${st.rider.seats > 1 ? ' (${st.rider.seats})' : ''}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
             Text(distanceText(_exactMetersTo(st.idx)), style: const TextStyle(fontWeight: FontWeight.w700)),
+            if (identical(st, stops.first)) ...[
+              const SizedBox(width: 8),
+              Semantics(
+                button: true,
+                label: '${s.t('navigateTo')} ${st.rider.name}',
+                excludeSemantics: true,
+                child: Tooltip(
+                  message: '${s.t('navigateTo')} ${st.rider.name}',
+                  child: FilledButton(
+                    key: const ValueKey('navigate'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A73E8),
+                      minimumSize: const Size(44, 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    onPressed: () => _navigate(st),
+                    child: const Icon(Icons.navigation, size: 20),
+                  ),
+                ),
+              ),
+            ],
           ]),
         ),
-      const SizedBox(height: 6),
-      OutlinedButton.icon(
-        key: const ValueKey('navigate'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF1A73E8),
-          side: const BorderSide(color: Color(0xFF1A73E8), width: 1.5),
-        ),
-        onPressed: () => _navigate(stops.first),
-        icon: const Icon(Icons.navigation),
-        label: Text('${s.t('navigateTo')} ${stops.first.rider.name}', overflow: TextOverflow.ellipsis),
-      ),
     ]);
   }
 
@@ -1222,140 +1225,148 @@ class _DriverHomeState extends State<DriverHome> {
     );
   }
 
+  /// Demande de course compacte : qui, combien, où, puis Refuser / Accepter. La carte reste visible.
   Widget _requestCard() {
     final r = _request!;
     final left = _requestSeconds - DateTime.now().difference(r.shownAt).inMilliseconds / 1000;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 18)],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        LinearProgressIndicator(
-          value: (left / _requestSeconds).clamp(0, 1),
-          minHeight: 5,
-          color: const Color(0xFFF5B301),
-          backgroundColor: AppColors.line,
+    final seats = '${r.rider.seats} ${r.rider.seats > 1 ? s.t('seats') : s.t('seat')}';
+    Widget chip(IconData icon, String text, Color bg, Color fg, {String? hint}) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, color: fg, size: 16),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 13)),
+                if (hint != null) Text(hint, style: TextStyle(color: fg, fontSize: 12)),
+              ]),
+            ),
+          ]),
+        );
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 14)],
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: const Color(0xFFF5B301),
-                child: Text(r.rider.name.substring(0, 1),
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s.t('newRequest'), style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-                  Row(children: [
-                    Flexible(
-                      child: Text(r.rider.name,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.star, size: 16, color: Color(0xFFF5B301)),
-                    Text(r.rating.toStringAsFixed(1)),
-                  ]),
-                ]),
-              ),
-              Text(dh(r.rider.fare), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-            ]),
-            if (r.bookedBy != null) ...[
-              const SizedBox(height: 6),
-              Text('${s.t('bookedBy')} ${r.bookedBy} ${s.t('forPerson')} ${r.rider.name}',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w600)),
-            ],
-            if (r.lowVision) ...[
-              const SizedBox(height: 10),
-              Semantics(
-                container: true,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(12)),
-                  child: Row(children: [
-                    const Icon(Icons.visibility_off, color: Colors.white),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(s.t('lowVisionBadge'),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-                        Text(s.t('lowVisionHint'), style: const TextStyle(color: Colors.white, fontSize: 13)),
-                      ]),
-                    ),
-                  ]),
-                ),
-              ),
-            ],
-            if (r.babySeat) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(12)),
-                child: Row(children: [
-                  const Icon(Icons.child_friendly, color: AppColors.moroccoGreen),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(s.t('babySeatRequested'),
-                        style:
-                            const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w800, fontSize: 15)),
-                  ),
-                ]),
-              ),
-            ],
-            const SizedBox(height: 12),
-            _infoLine(Icons.person_pin_circle, AppColors.moroccoGreen,
-                '${distanceText(_exactMetersTo(r.rider.pickupIdx))} ${s.t('pickupAhead')}'),
-            const SizedBox(height: 6),
-            _infoLine(Icons.flag, AppColors.ink, r.destination),
-            const SizedBox(height: 6),
-            _infoLine(Icons.event_seat, AppColors.muted,
-                '${r.rider.seats} ${r.rider.seats > 1 ? s.t('seats') : s.t('seat')}'),
-            const SizedBox(height: 14),
-            if (r.takenAt != null)
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: const Color(0xFFFBEAEA), borderRadius: BorderRadius.circular(12)),
-                child: Row(children: [
-                  const Icon(Icons.lock, color: AppColors.taxiRed),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(s.t('takenByOther'),
-                        style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w800)),
-                  ),
-                ]),
-              )
-            else
+        clipBehavior: Clip.antiAlias,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          LinearProgressIndicator(
+            value: (left / _requestSeconds).clamp(0, 1),
+            minHeight: 4,
+            color: const Color(0xFFF5B301),
+            backgroundColor: AppColors.line,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Row(children: [
-                Expanded(child: OutlinedButton(onPressed: _decline, child: Text(s.t('decline')))),
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: const Color(0xFFF5B301),
+                  child: Text(r.rider.name.substring(0, 1),
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.moroccoGreen),
-                    onPressed: _accept,
-                    child: Text(s.t('accept'), style: const TextStyle(fontSize: 18)),
-                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Flexible(
+                        child: Text(r.rider.name,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.star, size: 14, color: Color(0xFFF5B301)),
+                      Text(r.rating.toStringAsFixed(1), style: const TextStyle(fontSize: 13)),
+                    ]),
+                    Text('${distanceText(_exactMetersTo(r.rider.pickupIdx))} ${s.t('pickupAhead')}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: AppColors.moroccoGreen, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(dh(r.rider.fare), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
+                  Text(seats, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                ]),
+              ]),
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.flag, color: AppColors.ink, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(r.destination,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ]),
-          ]),
-        ),
-      ]),
+              if (r.bookedBy != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('${s.t('bookedBy')} ${r.bookedBy} ${s.t('forPerson')} ${r.rider.name}',
+                      style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              if (r.lowVision || r.babySeat)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (r.lowVision)
+                      Semantics(
+                        container: true,
+                        child: chip(Icons.visibility_off, s.t('lowVisionBadge'), AppColors.ink, Colors.white,
+                            hint: s.t('lowVisionHint')),
+                      ),
+                    if (r.babySeat)
+                      chip(Icons.child_friendly, s.t('babySeatRequested'), AppColors.greenSoft, AppColors.moroccoGreen),
+                  ]),
+                ),
+              const SizedBox(height: 10),
+              if (r.takenAt != null)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFFBEAEA), borderRadius: BorderRadius.circular(12)),
+                  child: Row(children: [
+                    const Icon(Icons.lock, color: AppColors.taxiRed, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(s.t('takenByOther'),
+                          style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w800)),
+                    ),
+                  ]),
+                )
+              else
+                Row(children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                      onPressed: _decline,
+                      child: Text(s.t('decline')),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.moroccoGreen, minimumSize: const Size(0, 44)),
+                      onPressed: _accept,
+                      child: Text(s.t('accept'), style: const TextStyle(fontSize: 17)),
+                    ),
+                  ),
+                ]),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
-
-  Widget _infoLine(IconData icon, Color color, String text) => Row(children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
-      ]);
 
   Widget _offlinePanel() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text(s.t('chooseTaxiType'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
@@ -1488,9 +1499,9 @@ class _DriverHomeState extends State<DriverHome> {
       );
 
   Widget _onlinePanel() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (_myDest != null) ...[_myDestBanner(), const Divider(height: 20, color: AppColors.line)],
+        if (_myDest != null) ...[_myDestBanner(), const Divider(height: 14, color: AppColors.line)],
         _seatCounter(),
-        const Divider(height: 26, color: AppColors.line),
+        const Divider(height: 14, color: AppColors.line),
         _stops(),
       ]);
 
@@ -1570,8 +1581,11 @@ class _DriverHomeState extends State<DriverHome> {
         Align(
           alignment: Alignment.bottomCenter,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            if (_request != null) _requestCard(),
-            Flexible(child: BottomPanel(child: _online ? _onlinePanel() : _offlinePanel())),
+            // Une demande remplace le panneau le temps de la réponse : la carte reste visible au maximum.
+            if (_request != null)
+              _requestCard()
+            else
+              Flexible(child: BottomPanel(child: _online ? _onlinePanel() : _offlinePanel())),
           ]),
         ),
       ]),
