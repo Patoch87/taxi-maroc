@@ -853,40 +853,40 @@ class _DriverHomeState extends State<DriverHome> {
         ),
       );
 
-  /// Grand rappel lisible d'un coup d'œil : triangle de danger, texte en gros, bouton OK.
+  /// Rappel discret des feux de détresse : bandeau compact sombre, pastille orange clignotante, OK.
   Widget _hazardBanner() => Semantics(
         liveRegion: true,
         container: true,
         label: s.t('hazardLights'),
         child: Container(
           key: const ValueKey('hazardBanner'),
-          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 6, 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFB300),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.taxiRed, width: 4),
-            boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 14)],
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
           ),
           child: Row(children: [
-            const Icon(Icons.warning_rounded, size: 64, color: AppColors.taxiRed),
-            const SizedBox(width: 12),
+            const _HazardBlink(),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Text(s.t('hazardLights'),
-                    style:
-                        const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.ink, height: 1.1)),
-                const SizedBox(height: 4),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
                 Text('${s.t('hazardNear')} · ${_hazardFor!.name}',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12.5, color: Colors.white70)),
               ]),
             ),
-            const SizedBox(width: 8),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.ink,
-                minimumSize: const Size(72, 64),
-                textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFFFB300),
+                minimumSize: const Size(48, 40),
+                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
               ),
               onPressed: _hideHazard,
               child: const Text('OK'),
@@ -897,10 +897,10 @@ class _DriverHomeState extends State<DriverHome> {
 
   Widget _earningsCard() => Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: AppColors.ink,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
         ),
         child: Row(children: [
@@ -914,11 +914,11 @@ class _DriverHomeState extends State<DriverHome> {
         ]),
       );
 
-  Widget _divider() => Container(width: 1, height: 30, color: Colors.white24);
+  Widget _divider() => Container(width: 1, height: 24, color: Colors.white24);
 
   Widget _stat(String value, String label) => Column(children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, height: 1.2)),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2)),
       ]);
 
   /// Compteur des personnes à bord : une icône de siège par place.
@@ -1563,7 +1563,7 @@ class _DriverHomeState extends State<DriverHome> {
         Positioned.fill(child: _buildMap()),
         Column(children: [
           _topBar(),
-          if (_online) _earningsCard(),
+          if (_online && _hazardFor == null) _earningsCard(),
           if (_online && _guideRider != null) _guideBanner(),
           if (_hazardFor != null) _hazardBanner(),
         ]),
@@ -1597,4 +1597,34 @@ class _ArrowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Pastille orange des feux de détresse, qui clignote doucement comme les vrais feux.
+class _HazardBlink extends StatefulWidget {
+  const _HazardBlink();
+
+  @override
+  State<_HazardBlink> createState() => _HazardBlinkState();
+}
+
+class _HazardBlinkState extends State<_HazardBlink> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+        opacity: Tween(begin: .45, end: 1.0).animate(_c),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(color: Color(0xFFFFB300), shape: BoxShape.circle),
+          child: const Icon(Icons.warning_rounded, size: 22, color: AppColors.ink),
+        ),
+      );
 }
