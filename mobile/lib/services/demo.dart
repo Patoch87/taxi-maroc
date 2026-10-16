@@ -19,14 +19,46 @@ class Demo {
 
   static double _round(double v) => (v * 100).round() / 100;
 
-  /// Prix du petit taxi pour une distance réelle par la route.
-  static double petitTaxiPrice({required double routeKm, required bool seul, required bool premium, DateTime? date}) {
+  /// Frais Bab Taxi ajoutés à la course seule.
+  static const fraisBab = 3.0;
+
+  /// Compensation minimale du chauffeur quand elle n'est pas nulle.
+  static const compensationMin = 10.0;
+
+  /// Places d'un petit taxi.
+  static const placesPetitTaxi = 3;
+
+  /// Compteur estimé (avec la majoration de nuit) pour une distance réelle par la route.
+  static double meter({required double routeKm, DateTime? date}) {
     var total = max(priseEnCharge + routeKm * parKm, minimum);
     final h = (date ?? DateTime.now()).hour;
     if (h >= 20 || h < 6) total *= 1.5;
-    if (seul) total *= 1.3;
-    if (premium) total *= 1.5;
     return _round(total);
+  }
+
+  /// Course seule : compteur + compensation chauffeur + 3 MAD de frais Bab.
+  /// Compensation = places libres bloquées × 50 % × compteur (2 places libres pour 1 passager,
+  /// 1 pour un groupe de 2, aucune pour 3), au moins 10 MAD quand elle n'est pas nulle.
+  static SeulPrice seulPrice({required double compteur, int passengers = 1}) {
+    final blocked = max(0, placesPetitTaxi - passengers.clamp(1, placesPetitTaxi));
+    var compensation = blocked * 0.5 * compteur;
+    if (compensation > 0) compensation = max(compensation, compensationMin);
+    compensation = _round(compensation);
+    return SeulPrice(compteur, compensation, fraisBab, _round(compteur + compensation + fraisBab));
+  }
+
+  /// Prix du petit taxi pour une distance réelle par la route.
+  /// Seul : nouvelle règle (compteur + compensation + frais). Premium : inchangé.
+  static double petitTaxiPrice(
+      {required double routeKm, required bool seul, required bool premium, DateTime? date, int passengers = 1}) {
+    final compteur = meter(routeKm: routeKm, date: date);
+    if (premium) {
+      var total = compteur;
+      if (seul) total *= 1.3;
+      return _round(total * 1.5);
+    }
+    if (seul) return seulPrice(compteur: compteur, passengers: passengers).total;
+    return compteur;
   }
 
   static Map<String, dynamic> estimatePetitTaxi({
@@ -55,4 +87,13 @@ class Demo {
     })
       ..sort((a, b) => (a['distanceAvantPriseEnChargeM'] as int).compareTo(b['distanceAvantPriseEnChargeM'] as int));
   }
+}
+
+/// Détail du prix d'une course seule.
+class SeulPrice {
+  const SeulPrice(this.compteur, this.compensation, this.frais, this.total);
+  final double compteur;
+  final double compensation;
+  final double frais;
+  final double total;
 }

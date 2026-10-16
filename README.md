@@ -14,7 +14,7 @@ Le plan produit complet est dans le dossier du projet : `plan/plan-application-t
 ## Ce qui fonctionne déjà
 
 - **Prise en charge sur la route** (`backend/src/domain/matching.ts`) : le passager donne sa destination finale ; seuls les taxis dont l'itinéraire passe près de lui (300 m) **et** va vers sa destination (800 m) le voient, dans le bon sens, avec des places libres.
-- **Course seule ou partagée** : la course seule ne va qu'à un taxi vide, ajoute un supplément et bloque les autres passagers.
+- **Course seule ou partagée** : la course seule ne va qu'à un taxi vide et bloque les autres passagers. Prix « Seul » (application) = compteur + compensation chauffeur (places libres bloquées × 50 % du compteur, au moins 10 MAD ; 2 places pour 1 passager, 1 pour un groupe de 2, 0 pour 3) + 3 MAD de frais Bab. Les touristes paient exactement comme tout le monde.
 - **Prix affiché à l'avance** (`backend/src/domain/fare.ts`) : compteur estimé, minimum, majoration de nuit +50 %, supplément seul, coefficient premium ; grand taxi au prix fixe par place.
 - **Plaintes** : refus, prix abusif, conduite dangereuse, comportement, objet oublié.
 - **Taxis premium** : filtre par catégorie.

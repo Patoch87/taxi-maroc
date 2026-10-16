@@ -45,7 +45,7 @@ class _CouponViewState extends State<CouponView> {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(s.t('couponTitle'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-                  Text(s.t('promoLabel'),
+                  Text(promoTag(c.promo),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.muted)),
                 ]),
               ),

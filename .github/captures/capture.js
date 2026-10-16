@@ -307,6 +307,55 @@ const { chromium } = require('playwright');
     await shot('33-chauffeur-quartier-trajet', 2500);
   });
 
+  // Nouveau prix « Seul » : compteur + compensation chauffeur + 3 MAD de frais, avec l'explication.
+  await step('prix-seul', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await shot('38-prix-seul', 4000);
+  });
+
+  // Restaurants : « Réserver une table » (date, heure, personnes, nom prérempli), puis « Table réservée ».
+  await step('reservation-restaurant', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await tap('Commander');
+    await page.waitForTimeout(9000);
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
+    await tap('Réserver une table');
+    await shot('36-reservation-restaurant', 2000);
+    await tap('Confirmer la réservation');
+    await shot('37-table-reservee', 2000);
+  });
+
+  // Jeux pendant le trajet (passager à bord) : cadeau d'un partenaire fictif enregistré dans « Mes offres ».
+  await step('jeux', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await tap('Commander');
+    await page.waitForTimeout(9000);
+    await fast();
+    await waitFor('Je suis dans le taxi');
+    await tap('Je suis dans le taxi');
+    await page.waitForTimeout(2000);
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 3; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
+    await tap('Jouer pendant le trajet');
+    await shot('34-jeu-pendant-trajet', 2000);
+    await tap('Grattez et gagnez');
+    await page.waitForTimeout(1500);
+    await tap('Tout gratter');
+    await shot('35-jeu-gagne-cadeau', 3000);
+  });
+
   // Chauffeur qui rentre chez lui : seulement les passagers sur son trajet
   await step('ma-destination', async () => {
     await open();

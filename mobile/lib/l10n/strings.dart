@@ -550,7 +550,12 @@ class S {
       'البوربوار كيتخلص بالكارط',
       'The tip is paid by card'
     ],
-    'simulatedPayment': ["Aucun montant n'est débité", "لن يتم خصم أي مبلغ", "ما غادي يتقطع حتى درهم", "No money is charged"],
+    'simulatedPayment': [
+      "Aucun montant n'est débité",
+      "لن يتم خصم أي مبلغ",
+      "ما غادي يتقطع حتى درهم",
+      "No money is charged"
+    ],
     'savedCard': ['Carte enregistrée', 'بطاقة محفوظة', 'الكارط المسجلة', 'Saved card'],
     'addCard': ['Ajouter une carte', 'إضافة بطاقة', 'زيد كارط', 'Add a card'],
     'cardNumber': ['Numéro de carte', 'رقم البطاقة', 'نمرة الكارط', 'Card number'],
@@ -730,7 +735,12 @@ class S {
       "حتى شيفور ما قبل. عاود من بعد شوية.",
       "No driver accepted. Try again in a moment."
     ],
-    'liveDriverIntro': ["Votre position GPS est partagée avec les passagers pendant votre service.", "يتم مشاركة موقعك مع الركاب أثناء العمل.", "الموقع ديالك كيتشارك مع الكليان وانت خدام.", "Your GPS location is shared with riders during your shift."],
+    'liveDriverIntro': [
+      "Votre position GPS est partagée avec les passagers pendant votre service.",
+      "يتم مشاركة موقعك مع الركاب أثناء العمل.",
+      "الموقع ديالك كيتشارك مع الكليان وانت خدام.",
+      "Your GPS location is shared with riders during your shift."
+    ],
     'plateOptional': [
       "Plaque du taxi (facultatif)",
       "لوحة الطاكسي (اختياري)",
@@ -738,7 +748,12 @@ class S {
       "Taxi plate (optional)"
     ],
     'offerCaribou': ["-20 % sur votre café", "تخفيض 20% على قهوتك", "-20% على القهوة ديالك", "20% off your coffee"],
-    'offerCaribouDetail': ["Sur présentation du bon Bab Taxi", "عند تقديم قسيمة باب طاكسي", "ملي تورّي البون ديال باب طاكسي", "Show your Bab Taxi voucher"],
+    'offerCaribouDetail': [
+      "Sur présentation du bon Bab Taxi",
+      "عند تقديم قسيمة باب طاكسي",
+      "ملي تورّي البون ديال باب طاكسي",
+      "Show your Bab Taxi voucher"
+    ],
     'navAsk': ['Demander à chaque fois', 'السؤال في كل مرة', 'سولني كل مرة', 'Ask every time'],
     'navSetting': ['Navigation vers les passagers', 'التنقل نحو الركاب', 'الطريق للزبناء', 'Navigation to passengers'],
     'navRemember': [
@@ -850,6 +865,136 @@ class S {
     'earned': ['gagnés', 'مكسب', 'ربحتي', 'earned'],
     'passengersShort': ['passagers', 'ركاب', 'كليان', 'riders'],
     'ridesShort': ['courses', 'رحلات', 'كورصات', 'rides'],
+
+    // Prix seul, réservation de restaurant, jeux pendant le trajet
+    'meterWord': ["Compteur", "العداد", "الكونتور", "Meter"],
+    'driverComp': ["compensation chauffeur", "تعويض السائق", "تعويض الشيفور", "driver compensation"],
+    'babFee': ["frais", "رسوم", "المصاريف", "fee"],
+    'compExplain': [
+      "La compensation paie au chauffeur les places qu'il ne pourra pas proposer sur sa route.",
+      "يدفع التعويض للسائق ثمن المقاعد التي لن يستطيع عرضها في طريقه.",
+      "التعويض كيخلّص الشيفور على البلايص اللي ما غاديش يقدر يعطيها فطريقو.",
+      "The compensation pays the driver for the seats he cannot offer along his route."
+    ],
+    'people': ["Personnes", "الأشخاص", "الناس", "People"],
+    'morePeople': ["Une personne de plus", "شخص إضافي", "واحد زايد", "One more person"],
+    'fewerPeople': ["Une personne de moins", "شخص أقل", "واحد ناقص", "One person less"],
+    'bookTable': ["Réserver une table", "حجز طاولة", "ريزيرفي طابلة", "Book a table"],
+    'bookDate': ["Date", "التاريخ", "النهار", "Date"],
+    'bookTime': ["Heure", "الساعة", "الساعة", "Time"],
+    'bookName': ["Au nom de", "باسم", "باسم", "Name"],
+    'bookConfirm': ["Confirmer la réservation", "تأكيد الحجز", "أكّد الريزيرفاسيون", "Confirm booking"],
+    'tableBooked': ["Table réservée", "تم حجز الطاولة", "الطابلة تريزيرفات", "Table booked"],
+    'tableFor': ["Table pour", "طاولة لـ", "طابلة ديال", "Table for"],
+    'taxiAtBooking': [
+      "Y aller en taxi à l'heure de la réservation",
+      "الذهاب بالطاكسي في موعد الحجز",
+      "سير بالطاكسي فوقت الريزيرفاسيون",
+      "Take a taxi there at the booking time"
+    ],
+    'bookingDemo': [
+      "Réservation de démonstration : le restaurant n'est pas prévenu.",
+      "حجز تجريبي: لا يتم إخبار المطعم.",
+      "ريزيرفاسيون ديال التجربة: الريسطو ما كيتعلمش.",
+      "Demo booking: the restaurant is not notified."
+    ],
+    'playDuringRide': ["Jouer pendant le trajet", "العب أثناء الرحلة", "لعب فالطريق", "Play during the ride"],
+    'playSubtitle': [
+      "Petits jeux, cadeaux offerts par des partenaires",
+      "ألعاب صغيرة وهدايا من الشركاء",
+      "لعيبات صغار وكادوات من الشركاء",
+      "Mini games, gifts from partners"
+    ],
+    'gamesTitle': ["Jeux du trajet", "ألعاب الرحلة", "لعيبات الطريق", "Ride games"],
+    'gamesIntro': [
+      "Une partie par jeu et par course. Les cadeaux gagnés vont dans Mes offres.",
+      "محاولة واحدة لكل لعبة في كل رحلة. الهدايا تُضاف إلى عروضي.",
+      "مرة وحدة لكل لعبة فكل كورصة. الكادوات كيمشيو للعروض ديالي.",
+      "One play per game per ride. Gifts you win go to My offers."
+    ],
+    'gameScratch': ["Grattez et gagnez", "اكشط واربح", "حك وربح", "Scratch and win"],
+    'gameScratchDesc': [
+      "Grattez la carte avec le doigt",
+      "اكشط البطاقة بإصبعك",
+      "حك الكارطة بصبعك",
+      "Scratch the card with your finger"
+    ],
+    'scratchAll': ["Tout gratter", "اكشط الكل", "حك كلشي", "Scratch it all"],
+    'gameWheel': ["Roue des cadeaux", "عجلة الهدايا", "الروضة ديال الكادوات", "Gift wheel"],
+    'gameWheelDesc': [
+      "Tournez la roue : un cadeau à chaque fois",
+      "أدر العجلة: هدية في كل مرة",
+      "دوّر الروضة: كادو كل مرة",
+      "Spin the wheel: a gift every time"
+    ],
+    'spinWheel': ["Tourner la roue", "أدر العجلة", "دوّر الروضة", "Spin the wheel"],
+    'gameQuiz': ["Quiz du Maroc", "مسابقة المغرب", "كويز المغرب", "Morocco quiz"],
+    'gameQuizDesc': [
+      "Une bonne réponse, un cadeau",
+      "جواب صحيح، هدية",
+      "جواب صحيح، كادو",
+      "One right answer, one gift"
+    ],
+    'quizQ1': [
+      "Quelle est la plus grande ville du Maroc ?",
+      "ما هي أكبر مدينة في المغرب؟",
+      "شنو هي أكبر مدينة فالمغرب؟",
+      "What is the largest city in Morocco?"
+    ],
+    'quizQ2': [
+      "Quelle mosquée de Casablanca est construite au bord de l'océan ?",
+      "أي مسجد في الدار البيضاء مبني على المحيط؟",
+      "شمن جامع فكازا مبني على البحر؟",
+      "Which Casablanca mosque is built on the ocean?"
+    ],
+    'quizQ3': [
+      "Quelle est la capitale du Maroc ?",
+      "ما هي عاصمة المغرب؟",
+      "شنو هي العاصمة ديال المغرب؟",
+      "What is the capital of Morocco?"
+    ],
+    'gameWon': ["Gagné !", "ربحت!", "ربحتي!", "You won!"],
+    'gameLost': [
+      "Perdu ! La bonne réponse était",
+      "خسرت! الجواب الصحيح هو",
+      "خسرتي! الجواب الصحيح هو",
+      "Not this time! The right answer was"
+    ],
+    'alreadyPlayed': [
+      "Déjà joué pendant cette course",
+      "لعبت بالفعل خلال هذه الرحلة",
+      "لعبتي ديجا فهاد الكورصة",
+      "Already played during this ride"
+    ],
+    'giftSaved': [
+      "Cadeau ajouté à Mes offres",
+      "أضيفت الهدية إلى عروضي",
+      "الكادو تزاد للعروض ديالي",
+      "Gift added to My offers"
+    ],
+    'seeMyOffers': ["Voir Mes offres", "عرض عروضي", "شوف العروض ديالي", "See My offers"],
+    'giftOfferedBy': ["Offert par", "مقدم من", "مهدي من", "Offered by"],
+    'fictiveExample': ["exemple fictif", "مثال وهمي", "مثال ماشي حقيقي", "fictitious example"],
+    'giftCafeAtlas': ["-15 % sur votre café", "تخفيض 15% على قهوتك", "-15% على القهوة ديالك", "15% off your coffee"],
+    'giftSoukMode': [
+      "-20 % sur vos achats",
+      "تخفيض 20% على مشترياتك",
+      "-20% على الشرية ديالك",
+      "20% off your purchase"
+    ],
+    'giftSharedRide': [
+      "1 course partagée offerte jusqu'à 10 MAD",
+      "رحلة مشتركة مجانية حتى 10 دراهم",
+      "كورصة مشتركة فابور حتى 10 دراهم",
+      "1 free shared ride up to 10 MAD"
+    ],
+    'giftDetail': [
+      "Sur présentation du bon, valable 24 h",
+      "عند تقديم القسيمة، صالحة 24 ساعة",
+      "ملي تورّي البون، صالح 24 ساعة",
+      "Show the voucher, valid 24 h"
+    ],
+    'playLabel': ["Jouer", "العب", "لعب", "Play"],
   };
 
   /// Clés et textes des 4 langues de base (fr, ar, dr, en).

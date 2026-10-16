@@ -23,6 +23,7 @@ class RideOption {
     required this.seats,
     required this.luggage,
     this.seul = false,
+    this.breakdown,
   });
 
   final String id;
@@ -35,12 +36,16 @@ class RideOption {
   /// Nombre de valises que le coffre peut prendre.
   final int luggage;
   final bool seul;
+
+  /// Course seule en petit taxi : détail du prix (compteur, compensation chauffeur, frais Bab).
+  final SeulPrice? breakdown;
 }
 
 /// Prix fixes par place des grands taxis (mêmes valeurs que backend/src/domain/tariffs.ts).
 const grandTaxiPrixPlace = {'casa-mohammedia': 12.0, 'casa-berrechid': 15.0, 'casa-eljadida': 40.0};
 
-List<RideOption> rideOptions({required Place destination, required double routeM, DateTime? date}) {
+/// [passengers] : nombre de personnes du groupe (1 à 3), pour la compensation de la course seule.
+List<RideOption> rideOptions({required Place destination, required double routeM, DateTime? date, int passengers = 1}) {
   if (destination.intercity) {
     final prix = grandTaxiPrixPlace[destination.ligne]!;
     return [
@@ -65,6 +70,7 @@ List<RideOption> rideOptions({required Place destination, required double routeM
   }
   double price(bool seul, bool premium) =>
       Demo.petitTaxiPrice(routeKm: routeM / 1000, seul: seul, premium: premium, date: date);
+  final alone = Demo.seulPrice(compteur: Demo.meter(routeKm: routeM / 1000, date: date), passengers: passengers);
   return [
     RideOption(
         id: 'partage',
@@ -79,10 +85,11 @@ List<RideOption> rideOptions({required Place destination, required double routeM
         title: s.t('aloneTitle'),
         description: s.t('aloneDesc'),
         kind: TaxiKind.petit,
-        priceMad: price(true, false),
+        priceMad: alone.total,
         seats: 3,
         luggage: 2,
-        seul: true),
+        seul: true,
+        breakdown: alone),
     RideOption(
         id: 'premium',
         title: s.t('premium'),
@@ -93,6 +100,13 @@ List<RideOption> rideOptions({required Place destination, required double routeM
         luggage: 3,
         seul: true),
   ];
+}
+
+/// « Compteur 20 + compensation chauffeur 20 + frais 3 = 43 DH ».
+String seulBreakdownText(SeulPrice b) {
+  String n(double v) => dh(v).replaceAll(' DH', '');
+  return '${s.t('meterWord')} ${n(b.compteur)} + ${s.t('driverComp')} ${n(b.compensation)} + '
+      '${s.t('babFee')} ${n(b.frais)} = ${dh(b.total)}';
 }
 
 /// Montant en dirhams, avec la virgule en français et en arabe (8,44 DH) et le point en anglais.

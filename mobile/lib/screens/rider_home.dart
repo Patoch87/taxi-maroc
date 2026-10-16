@@ -38,7 +38,9 @@ import '../services/account.dart';
 import 'complaint_screen.dart';
 import '../widgets/card_payment_sheet.dart';
 import '../widgets/sheets.dart';
+import '../widgets/table_booking.dart';
 import 'driver_home.dart';
+import 'games_screen.dart';
 import 'history_screen.dart';
 import 'search_screen.dart';
 import 'trusted_contacts_screen.dart';
@@ -93,6 +95,9 @@ class _RiderHomeState extends State<RiderHome> {
   /// Siège bébé demandé (gratuit) et nombre de valises du passager (0 à 4).
   bool _babySeat = false;
   int _bags = 0;
+
+  /// Nombre de personnes du groupe (1 à 3) : prix de la course seule (compensation chauffeur).
+  int _party = 1;
 
   /// Course commandée pour quelqu'un d'autre (null = pour moi).
   TrustedContact? _forOther;
@@ -226,7 +231,7 @@ class _RiderHomeState extends State<RiderHome> {
     final route = await fetchRoute(_me, LatLng(place.lat, place.lng));
     final routeM = routeLengthM(route);
     if (!mounted) return;
-    final options = rideOptions(destination: place, routeM: routeM);
+    final options = rideOptions(destination: place, routeM: routeM, passengers: _party);
     setState(() {
       _dest = place;
       _route = route;
@@ -268,7 +273,7 @@ class _RiderHomeState extends State<RiderHome> {
   /// Les prix dépendent de l'heure (tarif de nuit) : les options sont recalculées.
   void _setSchedule(DateTime? at) {
     if (_dest == null) return;
-    final options = rideOptions(destination: _dest!, routeM: _routeM, date: at);
+    final options = rideOptions(destination: _dest!, routeM: _routeM, date: at, passengers: _party);
     setState(() {
       _scheduledAt = at;
       _options = options;
@@ -722,9 +727,69 @@ class _RiderHomeState extends State<RiderHome> {
             destinationName: _dest!.name,
             items: restaurantsNear(_dest!),
             onGo: _confirmRestaurant,
+            onBook: _bookTable,
           ),
         ]
       : const [];
+
+  /// « Réserver une table » : date, heure, personnes et nom, puis « Table réservée ».
+  /// Option : un taxi réservé pour arriver à l'heure (réservation à l'avance, comme « Plus tard »).
+  Future<void> _bookTable(Restaurant r) async {
+    final booking = await showTableBookingSheet(context, r);
+    if (booking == null || !mounted) return;
+    final go =
+        await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => TableBookedScreen(booking: booking)));
+    if (go != true || !mounted) return;
+    final p = r.place;
+    final from = _step == RiderStep.idle || _dest == null ? _me : LatLng(_dest!.lat, _dest!.lng);
+    final route = await fetchRoute(from, LatLng(p.lat, p.lng));
+    if (!mounted) return;
+    final routeM = routeLengthM(route);
+    // Prise en charge : durée du trajet et 10 minutes de marge avant l'heure de la table.
+    final drive = Duration(seconds: (routeM / _cityMps).round());
+    final pickup = clampSchedule(booking.at.subtract(drive + const Duration(minutes: 10)));
+    final option = rideOptions(destination: p, routeM: routeM, date: pickup, passengers: _party).first;
+    tripHistory.insert(
+      0,
+      TripRecord(destination: p.name, option: option.title, price: option.priceMad, date: pickup, scheduled: true),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('${s.t('tripBooked')} ${scheduleLabel(pickup, lang: s.lang)} · ${r.name} · ${dh(option.priceMad)}'),
+    ));
+  }
+
+  /// « Jouer pendant le trajet » : petits jeux, cadeaux de partenaires fictifs dans « Mes offres ».
+  Widget _gamesEntry() => Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Semantics(
+          button: true,
+          label: '${s.t('playDuringRide')}. ${s.t('playSubtitle')}',
+          excludeSemantics: true,
+          child: Material(
+            color: AppColors.greenSoft,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GamesScreen(tripId: _tripId))),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(children: [
+                  const Icon(Icons.sports_esports, color: AppColors.moroccoGreen),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(s.t('playDuringRide'),
+                          style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.moroccoGreen)),
+                      Text(s.t('playSubtitle'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                    ]),
+                  ),
+                  const Icon(Icons.chevron_right, color: AppColors.moroccoGreen),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      );
 
   /// « Y aller en taxi » : fenêtre de confirmation avec le nouveau prix (depuis la position actuelle,
   /// même type de taxi) et la nouvelle heure d'arrivée, comparés au prix actuel. Rien ne change sans « Confirmer ».
@@ -734,7 +799,7 @@ class _RiderHomeState extends State<RiderHome> {
     final route = await fetchRoute(from, LatLng(p.lat, p.lng));
     if (!mounted) return;
     final routeM = routeLengthM(route);
-    final options = rideOptions(destination: p, routeM: routeM);
+    final options = rideOptions(destination: p, routeM: routeM, passengers: _party);
     final next = options.firstWhere((o) => o.id == _selected?.id, orElse: () => options.first);
     final drive = Duration(seconds: (routeM / _cityMps).round());
     // En attendant le taxi, il faut d'abord qu'il arrive.
@@ -800,7 +865,7 @@ class _RiderHomeState extends State<RiderHome> {
     final route = computed ?? await fetchRoute(from, LatLng(p.lat, p.lng));
     if (!mounted) return;
     final routeM = routeLengthM(route);
-    final options = rideOptions(destination: p, routeM: routeM);
+    final options = rideOptions(destination: p, routeM: routeM, passengers: _party);
     setState(() {
       _dest = p;
       _route = route;
@@ -1094,6 +1159,7 @@ class _RiderHomeState extends State<RiderHome> {
       _forOther = null;
       _babySeat = false;
       _bags = 0;
+      _party = 1;
       _lastAnnouncedMin = -1;
       _seniorPromoOpen = false;
       _collapsed = false;
@@ -1358,6 +1424,7 @@ class _RiderHomeState extends State<RiderHome> {
               onTap: () => setState(() => _babySeat = !_babySeat),
             ),
             _bagStepper(),
+            _partyStepper(),
             _pill(
               icon: Icons.visibility_off_outlined,
               label: s.t('lowVisionShort'),
@@ -1472,6 +1539,47 @@ class _RiderHomeState extends State<RiderHome> {
     );
   }
 
+  /// Nombre de personnes (1 à 3) : la compensation de la course seule baisse avec le groupe.
+  Widget _partyStepper() {
+    Widget btn(IconData icon, String tip, int delta) => IconButton(
+          tooltip: tip,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          onPressed: (_party + delta).clamp(1, 3) == _party ? null : () => _setParty(_party + delta),
+          icon: Icon(icon, size: 18),
+        );
+    return Container(
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: StadiumBorder(side: BorderSide(color: _party > 1 ? AppColors.moroccoGreen : AppColors.line, width: 1.5)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        btn(Icons.remove, s.t('fewerPeople'), -1),
+        Semantics(
+          liveRegion: true,
+          label: '${s.t('people')} : $_party',
+          excludeSemantics: true,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.people_alt_outlined, size: 18, color: AppColors.ink),
+            const SizedBox(width: 4),
+            Text('$_party', style: const TextStyle(fontWeight: FontWeight.w800)),
+          ]),
+        ),
+        btn(Icons.add, s.t('morePeople'), 1),
+      ]),
+    );
+  }
+
+  void _setParty(int n) {
+    if (_dest == null) return;
+    _party = n;
+    final options = rideOptions(destination: _dest!, routeM: _routeM, date: _scheduledAt, passengers: n);
+    setState(() {
+      _options = options;
+      _selected = options.firstWhere((o) => o.id == _selected?.id, orElse: () => options.first);
+    });
+  }
+
   void _setBags(int n) => setState(() {
         _bags = n;
         if (_selected != null && _selected!.luggage < n) {
@@ -1501,6 +1609,7 @@ class _RiderHomeState extends State<RiderHome> {
         selected: selected,
         enabled: fits,
         label: '${o.title}, ${dh(o.priceMad)}, ${o.description}, ${o.luggage} ${s.t('suitcasesMax')}'
+            '${o.breakdown == null ? '' : ', ${seulBreakdownText(o.breakdown!)}. ${s.t('compExplain')}'}'
             '${fits ? '' : ', ${s.t('tooManyBags')}'}',
         excludeSemantics: true,
         child: GestureDetector(
@@ -1546,6 +1655,14 @@ class _RiderHomeState extends State<RiderHome> {
                             fontSize: 13,
                             color: fits ? AppColors.muted : AppColors.taxiRed,
                             fontWeight: fits ? null : FontWeight.w600)),
+                    // Course seule : détail du prix et explication de la compensation.
+                    if (o.breakdown != null) ...[
+                      const SizedBox(height: 2),
+                      Text(seulBreakdownText(o.breakdown!),
+                          key: const ValueKey('seulBreakdown'),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                      Text(s.t('compExplain'), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                    ],
                   ]),
                 ),
                 Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
@@ -1749,7 +1866,8 @@ class _RiderHomeState extends State<RiderHome> {
                 ),
               ),
           ]),
-        // Passager à bord : une offre (jamais avant la course, ni dans la sécurité ou une plainte).
+        // Passager à bord : jeux pendant le trajet, puis une offre (jamais avant la course).
+        if (_step == RiderStep.onTrip) _gamesEntry(),
         ..._promoBlock(),
         ..._restaurantBlock(),
       ],
@@ -1824,9 +1942,7 @@ class _RiderHomeState extends State<RiderHome> {
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 48),
         title: Text(s.t('thanksSent'), textAlign: TextAlign.center),
-        content: tip > 0
-            ? Text('${s.t('tipPaid')} : ${dh(tip)}', textAlign: TextAlign.center)
-            : null,
+        content: tip > 0 ? Text('${s.t('tipPaid')} : ${dh(tip)}', textAlign: TextAlign.center) : null,
         actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
       ),
     );
@@ -1949,8 +2065,7 @@ class _RiderHomeState extends State<RiderHome> {
           const Icon(Icons.credit_card, size: 16, color: AppColors.muted),
           const SizedBox(width: 6),
           Expanded(
-            child: Text(s.t('tipByCard'),
-                style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            child: Text(s.t('tipByCard'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ),
         ]),
         // « Envoyer » juste sous le pourboire, avant les restaurants.

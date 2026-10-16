@@ -20,6 +20,7 @@ class Promo {
     required this.color,
     this.logoAsset,
     this.wideLogoAsset,
+    this.partnerGift = false,
   });
 
   /// Identifiant court, repris dans le code du bon (lettres majuscules).
@@ -43,6 +44,10 @@ class Promo {
 
   /// Logo complet (format large), affiché en tête du bon de réduction.
   final String? wideLogoAsset;
+
+  /// Cadeau gagné à un jeu pendant le trajet, offert par un partenaire fictif :
+  /// mention « Offert par `partenaire` · exemple fictif » au lieu de « Publicité ».
+  final bool partnerGift;
 }
 
 /// Annonceur principal : affiché sur tous les trajets, en premier.

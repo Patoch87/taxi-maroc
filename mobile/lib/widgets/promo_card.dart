@@ -6,6 +6,10 @@ import '../services/rides.dart';
 import '../services/tourism.dart';
 import '../theme.dart';
 
+/// Mention de l'offre : « Publicité », ou « Offert par `partenaire` · exemple fictif » pour un cadeau de jeu.
+String promoTag(Promo p) =>
+    p.partnerGift ? '${s.t('giftOfferedBy')} ${p.brand} · ${s.t('fictiveExample')}' : s.t('promoLabel');
+
 /// Carte d'offre discrète, toujours marquée « Publicité ».
 class PromoCard extends StatelessWidget {
   const PromoCard({super.key, required this.promo, this.big = false, this.onClose, this.onTap});
@@ -33,7 +37,7 @@ class PromoCard extends StatelessWidget {
             child: Semantics(
               container: true,
               button: onTap != null,
-              label: '${s.t('promoLabel')}. ${promo.brand}. ${s.t(promo.titleKey)}. ${s.t(promo.detailKey)}',
+              label: '${promoTag(promo)}. ${promo.brand}. ${s.t(promo.titleKey)}. ${s.t(promo.detailKey)}',
               excludeSemantics: true,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -47,7 +51,7 @@ class PromoCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(color: AppColors.sandDeep, borderRadius: BorderRadius.circular(6)),
-                        child: Text(s.t('promoLabel'),
+                        child: Text(promoTag(promo),
                             style: TextStyle(
                                 fontSize: big ? 16 : 11, fontWeight: FontWeight.w700, color: AppColors.muted)),
                       ),
@@ -122,10 +126,14 @@ class BrandBadge extends StatelessWidget {
 
 /// Restaurants proposés aux touristes près de la destination, chacun avec « Y aller en taxi ».
 class RestaurantSuggestions extends StatelessWidget {
-  const RestaurantSuggestions({super.key, required this.destinationName, required this.items, required this.onGo});
+  const RestaurantSuggestions(
+      {super.key, required this.destinationName, required this.items, required this.onGo, this.onBook});
   final String destinationName;
   final List<(Restaurant, double)> items;
   final void Function(Restaurant) onGo;
+
+  /// « Réserver une table » (démo).
+  final void Function(Restaurant)? onBook;
 
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -151,9 +159,21 @@ class RestaurantSuggestions extends StatelessWidget {
               Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800)),
               Text('${s.t(r.cuisineKey)} · ${r.priceMad} · ${distanceText(m)}',
                   style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-              // Note et bouton côte à côte, ou l'un sous l'autre si la place manque (grands textes).
+              // Note et boutons côte à côte, ou l'un sous l'autre si la place manque (grands textes).
               Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 RatingBubbles(rating: r.rating, reviews: r.reviews),
+                if (onBook != null)
+                  Semantics(
+                    button: true,
+                    label: '${s.t('bookTable')} : ${r.name}',
+                    excludeSemantics: true,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(foregroundColor: AppColors.taxiRed),
+                      onPressed: () => onBook!(r),
+                      icon: const Icon(Icons.table_restaurant, size: 18),
+                      label: Text(s.t('bookTable'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
                 Semantics(
                   button: true,
                   label: '${s.t('goByTaxi')} : ${r.name}',
