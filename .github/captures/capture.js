@@ -290,6 +290,23 @@ const { chromium } = require('playwright');
     await shot('31-chauffeur-naviguer-waze-google', 800);
   });
 
+  // Chauffeur en service (ou avec un passager pris dans la rue) : il dit le quartier où il va,
+  // ou le touche dans la liste si le micro n'est pas disponible ; seulement les passagers sur la route.
+  await step('quartier-vocal', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Mode chauffeur');
+    await page.waitForTimeout(2500);
+    await tap('Commencer le service');
+    await page.waitForTimeout(800);
+    await tap('Dire mon quartier');
+    await target('Ou touchez le quartier').waitFor({ timeout: 10000 });
+    await shot('32-chauffeur-quartier-vocal', 2000);
+    await tap('Maârif');
+    await shot('33-chauffeur-quartier-trajet', 2500);
+  });
+
   // Chauffeur qui rentre chez lui : seulement les passagers sur son trajet
   await step('ma-destination', async () => {
     await open();

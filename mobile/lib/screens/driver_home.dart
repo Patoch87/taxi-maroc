@@ -15,11 +15,13 @@ import '../services/live.dart';
 import '../services/location.dart';
 import '../services/navigation_apps.dart';
 import '../services/places.dart';
+import '../services/quartiers.dart';
 import '../services/rides.dart';
 import '../services/routing.dart';
 import '../services/driver_notifications.dart';
 import '../services/request_chime.dart';
 import '../services/settings.dart';
+import '../services/voice.dart';
 import '../theme.dart';
 import '../widgets/google_taxi_map.dart';
 import '../widgets/map_parts.dart';
@@ -88,6 +90,12 @@ class _DriverHomeState extends State<DriverHome> {
   /// Destination du chauffeur (ex. : il rentre chez lui). Il ne reçoit alors que les passagers
   /// pris et déposés sur son trajet, avant sa destination ; arrivé, il passe hors ligne.
   Place? _myDest;
+
+  /// La destination est un quartier dit à voix haute (ou touché) en service : une fois arrivé,
+  /// le chauffeur reste en ligne et redevient libre.
+  bool _areaDest = false;
+  Voice? _voiceEngine;
+  Voice get _voice => _voiceEngine ??= Voice();
   List<LatLng> _route = [];
   int _pos = 0;
   double _carry = 0;
@@ -229,6 +237,10 @@ class _DriverHomeState extends State<DriverHome> {
     _stopLive();
     setState(() {
       _online = false;
+      if (_areaDest) {
+        _myDest = null;
+        _areaDest = false;
+      }
       _request = null;
       _route = [];
       _shift.riders.clear();
@@ -300,12 +312,18 @@ class _DriverHomeState extends State<DriverHome> {
 
     // Fin de la route : nouvelle direction si plus personne à déposer.
     if (_pos >= _route.length - 1 && _shift.riders.isEmpty) {
-      if (_myDest != null) {
+      if (_myDest != null && !_areaDest) {
         // Arrivé chez lui : fin du service, plus de demandes.
         _toast(Icons.flag_rounded, '${s.t('driverDestReached')} : ${_myDest!.name}');
         _myDest = null;
         _goOffline();
         return;
+      }
+      if (_myDest != null) {
+        // Arrivé dans le quartier annoncé : il reste en ligne, les demandes redeviennent libres.
+        _toast(Icons.flag_rounded, '${s.t('areaReached')} : ${_myDest!.name}');
+        _myDest = null;
+        _areaDest = false;
       }
       _newRoute();
     }
@@ -569,7 +587,18 @@ class _DriverHomeState extends State<DriverHome> {
           _route = [];
           _pos = 0;
         });
-      } else if (d(p, LatLng(dest.lat, dest.lng)) <= 80) {
+      } else if (d(p, LatLng(dest.lat, dest.lng)) <= (_areaDest ? 400 : 80)) {
+        if (_areaDest) {
+          // Quartier atteint : il reste en ligne, libre.
+          _toast(Icons.flag_rounded, '${s.t('areaReached')} : ${dest.name}');
+          setState(() {
+            _myDest = null;
+            _areaDest = false;
+            _route = [];
+            _pos = 0;
+          });
+          return;
+        }
         _toast(Icons.flag_rounded, '${s.t('driverDestReached')} : ${dest.name}');
         _myDest = null;
         _goOffline();
@@ -1424,7 +1453,12 @@ class _DriverHomeState extends State<DriverHome> {
 
   Future<void> _searchMyDest() async {
     final place = await Navigator.push<Place>(context, MaterialPageRoute(builder: (_) => SearchScreen(near: _me)));
-    if (place != null && mounted) setState(() => _myDest = place);
+    if (place != null && mounted) {
+      setState(() {
+        _myDest = place;
+        _areaDest = false;
+      });
+    }
   }
 
   /// Hors ligne : « Ma destination » (facultatif). Avec une destination, seulement les passagers sur le trajet.
@@ -1448,7 +1482,10 @@ class _DriverHomeState extends State<DriverHome> {
             child: OutlinedButton.icon(
               key: const ValueKey('myDestHome'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(0, 46)),
-              onPressed: () => setState(() => _myDest = homePlace),
+              onPressed: () => setState(() {
+                _myDest = homePlace;
+                _areaDest = false;
+              }),
               icon: const Icon(Icons.home_rounded),
               label: Text(s.t('goingHome'), overflow: TextOverflow.ellipsis),
             ),
@@ -1486,11 +1523,21 @@ class _DriverHomeState extends State<DriverHome> {
               Text(s.t('onMyRouteOnly'), style: const TextStyle(color: AppColors.muted)),
             ]),
           ),
+          if (_online && _areaDest)
+            IconButton(
+              key: const ValueKey('sayAreaAgain'),
+              tooltip: s.t('changeArea'),
+              onPressed: _openAreaSheet,
+              icon: const Icon(Icons.mic, color: AppColors.moroccoGreen),
+            ),
           IconButton(
             key: const ValueKey('myDestClear'),
             tooltip: s.t('clearDest'),
             onPressed: () {
-              setState(() => _myDest = null);
+              setState(() {
+                _myDest = null;
+                _areaDest = false;
+              });
               // En service : le trajet en cours continue, la suite redevient libre.
             },
             icon: const Icon(Icons.close),
@@ -1498,8 +1545,88 @@ class _DriverHomeState extends State<DriverHome> {
         ]),
       );
 
+  // ---------------------------------------------------------------- Quartier dit à voix haute
+
+  /// « Dire mon quartier » : le chauffeur (même avec des passagers pris dans la rue) dit où il va ;
+  /// le quartier reconnu devient sa destination et seuls les passagers sur la route lui sont proposés.
+  Future<void> _openAreaSheet() async {
+    final place = await showModalBottomSheet<Place>(
+      context: context,
+      backgroundColor: AppColors.sand,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => _AreaSheet(voice: _voice),
+    );
+    if (place != null && mounted) await _setArea(place);
+  }
+
+  Future<void> _setArea(Place area) async {
+    setState(() {
+      _myDest = area;
+      _areaDest = true;
+    });
+    // Confirmation à voix haute, en arabe pour l'arabe et la darija.
+    final name = s.lang == 'ar' || s.lang == 'dr' ? area.arabicName : area.name;
+    _voice.say('${s.t('areaHeadingTo')} $name. ${s.t('onMyRouteOnly')}').ignore();
+    _toast(Icons.alt_route, '${s.t('areaHeadingTo')} ${area.name} · ${s.t('onMyRouteOnly')}');
+    await _routeToMyDest();
+  }
+
+  /// En service : la route continue jusqu'au dernier passager à déposer, puis va vers la destination.
+  /// Les demandes (même mécanisme que « Ma destination ») ne viennent alors que de cette route.
+  Future<void> _routeToMyDest() async {
+    final dest = _myDest;
+    if (!_online || dest == null) return;
+    // Demande en attente sur l'ancienne route : elle n'est plus sur le trajet.
+    if (_request != null) _decline();
+    final keep = _route.isEmpty ? 0 : _shift.riders.fold<int>(_pos, (m, r) => max(m, r.dropIdx));
+    final from = _route.isEmpty ? _taxi : _route[min(keep, _route.length - 1)];
+    final to = LatLng(dest.lat, dest.lng);
+    var tail = await fetchRoute(from, to);
+    if (tail.length < 20) tail = interpolate(from, to, 80);
+    if (!mounted || !_online || _myDest != dest) return;
+    setState(() {
+      _heading = dest;
+      _previewRoute = false;
+      if (_route.isEmpty) {
+        _route = tail;
+        _pos = 0;
+        _carry = 0;
+      } else {
+        _route = [..._route.sublist(0, min(keep, _route.length - 1) + 1), ...tail.skip(1)];
+      }
+    });
+    if (_liveOn) _publish();
+  }
+
+  /// Bouton bien visible en service : dire (ou toucher) le quartier vers lequel il va.
+  Widget _sayAreaButton() => FilledButton.icon(
+        key: const ValueKey('sayArea'),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.ink,
+          minimumSize: const Size.fromHeight(50),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        onPressed: _openAreaSheet,
+        icon: const Icon(Icons.mic, size: 26),
+        label: Row(children: [
+          Text(s.t('sayMyArea'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(s.t('sayMyAreaDesc'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Colors.white70)),
+          ),
+        ]),
+      );
+
   Widget _onlinePanel() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (_myDest != null) ...[_myDestBanner(), const Divider(height: 14, color: AppColors.line)],
+        if (_myDest != null)
+          ...[_myDestBanner(), const Divider(height: 14, color: AppColors.line)]
+        else
+          ...[_sayAreaButton(), const SizedBox(height: 10)],
         _seatCounter(),
         const Divider(height: 14, color: AppColors.line),
         _stops(),
@@ -1641,4 +1768,170 @@ class _HazardBlinkState extends State<_HazardBlink> with SingleTickerProviderSta
           child: const Icon(Icons.warning_rounded, size: 22, color: AppColors.ink),
         ),
       );
+}
+
+/// « Je vais vers… » : le chauffeur dit le quartier, l'application le répète puis le choisit.
+/// Sans micro (navigateur, permission refusée), il touche le quartier dans la liste.
+class _AreaSheet extends StatefulWidget {
+  const _AreaSheet({required this.voice});
+  final Voice voice;
+
+  @override
+  State<_AreaSheet> createState() => _AreaSheetState();
+}
+
+class _AreaSheetState extends State<_AreaSheet> {
+  bool _listening = false;
+  String _heard = '';
+  String? _status;
+  Place? _found;
+  Timer? _silence;
+
+  @override
+  void initState() {
+    super.initState();
+    // Un seul geste en conduisant : l'écoute commence tout de suite.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _listen());
+  }
+
+  @override
+  void dispose() {
+    _silence?.cancel();
+    if (_listening) widget.voice.stop().ignore();
+    super.dispose();
+  }
+
+  /// Lecture à voix haute sans bloquer l'écran si la synthèse vocale ne répond pas.
+  Future<void> _say(String text) =>
+      widget.voice.say(text).timeout(const Duration(seconds: 4), onTimeout: () {});
+
+  Future<void> _listen() async {
+    if (_listening) {
+      await widget.voice.stop();
+      if (mounted) setState(() => _listening = false);
+      return;
+    }
+    if (!await widget.voice.init()) {
+      if (mounted) setState(() => _status = s.t('micDenied'));
+      return;
+    }
+    await _say(s.t('speakArea'));
+    if (!mounted) return;
+    setState(() {
+      _listening = true;
+      _heard = '';
+      _found = null;
+      _status = s.t('listening');
+    });
+    // Rien entendu : on arrête et on propose la liste.
+    _silence?.cancel();
+    _silence = Timer(const Duration(seconds: 10), () {
+      if (!mounted || !_listening || _heard.isNotEmpty) return;
+      widget.voice.stop().ignore();
+      setState(() {
+        _listening = false;
+        _status = s.t('areaNotFound');
+      });
+    });
+    try {
+      await widget.voice.listen(onResult: (words, done) {
+        if (!mounted) return;
+        setState(() => _heard = words);
+        if (done) _onHeard(words);
+      });
+    } catch (_) {
+      if (mounted) setState(() => _listening = false);
+    }
+  }
+
+  Future<void> _onHeard(String words) async {
+    _silence?.cancel();
+    setState(() => _listening = false);
+    final area = findQuartier(words);
+    if (area == null) {
+      setState(() => _status = words.trim().isEmpty ? s.t('areaNotFound') : '« $words » : ${s.t('areaNotFound')}');
+      await _say(s.t('areaNotFound'));
+      return;
+    }
+    // Répète ce qui a été compris avant de le choisir (comme la commande vocale du passager).
+    setState(() {
+      _found = area;
+      _status = '${s.t('youSaid')} : « $words »';
+    });
+    await _say('${s.t('youSaid')} : ${s.lang == 'ar' || s.lang == 'dr' ? area.arabicName : area.name}');
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (mounted) Navigator.pop(context, area);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final found = _found;
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .8),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(s.t('areaTitle'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+            Text(s.t('onMyRouteOnly'), style: const TextStyle(color: AppColors.muted)),
+            const SizedBox(height: 14),
+            Row(children: [
+              SizedBox(
+                width: 68,
+                height: 68,
+                child: IconButton.filled(
+                  key: const ValueKey('areaMic'),
+                  tooltip: s.t('sayMyArea'),
+                  style: IconButton.styleFrom(
+                    backgroundColor: _listening ? AppColors.taxiRed : AppColors.moroccoGreen,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: _listen,
+                  icon: Icon(_listening ? Icons.graphic_eq : Icons.mic, size: 36),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Semantics(
+                  liveRegion: true,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    if (found != null)
+                      Text('${s.t('areaHeadingTo')} ${found.name}',
+                          key: const ValueKey('areaFound'),
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.moroccoGreen))
+                    else
+                      Text(
+                        _listening && _heard.isNotEmpty ? '« $_heard »' : _status ?? s.t('speakArea'),
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                      ),
+                    if (found != null && _status != null)
+                      Text(_status!, style: const TextStyle(color: AppColors.muted)),
+                  ]),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 16),
+            Text(s.t('chooseArea'), style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final q in casablancaQuartiers)
+                ActionChip(
+                  key: ValueKey('area-${q.name}'),
+                  avatar: const Icon(Icons.place_outlined, size: 18),
+                  label: Text(q.name),
+                  backgroundColor: identical(q, found) ? AppColors.greenSoft : Colors.white,
+                  onPressed: () {
+                    _silence?.cancel();
+                    if (_listening) widget.voice.stop().ignore();
+                    _listening = false;
+                    Navigator.pop(context, q);
+                  },
+                ),
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
 }

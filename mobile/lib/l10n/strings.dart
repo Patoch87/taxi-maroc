@@ -688,6 +688,30 @@ class S {
     ],
     'clearDest': ['Retirer ma destination', 'إزالة وجهتي', 'حيد الوجهة', 'Remove my destination'],
     'driverDestReached': ["Arrivé, fin du service", "وصلت، انتهى العمل", "وصلتي، سالات الخدمة", "Arrived, shift ended"],
+    'sayMyArea': ["Dire mon quartier", "قل الحي الذي تتجه إليه", "قول الحومة فين غادي", "Say my area"],
+    'sayMyAreaDesc': [
+      "Je vais vers… : passagers sur ma route",
+      "أنا متجه إلى… : ركاب في طريقي",
+      "غادي لـ… : كليان فطريقي",
+      "I'm heading to…: riders on my way"
+    ],
+    'areaTitle': ["Je vais vers…", "أنا متجه إلى…", "أنا غادي لـ…", "I'm heading to…"],
+    'speakArea': [
+      "Dites le quartier où vous allez",
+      "قل الحي الذي تتجه إليه",
+      "قول الحومة فين غادي",
+      "Say the area you are heading to"
+    ],
+    'areaHeadingTo': ["Direction", "الاتجاه نحو", "غادي لـ", "Heading to"],
+    'areaNotFound': [
+      "Quartier non reconnu : touchez-le dans la liste",
+      "لم يتم التعرف على الحي، اختره من القائمة",
+      "ما فهمتش الحومة، ختارها من اللائحة",
+      "Area not recognised: tap it in the list"
+    ],
+    'chooseArea': ["Ou touchez le quartier", "أو اختر الحي", "ولا ختار الحومة", "Or tap the area"],
+    'changeArea': ["Changer de quartier", "تغيير الحي", "بدل الحومة", "Change area"],
+    'areaReached': ["Quartier atteint", "وصلت إلى الحي", "وصلتي للحومة", "Area reached"],
     'navNotInstalled': [
       "Application non installée, ouverture du Play Store",
       "التطبيق غير مثبت، فتح متجر Play",
