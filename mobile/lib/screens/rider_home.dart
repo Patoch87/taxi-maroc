@@ -1626,46 +1626,48 @@ class _RiderHomeState extends State<RiderHome> {
                 border:
                     Border.all(color: selected ? AppColors.moroccoGreen : AppColors.line, width: selected ? 2 : 1.5),
               ),
-              child: Row(children: [
-                Container(
-                  width: 54,
-                  height: 42,
-                  decoration: BoxDecoration(color: taxiColor(o.kind), borderRadius: BorderRadius.circular(11)),
-                  child: Icon(Icons.local_taxi, color: o.kind == TaxiKind.grand ? AppColors.ink : Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Flexible(
-                        child: Text(o.title,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.person, size: 14, color: AppColors.muted),
-                      Text('${o.seats}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
-                      const SizedBox(width: 6),
-                      // Nombre de valises que le coffre peut prendre.
-                      const Icon(Icons.luggage, size: 14, color: AppColors.muted),
-                      Text('${o.luggage}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Container(
+                    width: 54,
+                    height: 42,
+                    decoration: BoxDecoration(color: taxiColor(o.kind), borderRadius: BorderRadius.circular(11)),
+                    child: Icon(Icons.local_taxi, color: o.kind == TaxiKind.grand ? AppColors.ink : Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Flexible(
+                          child: Text(o.title,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.person, size: 14, color: AppColors.muted),
+                        Text('${o.seats}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                        const SizedBox(width: 6),
+                        // Nombre de valises que le coffre peut prendre.
+                        const Icon(Icons.luggage, size: 14, color: AppColors.muted),
+                        Text('${o.luggage}', style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                      ]),
+                      Text(fits ? o.description : s.t('tooManyBags'),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: fits ? AppColors.muted : AppColors.taxiRed,
+                              fontWeight: fits ? null : FontWeight.w600)),
                     ]),
-                    Text(fits ? o.description : s.t('tooManyBags'),
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: fits ? AppColors.muted : AppColors.taxiRed,
-                            fontWeight: fits ? null : FontWeight.w600)),
-                    // Course seule : détail du prix et explication de la compensation.
-                    if (o.breakdown != null) ...[
-                      const SizedBox(height: 2),
-                      Text(seulBreakdownText(o.breakdown!),
-                          key: const ValueKey('seulBreakdown'),
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                      Text(s.t('compExplain'), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-                    ],
-                  ]),
-                ),
-                Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                  ),
+                  Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                ]),
+                // Course seule : détail du prix et explication de la compensation, sur toute la largeur.
+                if (o.breakdown != null) ...[
+                  const SizedBox(height: 6),
+                  Text(seulBreakdownText(o.breakdown!),
+                      key: const ValueKey('seulBreakdown'),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                  Text(s.t('compExplain'), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                ],
               ]),
             ),
           ),

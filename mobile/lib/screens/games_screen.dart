@@ -181,7 +181,7 @@ class _GiftWon extends StatelessWidget {
         Text(s.t('gameWon'),
             textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
         const SizedBox(height: 16),
-        PromoCard(promo: coupon.promo, big: true, onTap: () => showCouponSheet(context, coupon)),
+        PromoCard(promo: coupon.promo, onTap: () => showCouponSheet(context, coupon)),
         const SizedBox(height: 12),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           const Icon(Icons.check_circle, color: AppColors.moroccoGreen),
@@ -249,13 +249,20 @@ class _ScratchGameState extends State<_ScratchGame> {
                     color: widget.gift.color,
                     padding: const EdgeInsets.all(16),
                     alignment: Alignment.center,
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(widget.gift.icon, color: Colors.white, size: 40),
-                      Text(s.t(widget.gift.titleKey),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
-                      Text(widget.gift.brand, style: const TextStyle(color: Colors.white70)),
-                    ]),
+                    // Texte réduit si besoin : le cadeau tient toujours dans la carte.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: SizedBox(
+                        width: 260,
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(widget.gift.icon, color: Colors.white, size: 40),
+                          Text(s.t(widget.gift.titleKey),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                          Text(widget.gift.brand, style: const TextStyle(color: Colors.white70)),
+                        ]),
+                      ),
+                    ),
                   ),
                   AnimatedOpacity(
                     opacity: _revealed ? 0 : 1,

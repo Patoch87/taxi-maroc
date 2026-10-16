@@ -91,6 +91,8 @@ void main() {
     expect(savedCoupons, hasLength(1));
     expect(savedCoupons.first.promo.partnerGift, isTrue);
     expect(isValidCouponCode(savedCoupons.first.code), isTrue);
+    await tester.ensureVisible(find.text('Fermer'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Fermer'));
     await tester.pumpAndSettle();
     expect(find.text('Déjà joué pendant cette course'), findsOneWidget);

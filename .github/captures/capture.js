@@ -177,6 +177,12 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(300);
     await tap('Siège bébé');
     await shot('24-options-valises-siege-bebe', 1500);
+    // Fait défiler le panneau jusqu'au bouton « Commander » (sous les options et les réglages).
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 4; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
     await tap('Commander');
     await page.waitForTimeout(9000);
     await fast();
