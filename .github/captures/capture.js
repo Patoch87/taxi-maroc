@@ -228,14 +228,20 @@ const { chromium } = require('playwright');
     await tap('Annuler');
     await waitFor('5 étoiles sur 5', 240);
     await page.waitForTimeout(1500);
-    // Le bon du reçu est au-dessus de la note : défilement jusqu'aux étoiles.
-    await page.mouse.move(195, 760);
-    await page.mouse.wheel(0, 250);
-    await page.waitForTimeout(600);
-    await tap('5 étoiles sur 5');
-    await page.waitForTimeout(600);
-    // Avis rapides et pourboire : chaque appui est facultatif, la capture est prise quand même.
+    // Le bon du reçu est au-dessus de la note : on cherche les étoiles en faisant défiler le panneau.
+    // Chaque appui est facultatif, la capture est prise quand même.
     const soft = (fn) => fn().catch((e) => console.error('notation :', e.message));
+    await page.mouse.move(195, 760);
+    for (const dy of [-2000, 250, 150, 150]) {
+      await page.mouse.wheel(0, dy);
+      await page.waitForTimeout(600);
+      const ok = await target('5 étoiles sur 5')
+        .click({ timeout: 3000 })
+        .then(() => true)
+        .catch(() => false);
+      if (ok) break;
+    }
+    await page.waitForTimeout(600);
     await soft(() => tap('Ponctuel'));
     await soft(() => tap('Conduite prudente'));
     await page.mouse.wheel(0, 150);
