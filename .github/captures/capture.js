@@ -234,9 +234,13 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(600);
     await tap('5 étoiles sur 5');
     await page.waitForTimeout(600);
-    await tap('Ponctuel');
-    await tap('Conduite prudente');
-    await tap('10 DH');
+    // Avis rapides et pourboire : chaque appui est facultatif, la capture est prise quand même.
+    const soft = (fn) => fn().catch((e) => console.error('notation :', e.message));
+    await soft(() => tap('Ponctuel'));
+    await soft(() => tap('Conduite prudente'));
+    await page.mouse.wheel(0, 150);
+    await page.waitForTimeout(600);
+    await soft(() => tap('10 DH'));
     await shot('26-notation-pourboire', 1500);
   });
 
