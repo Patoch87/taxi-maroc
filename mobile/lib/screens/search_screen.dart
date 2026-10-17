@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../main.dart';
+import '../services/ads.dart';
+import '../widgets/promo_card.dart';
 import '../services/geocode.dart';
 import '../services/live.dart';
 import '../services/places.dart';
@@ -235,13 +237,41 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                 // Test réel : les adresses autour du téléphone d'abord.
                 if (live.enabled && _ctrl.text.trim().length >= 3)
                   for (final p in _addresses) _tile(p, Icons.location_on_outlined, p.name),
-                for (final p in results) _tile(p, p.intercity ? Icons.alt_route : Icons.place_outlined, p.name),
+                for (final (i, p) in results.indexed) ...[
+                  _tile(p, p.intercity ? Icons.alt_route : Icons.place_outlined, p.name),
+                  // Destination sponsorisée (annonceur fictif) : une seule, parmi les premières suggestions.
+                  if (i == 0 && _ctrl.text.isEmpty && !big) ..._sponsoredTile(),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  List<Widget> _sponsoredTile() {
+    final ad = adCatalog.forPlacement(AdPlacement.destination);
+    final place = ad?.asPlace;
+    if (ad == null || place == null) return const [];
+    return [
+      Semantics(
+        button: true,
+        label: '${ad.promo.brand}, ${s.t(ad.promo.detailKey)}, ${s.t('sponsored')}, ${s.t('fictiveExample')}',
+        excludeSemantics: true,
+        child: ListTile(
+          key: const ValueKey('sponsoredDestination'),
+          leading: BrandBadge(promo: ad.promo, size: 40),
+          title: Text(ad.promo.brand, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          subtitle: Text(s.t(ad.promo.detailKey), style: const TextStyle(color: AppColors.muted, fontSize: 14)),
+          trailing: const SponsoredTag(),
+          onTap: () {
+            adCatalog.track(ad, 'clic');
+            Navigator.pop(context, place);
+          },
+        ),
+      ),
+    ];
   }
 
   Widget _tile(Place p, IconData icon, String title) {

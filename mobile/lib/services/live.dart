@@ -16,11 +16,57 @@ class LiveConfig extends ChangeNotifier {
   LiveConfig() : _enabled = apiUrl.isNotEmpty;
 
   bool _enabled;
-  bool get enabled => _enabled && url.isNotEmpty;
+
+  /// Serveur utilisé : activé, adresse connue, et pas en train de se réveiller.
+  bool get enabled => _enabled && url.isNotEmpty && !_connecting;
   set enabled(bool v) {
     if (v == _enabled) return;
     _enabled = v;
+    if (v) _fellBack = false;
     notifyListeners();
+  }
+
+  /// Réveil du serveur (offre gratuite Render : il dort après 15 minutes sans visite).
+  bool _connecting = false;
+  bool get connecting => _connecting;
+
+  /// Serveur resté injoignable : l'application est passée d'elle-même en mode démo.
+  bool _fellBack = false;
+  bool get fellBack => _fellBack;
+
+  /// Le passager a vu (ou fermé) l'avis « Mode démo (serveur indisponible) ».
+  void dismissFallback() {
+    if (!_fellBack) return;
+    _fellBack = false;
+    notifyListeners();
+  }
+
+  /// Premier appel : « Connexion au serveur… » et nouvel essai toutes les [every] pendant [max] au plus ;
+  /// sans réponse, passage automatique en mode démo avec un avis, au lieu d'une erreur.
+  Future<bool> warmUp({
+    LiveApi? api,
+    Duration max = const Duration(seconds: 60),
+    Duration every = const Duration(seconds: 3),
+  }) async {
+    if (!_enabled || url.isEmpty || _connecting) return enabled;
+    _connecting = true;
+    _fellBack = false;
+    notifyListeners();
+    final client = api ?? LiveApi();
+    final end = DateTime.now().add(max);
+    var ok = false;
+    while (!ok && _enabled) {
+      ok = await client.ping();
+      if (ok || !DateTime.now().isBefore(end)) break;
+      await Future<void>.delayed(every);
+    }
+    _connecting = false;
+    if (!ok && _enabled) {
+      _enabled = false;
+      _fellBack = true;
+    }
+    notifyListeners();
+    return ok;
   }
 
   /// Adresse du serveur, sans « / » final.
@@ -40,6 +86,8 @@ class LiveConfig extends ChangeNotifier {
   @visibleForTesting
   void reset() {
     _enabled = apiUrl.isNotEmpty;
+    _connecting = false;
+    _fellBack = false;
     url = apiUrl;
     notifyListeners();
   }
@@ -127,7 +175,7 @@ class LiveApi {
   String get base => (_base ?? live.url).replaceAll(RegExp(r'/+$'), '');
   static const _timeout = Duration(seconds: 15);
 
-  Future<dynamic> _send(String method, String path, [Map<String, dynamic>? body]) async {
+  Future<dynamic> _send(String method, String path, [Map<String, dynamic>? body, Duration timeout = _timeout]) async {
     final uri = Uri.parse('$base$path');
     final headers = {'Content-Type': 'application/json'};
     final res = await switch (method) {
@@ -136,7 +184,7 @@ class LiveApi {
       'DELETE' => _client.delete(uri),
       _ => _client.post(uri, headers: headers, body: jsonEncode(body ?? {})),
     }
-        .timeout(_timeout);
+        .timeout(timeout);
     if (res.statusCode == 409) throw LiveConflict();
     if (res.statusCode >= 400) throw Exception('HTTP ${res.statusCode}');
     return res.body.isEmpty ? null : jsonDecode(res.body);
@@ -144,12 +192,18 @@ class LiveApi {
 
   Future<bool> ping() async {
     try {
-      final r = await _send('GET', '/health');
+      final r = await _send('GET', '/health', null, const Duration(seconds: 10));
       return r is Map && r['status'] == 'ok';
     } catch (_) {
       return false;
     }
   }
+
+  /// Publicités du serveur (annonceurs fictifs), pour tous les emplacements.
+  Future<List<dynamic>> ads() async => await _send('GET', '/ads') as List;
+
+  /// Vue, clic ou bon enregistré sur une publicité (statistiques de l'annonceur, sans donnée personnelle).
+  Future<void> adEvent(String id, String type) => _send('POST', '/ads/$id/events', {'type': type});
 
   // ---------------------------------------------------------------- Passager
 

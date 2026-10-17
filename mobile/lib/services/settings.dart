@@ -21,6 +21,7 @@ class AppSettings extends ChangeNotifier {
   bool _requestSound = true;
   bool _requestVoice = false;
   bool _restaurantSuggestions = true;
+  bool _personalizedOffers = true;
   NavApp _navApp = NavApp.ask;
   AutoShare _autoShare = AutoShare.night;
   final List<TrustedContact> _contacts = [];
@@ -53,6 +54,11 @@ class AppSettings extends ChangeNotifier {
   /// vidéo de démonstration, version web « ?video=1 »).
   bool get restaurantSuggestions => _restaurantSuggestions;
   set restaurantSuggestions(bool v) => _set(() => _restaurantSuggestions = v);
+
+  /// « Offres personnalisées » : désactivées, les offres ne dépendent plus des trajets passés,
+  /// seulement du trajet en cours (lieu, heure). Jamais selon le revenu ou la catégorie sociale.
+  bool get personalizedOffers => _personalizedOffers;
+  set personalizedOffers(bool v) => _set(() => _personalizedOffers = v);
 
   /// Chauffeur : application d'itinéraire vers les passagers (« Demander » à chaque fois par défaut).
   NavApp get navApp => _navApp;
@@ -90,6 +96,7 @@ class AppSettings extends ChangeNotifier {
         _requestSound = true;
         _requestVoice = false;
         _restaurantSuggestions = true;
+        _personalizedOffers = true;
         _navApp = NavApp.ask;
         _autoShare = AutoShare.night;
         _contacts.clear();

@@ -345,6 +345,69 @@ const { chromium } = require('playwright');
     await shot('40-criteres-premium', 2000);
   });
 
+  // Publicités (annonceurs fictifs, « exemple fictif ») : les six emplacements.
+  // Bannière d'accueil : logo, titre court et bon de réduction.
+  await step('pub-accueil', async () => {
+    await open();
+    await shot('41-pub-banniere-accueil', 1500);
+  });
+
+  // Destination sponsorisée parmi les premières suggestions de la recherche.
+  await step('pub-destination', async () => {
+    await open();
+    await tap('Rechercher une destination');
+    await shot('42-pub-destination-sponsorisee', 2000);
+  });
+
+  // Écran d'attente : carte pendant la recherche d'un chauffeur.
+  await step('pub-attente', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 4; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
+    await tap('Commander');
+    await page.waitForTimeout(600);
+    await page.mouse.move(195, 760);
+    await page.mouse.wheel(0, 600);
+    await shot('43-pub-ecran-attente', 600);
+  });
+
+  // Carte en course (logo, offre, QR code), lieu mis en avant parmi les restaurants, bon sur le reçu.
+  await step('pub-course-recu', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await tap('Commander');
+    await page.waitForTimeout(9000);
+    await fast();
+    await waitFor('Je suis dans le taxi');
+    await tap('Je suis dans le taxi');
+    await page.waitForTimeout(1500);
+    await page.mouse.move(195, 760);
+    for (let i = 0; i < 4; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
+    await shot('44-pub-carte-en-course', 1200);
+    for (let i = 0; i < 4; i++) {
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
+    }
+    await shot('45-pub-lieu-sponsorise', 1200);
+    await fast();
+    await waitFor('5 étoiles sur 5', 240);
+    await page.waitForTimeout(1500);
+    await page.mouse.move(195, 760);
+    await page.mouse.wheel(0, 250);
+    await shot('46-pub-bon-sur-recu', 1500);
+    await tap('Bon ajouté');
+    await shot('47-pub-bon-qr-code', 2000);
+  });
+
   // Restaurants : « Réserver une table » (date, heure, personnes, nom prérempli), puis « Table réservée ».
   await step('reservation-restaurant', async () => {
     await open();

@@ -10,6 +10,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/strings.dart';
 import '../main.dart';
+import '../services/ads.dart';
+import '../services/api.dart';
 import '../services/navigation_apps.dart';
 import '../services/live.dart';
 import '../services/location.dart';
@@ -138,6 +140,13 @@ class _RiderHomeState extends State<RiderHome> {
   /// Identifiant de la course en cours (pour les bons de réduction).
   String _tripId = 'T000000';
 
+  /// Bannière d'accueil fermée par le passager (pour cette session).
+  bool _homeAdClosed = false;
+
+  /// Bon du reçu déjà enregistré dans « Mes offres » pour cette course.
+  String? _receiptSavedFor;
+  Coupon? _receiptCoupon;
+
   // Panneau du bas à glisser : replié, il ne garde que l'essentiel et laisse voir la carte.
   // Pendant la course, replié = vue carte : bandeau du taxi en bas, bandeau publicitaire en haut.
   bool _collapsed = false;
@@ -150,6 +159,7 @@ class _RiderHomeState extends State<RiderHome> {
   void initState() {
     super.initState();
     settings.addListener(_onSettings);
+    adCatalog.addListener(_onSettings);
     if (widget.locate) _locate();
     _ambientTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (!mounted || _step.index >= RiderStep.arriving.index) return;
@@ -173,6 +183,7 @@ class _RiderHomeState extends State<RiderHome> {
   @override
   void dispose() {
     settings.removeListener(_onSettings);
+    adCatalog.removeListener(_onSettings);
     _comment.dispose();
     _ambientTimer?.cancel();
     _adTimer?.cancel();
@@ -704,8 +715,61 @@ class _RiderHomeState extends State<RiderHome> {
   /// (passager à bord), jamais sur l'accueil, le choix du taxi, la recherche ou l'attente du taxi.
   /// Toujours affichée pendant la course, sauf si le passager l'a fermée.
   Promo? get _promo => _step == RiderStep.onTrip && !_adClosed && _dest != null && _selected != null
-      ? pickPromo(destination: _dest!, option: _selected!, history: tripHistory)
+      ? pickPromo(destination: _dest!, option: _selected!, history: _offerHistory)
       : null;
+
+  /// « Offres personnalisées » désactivées : les trajets passés ne comptent plus (offres contextuelles seulement).
+  List<TripRecord> get _offerHistory => settings.personalizedOffers ? tripHistory : const [];
+
+  /// Publicité du catalogue (annonceurs fictifs) pour un emplacement.
+  Ad? _ad(AdPlacement p) => adCatalog.forPlacement(p);
+
+  /// Toucher une publicité : bon de réduction avec QR code s'il y en a un.
+  void _openAd(Ad ad) {
+    adCatalog.track(ad, 'clic');
+    if (ad.coupon) showCouponSheet(context, Coupon(promo: ad.promo, tripId: _tripId, issuedAt: DateTime.now()));
+  }
+
+  /// Carte en course : publicité avec QR code dans le panneau de suivi, passager à bord.
+  List<Widget> _rideAdBlock() {
+    final ad = _ad(AdPlacement.ride);
+    if (ad == null || _step != RiderStep.onTrip || _adClosed) return const [];
+    final coupon = Coupon(promo: ad.promo, tripId: _tripId, issuedAt: DateTime.now());
+    return [
+      const SizedBox(height: 10),
+      AdQrCard(
+          key: const ValueKey('rideAd'),
+          coupon: coupon,
+          onTap: () => _openAd(ad),
+          onClose: () => setState(() => _adClosed = true)),
+    ];
+  }
+
+  /// Bon de réduction sur le reçu : enregistré une fois dans « Mes offres ».
+  List<Widget> _receiptAdBlock() {
+    final ad = _ad(AdPlacement.receipt);
+    if (ad == null) return const [];
+    if (_receiptSavedFor != _tripId || _receiptCoupon == null) {
+      _receiptSavedFor = _tripId;
+      final c = Coupon(promo: ad.promo, tripId: _tripId, issuedAt: DateTime.now());
+      _receiptCoupon = c;
+      saveCoupon(c);
+      adCatalog.track(ad, 'bon');
+    }
+    final c = _receiptCoupon!;
+    return [
+      const SizedBox(height: 12),
+      AdQrCard(
+        key: const ValueKey('receiptAd'),
+        coupon: c,
+        note: s.t('receiptCouponSaved'),
+        onTap: () {
+          adCatalog.track(ad, 'clic');
+          showCouponSheet(context, c);
+        },
+      ),
+    ];
+  }
 
   List<Widget> _promoBlock() {
     final p = _promo;
@@ -728,9 +792,18 @@ class _RiderHomeState extends State<RiderHome> {
             items: restaurantsNear(_dest!),
             onGo: _confirmRestaurant,
             onBook: _bookTable,
+            sponsored: _sponsoredPlace,
           ),
         ]
       : const [];
+
+  /// Lieu mis en avant (annonceur fictif), premier des restaurants à proximité.
+  (Ad, Restaurant, double)? get _sponsoredPlace {
+    final ad = _ad(AdPlacement.place);
+    if (ad?.lat == null || _dest == null) return null;
+    final r = Restaurant(ad!.promo.brand, ad.promo.titleKey, '', ad.lat!, ad.lng!, 0, 0);
+    return (ad, r, const Distance()(LatLng(_dest!.lat, _dest!.lng), LatLng(r.lat, r.lng)));
+  }
 
   /// « Réserver une table » : date, heure, personnes et nom, puis « Table réservée ».
   /// Option : un taxi réservé pour arriver à l'heure (réservation à l'avance, comme « Plus tard »).
@@ -892,7 +965,7 @@ class _RiderHomeState extends State<RiderHome> {
   /// Offres du bandeau : personnalisées selon le trajet, sinon un bandeau générique.
   List<Promo> get _bannerPromos {
     if (_dest == null || _selected == null) return const [genericPromo];
-    final list = promosFor(destination: _dest!, option: _selected!, history: tripHistory);
+    final list = promosFor(destination: _dest!, option: _selected!, history: _offerHistory);
     return list.isEmpty ? const [genericPromo] : list;
   }
 
@@ -1717,6 +1790,11 @@ class _RiderHomeState extends State<RiderHome> {
           const SizedBox(width: 6),
           Expanded(child: Text(s.t('firstWins'), style: const TextStyle(fontSize: 12, color: AppColors.muted))),
         ]),
+        // Écran d'attente : une publicité (annonceur fictif) pendant la recherche d'un chauffeur.
+        if (accepted == null && _ad(AdPlacement.waiting) != null) ...[
+          const SizedBox(height: 10),
+          PromoCard(key: const ValueKey('waitingAd'), promo: _ad(AdPlacement.waiting)!.promo),
+        ],
         const SizedBox(height: 10),
         OutlinedButton(onPressed: _reset, child: Text(s.t('cancel'))),
       ],
@@ -1870,6 +1948,7 @@ class _RiderHomeState extends State<RiderHome> {
         // Passager à bord : jeux pendant le trajet, puis une offre (jamais avant la course).
         if (_step == RiderStep.onTrip) _gamesEntry(),
         ..._promoBlock(),
+        ..._rideAdBlock(),
         ..._restaurantBlock(),
       ],
     );
@@ -1996,6 +2075,8 @@ class _RiderHomeState extends State<RiderHome> {
             ),
           ]),
         ),
+        // Reçu : bon de réduction d'un annonceur (fictif), enregistré dans « Mes offres ».
+        ..._receiptAdBlock(),
         const SizedBox(height: 12),
         // Note de 1 à 5 : grandes étoiles faciles à toucher.
         Text(s.t('rate'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
@@ -2176,9 +2257,78 @@ class _RiderHomeState extends State<RiderHome> {
               value: settings.voiceAnnounce,
               onChanged: (v) => settings.voiceAnnounce = v,
             ),
+            const Divider(color: AppColors.line),
+            // Désactivées : offres selon le trajet en cours seulement (jamais selon le revenu).
+            SwitchListTile(
+              key: const ValueKey('personalizedOffers'),
+              secondary: const Icon(Icons.local_offer_outlined),
+              title: Text(s.t('personalizedOffers')),
+              subtitle: Text(s.t('personalizedOffersDesc'), style: const TextStyle(color: AppColors.muted)),
+              value: settings.personalizedOffers,
+              onChanged: (v) => settings.personalizedOffers = v,
+            ),
+            // Application reliée au serveur : le mode démo (taxis simulés) reste disponible.
+            if (apiUrl.isNotEmpty)
+              ListenableBuilder(
+                listenable: live,
+                builder: (_, __) => SwitchListTile(
+                  key: const ValueKey('demoMode'),
+                  secondary: const Icon(Icons.science_outlined),
+                  title: Text(s.t('demoMode')),
+                  subtitle: Text(s.t('demoModeDesc'), style: const TextStyle(color: AppColors.muted)),
+                  value: !live.enabled && !live.connecting,
+                  onChanged: (demo) {
+                    live.enabled = !demo;
+                    if (!demo) live.warmUp().then((ok) => ok ? adCatalog.refresh() : null);
+                  },
+                ),
+              ),
           ],
         ),
       );
+
+  /// « Connexion au serveur… » pendant le réveil, puis « Mode démo (serveur indisponible) » s'il ne répond pas.
+  Widget _serverNotice() {
+    if (!live.connecting && !live.fellBack) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Align(
+        child: Material(
+          key: const ValueKey('serverNotice'),
+          color: live.connecting ? AppColors.ink : AppColors.sandDeep,
+          borderRadius: BorderRadius.circular(20),
+          elevation: 3,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 4, 6),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (live.connecting)
+                const SizedBox(
+                    width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              else
+                const Icon(Icons.cloud_off, size: 16, color: AppColors.ink),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(live.connecting ? s.t('connectingServer') : s.t('demoFallback'),
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: live.connecting ? Colors.white : AppColors.ink)),
+              ),
+              if (live.fellBack)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: s.t('close'),
+                  onPressed: live.dismissFallback,
+                  icon: const Icon(Icons.close, size: 18),
+                )
+              else
+                const SizedBox(width: 8),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _menuItem(IconData icon, String label, Widget Function() page) => ListTile(
         leading: Icon(icon),
@@ -2369,6 +2519,18 @@ class _RiderHomeState extends State<RiderHome> {
                   const SizedBox(width: 8),
                   MapCircleButton(icon: Icons.my_location, tooltip: s.t('myPosition'), onTap: _locate),
                 ]),
+                // Bannière d'accueil (annonceur fictif), sous la barre du haut : logo, titre court, bon, fermable.
+                if (_step == RiderStep.idle && !_homeAdClosed && _ad(AdPlacement.home) != null) ...[
+                  const SizedBox(height: 8),
+                  AdBanner(
+                    key: const ValueKey('homeAd'),
+                    promo: _ad(AdPlacement.home)!.promo,
+                    onOpen: () => _openAd(_ad(AdPlacement.home)!),
+                    onClose: () => setState(() => _homeAdClosed = true),
+                  ),
+                ],
+                // Serveur du test réel : réveil (offre gratuite) puis, sans réponse, mode démo automatique.
+                ListenableBuilder(listenable: live, builder: (_, __) => _serverNotice()),
               ]),
             ),
           ),

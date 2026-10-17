@@ -14,6 +14,7 @@ import 'package:taxi_maroc/services/rides.dart';
 import 'package:taxi_maroc/services/settings.dart';
 import 'package:taxi_maroc/services/tourism.dart';
 import 'package:taxi_maroc/theme.dart';
+import 'package:taxi_maroc/widgets/coupon_sheet.dart';
 import 'package:taxi_maroc/widgets/promo_card.dart';
 
 void phone(WidgetTester tester) {
@@ -185,14 +186,18 @@ void main() {
     // Passager à bord : l'offre apparaît, avec le badge de l'annonceur.
     expect(find.text('Publicité'), findsOneWidget);
     expect(find.text('-20 % sur votre café'), findsOneWidget);
-    expect(find.byType(BrandBadge), findsOneWidget);
+    expect(find.descendant(of: find.byType(PromoCard), matching: find.byType(BrandBadge)), findsOneWidget);
+    // Carte en course (annonceur fictif) : logo, offre et QR code.
+    expect(find.byKey(const ValueKey('rideAd')), findsOneWidget);
+    expect(find.text('Publicité · exemple fictif'), findsOneWidget);
 
     await tester.ensureVisible(find.text('-20 % sur votre café'));
     await tester.tap(find.text('-20 % sur votre café'));
     await tester.pumpAndSettle();
     expect(find.text('Votre bon de réduction'), findsOneWidget);
-    expect(find.byType(QrImageView), findsOneWidget);
-    final code = tester.widget<QrImageView>(find.byType(QrImageView));
+    final sheetQr = find.descendant(of: find.byType(CouponView), matching: find.byType(QrImageView));
+    expect(sheetQr, findsOneWidget);
+    final code = tester.widget<QrImageView>(sheetQr);
     final text = tester.widget<SelectableText>(find.byType(SelectableText)).data!;
     expect(text, startsWith('TM-$demoUserId-CARIBOU-T'));
     expect(isValidCouponCode(text), isTrue);
@@ -230,13 +235,16 @@ void main() {
     }
     expect(find.text('Your taxi arrives in'), findsOneWidget);
     expect(find.text('Restaurants near Gare Casa Voyageurs'), findsOneWidget);
-    expect(find.text('Take a taxi there'), findsNWidgets(3));
+    // 3 restaurants, et en premier le lieu mis en avant (annonceur fictif, « Sponsored »).
+    expect(find.text('Take a taxi there'), findsNWidgets(4));
+    expect(find.byKey(const ValueKey('sponsoredPlace')), findsOneWidget);
+    expect(find.text('Sponsored'), findsOneWidget);
     expect(find.text('Customer rating'), findsNWidgets(3));
 
     final first = restaurantsNear(place('Gare Casa Voyageurs')).first.$1;
     // Confirmation : nouveau prix depuis la position actuelle, même type de taxi, et nouvelle arrivée.
-    await tester.ensureVisible(find.text('Take a taxi there').first);
-    await tester.tap(find.text('Take a taxi there').first);
+    await tester.ensureVisible(find.text('Take a taxi there').at(1));
+    await tester.tap(find.text('Take a taxi there').at(1));
     await tester.pumpAndSettle();
     expect(find.text('Change destination?'), findsOneWidget);
     expect(find.text('Current price'), findsOneWidget);
@@ -255,8 +263,8 @@ void main() {
     expect(find.text('New destination : ${first.name}'), findsNothing);
     expect(find.text('Restaurants near Gare Casa Voyageurs'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Take a taxi there').first);
-    await tester.tap(find.text('Take a taxi there').first);
+    await tester.ensureVisible(find.text('Take a taxi there').at(1));
+    await tester.tap(find.text('Take a taxi there').at(1));
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Confirm')));
     await tester.pump();

@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/setup';
 
 describe('API', () => {
   let app: INestApplication;
@@ -150,5 +151,67 @@ describe('Test réel : un chauffeur, deux passagers', () => {
     expect((await request(http).get('/taxis/T3/offers')).body.map((o: { id: string }) => o.id)).toContain(d.body.id);
     await request(http).post(`/rides/requests/${d.body.id}/decline`).send({ taxiId: 'T3' }).expect(201);
     expect((await request(http).get('/taxis/T3/offers')).body.map((o: { id: string }) => o.id)).not.toContain(d.body.id);
+  });
+});
+
+describe('Serveur de test (Render) : santé, CORS, prix et publicités', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = mod.createNestApplication();
+    configureApp(app);
+    await app.init();
+  });
+  afterAll(() => app.close());
+
+  it('GET /health et GET / répondent', async () => {
+    const h = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(h.body.status).toBe('ok');
+    const root = await request(app.getHttpServer()).get('/').expect(200);
+    expect(root.body.routes).toContain('GET /ads');
+  });
+
+  it('CORS ouvert pour la version web', async () => {
+    const res = await request(app.getHttpServer()).get('/health').set('Origin', 'https://bab-taxi-web.onrender.com');
+    expect(res.headers['access-control-allow-origin']).toBe('https://bab-taxi-web.onrender.com');
+    const pre = await request(app.getHttpServer())
+      .options('/rides/requests')
+      .set('Origin', 'https://bab-taxi-web.onrender.com')
+      .set('Access-Control-Request-Method', 'POST');
+    expect(pre.status).toBeLessThan(300);
+  });
+
+  it('prix seul et premium avec le nombre de passagers', async () => {
+    const body = { depart: { lat: 33.57, lng: -7.63 }, destination: { lat: 33.59, lng: -7.61 }, date: '2026-10-02T12:00:00' };
+    const partage = (await request(app.getHttpServer()).post('/fares/petit-taxi').send(body).expect(201)).body.montantMad;
+    const seul = (await request(app.getHttpServer()).post('/fares/petit-taxi').send({ ...body, mode: 'seul' })).body.montantMad;
+    const premium = (await request(app.getHttpServer()).post('/fares/petit-taxi').send({ ...body, mode: 'seul', categorie: 'premium' }))
+      .body.montantMad;
+    const groupe = (await request(app.getHttpServer()).post('/fares/petit-taxi').send({ ...body, mode: 'seul', passagers: 3 })).body
+      .montantMad;
+    expect(seul).toBeCloseTo(partage * 2 + 3, 1);
+    expect(premium).toBeCloseTo(seul + 10, 1);
+    expect(groupe).toBeCloseTo(partage + 3, 1);
+  });
+
+  it('GET /ads : annonceurs fictifs, un par emplacement', async () => {
+    const res = await request(app.getHttpServer()).get('/ads').expect(200);
+    expect(res.body.map((a: { emplacement: string }) => a.emplacement).sort()).toEqual(
+      ['accueil', 'attente', 'course', 'destination', 'lieu', 'recu'],
+    );
+    expect(res.body.every((a: { exempleFictif: boolean }) => a.exempleFictif)).toBe(true);
+    const accueil = await request(app.getHttpServer()).get('/ads?emplacement=accueil').expect(200);
+    expect(accueil.body).toHaveLength(1);
+    expect(accueil.body[0].titre.length).toBeLessThanOrEqual(40);
+    await request(app.getHttpServer()).get('/ads?emplacement=chauffeur').expect(400);
+  });
+
+  it('compte les vues et les clics', async () => {
+    await request(app.getHttpServer()).post('/ads/SOUK/events').send({ type: 'vue' }).expect(204);
+    await request(app.getHttpServer()).post('/ads/SOUK/events').send({ type: 'clic' }).expect(204);
+    const s = await request(app.getHttpServer()).get('/ads/SOUK/stats').expect(200);
+    expect(s.body).toMatchObject({ vue: 1, clic: 1 });
+    await request(app.getHttpServer()).post('/ads/INCONNUE/events').send({}).expect(404);
   });
 });

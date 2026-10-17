@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/strings.dart';
 import 'screens/account_screen.dart';
 import 'screens/rider_home.dart';
+import 'services/ads.dart';
 import 'services/live.dart';
 import 'services/navigation_apps.dart';
 import 'services/account.dart';
@@ -32,6 +33,18 @@ void main() {
   if (kIsWeb) applyWebDemoOptions(Uri.base);
   if (useGoogleMaps) _setUpGoogleMapsAndroid();
   runApp(const TaxiMarocApp());
+  connectToServer();
+}
+
+/// Serveur du test réel (Render, offre gratuite) : réveil au lancement, « Connexion au serveur… »
+/// pendant 60 s au plus, puis mode démo automatique avec un avis si le serveur ne répond pas.
+Future<void> connectToServer() async {
+  if (!live.enabled) return;
+  if (await live.warmUp()) {
+    await adCatalog.refresh();
+  } else {
+    Future.delayed(const Duration(seconds: 12), live.dismissFallback);
+  }
 }
 
 /// Carte Google sur Android : composition « hybride » (vue Android réelle) et moteur récent ;

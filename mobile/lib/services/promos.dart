@@ -21,6 +21,7 @@ class Promo {
     this.logoAsset,
     this.wideLogoAsset,
     this.partnerGift = false,
+    this.fictive = false,
   });
 
   /// Identifiant court, repris dans le code du bon (lettres majuscules).
@@ -48,6 +49,9 @@ class Promo {
   /// Cadeau gagné à un jeu pendant le trajet, offert par un partenaire fictif :
   /// mention « Offert par `partenaire` · exemple fictif » au lieu de « Publicité ».
   final bool partnerGift;
+
+  /// Annonceur fictif du catalogue de publicités (services/ads.dart) : « Publicité · exemple fictif ».
+  final bool fictive;
 }
 
 /// Annonceur principal : affiché sur tous les trajets, en premier.

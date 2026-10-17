@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+
 import '../main.dart';
+import '../services/ads.dart';
+import '../services/coupons.dart';
 import '../services/promos.dart';
 import '../services/rides.dart';
 import '../services/tourism.dart';
 import '../theme.dart';
 
 /// Mention de l'offre : « Publicité », ou « Offert par `partenaire` · exemple fictif » pour un cadeau de jeu.
-String promoTag(Promo p) =>
-    p.partnerGift ? '${s.t('giftOfferedBy')} ${p.brand} · ${s.t('fictiveExample')}' : s.t('promoLabel');
+String promoTag(Promo p) => p.partnerGift
+    ? '${s.t('giftOfferedBy')} ${p.brand} · ${s.t('fictiveExample')}'
+    : p.fictive
+        ? '${s.t('promoLabel')} · ${s.t('fictiveExample')}'
+        : s.t('promoLabel');
 
 /// Carte d'offre discrète, toujours marquée « Publicité ».
 class PromoCard extends StatelessWidget {
@@ -127,10 +134,13 @@ class BrandBadge extends StatelessWidget {
 /// Restaurants proposés aux touristes près de la destination, chacun avec « Y aller en taxi ».
 class RestaurantSuggestions extends StatelessWidget {
   const RestaurantSuggestions(
-      {super.key, required this.destinationName, required this.items, required this.onGo, this.onBook});
+      {super.key, required this.destinationName, required this.items, required this.onGo, this.onBook, this.sponsored});
   final String destinationName;
   final List<(Restaurant, double)> items;
   final void Function(Restaurant) onGo;
+
+  /// Lieu mis en avant (publicité, annonceur fictif) : affiché en premier, badge « Sponsorisé ».
+  final (Ad, Restaurant, double)? sponsored;
 
   /// « Réserver une table » (démo).
   final void Function(Restaurant)? onBook;
@@ -146,6 +156,7 @@ class RestaurantSuggestions extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 6),
+        if (sponsored != null) _sponsoredTile(sponsored!),
         for (final (r, m) in items)
           Container(
             margin: const EdgeInsets.only(bottom: 6),
@@ -191,6 +202,143 @@ class RestaurantSuggestions extends StatelessWidget {
       ]);
 }
 
+extension on RestaurantSuggestions {
+  Widget _sponsoredTile((Ad, Restaurant, double) item) {
+    final (ad, r, m) = item;
+    return Container(
+      key: const ValueKey('sponsoredPlace'),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 6, 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.gold, width: 1.5),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          BrandBadge(promo: ad.promo, size: 34),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text('${s.t(r.cuisineKey)} · ${distanceText(m)}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            ]),
+          ),
+          const SponsoredTag(),
+        ]),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Semantics(
+            button: true,
+            label: '${s.t('goByTaxi')} : ${r.name}, ${s.t('sponsored')}',
+            excludeSemantics: true,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: AppColors.moroccoGreen),
+              onPressed: () => onGo(r),
+              icon: const Icon(Icons.local_taxi, size: 18),
+              label: Text(s.t('goByTaxi'), style: const TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Étiquette « Sponsorisé · exemple fictif » des lieux et destinations mis en avant.
+class SponsoredTag extends StatelessWidget {
+  const SponsoredTag({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(color: AppColors.sandDeep, borderRadius: BorderRadius.circular(6)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+          Text(s.t('sponsored'),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.gold)),
+          Text(s.t('fictiveExample'), style: const TextStyle(fontSize: 9, color: AppColors.muted)),
+        ]),
+      );
+}
+
+/// Carte publicitaire avec QR code visible (carte en course, bon sur le reçu) :
+/// logo, mention « Publicité · exemple fictif », offre, et le QR du bon lié au compte et à la course.
+class AdQrCard extends StatelessWidget {
+  const AdQrCard({super.key, required this.coupon, this.note, this.onTap, this.onClose});
+  final Coupon coupon;
+
+  /// Ligne sous l'offre (ex. « Bon ajouté à Mes offres »).
+  final String? note;
+  final VoidCallback? onTap;
+  final VoidCallback? onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final promo = coupon.promo;
+    return Container(
+      padding: EdgeInsetsDirectional.fromSTEB(12, 10, onClose == null ? 10 : 0, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.line, width: 1.5),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Semantics(
+            container: true,
+            button: onTap != null,
+            label: '${promoTag(promo)}. ${promo.brand}. ${s.t(promo.titleKey)}. ${s.t(promo.detailKey)}'
+                '${note == null ? '' : '. $note'}',
+            excludeSemantics: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      BrandBadge(promo: promo, size: 30),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(promoTag(promo),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.muted)),
+                      ),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text(s.t(promo.titleKey),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    Text('${promo.brand} · ${s.t(promo.detailKey)}',
+                        style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                    if (note != null)
+                      Text(note!,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.moroccoGreen)),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+                QrImageView(
+                  key: const ValueKey('adQr'),
+                  data: coupon.code,
+                  size: 64,
+                  padding: EdgeInsets.zero,
+                  backgroundColor: Colors.white,
+                ),
+              ]),
+            ),
+          ),
+        ),
+        if (onClose != null)
+          IconButton(
+            tooltip: s.t('hideAd'),
+            onPressed: onClose,
+            icon: const Icon(Icons.close, size: 20, color: AppColors.muted),
+          ),
+      ]),
+    );
+  }
+}
+
 /// Bandeau publicitaire fin en haut de la carte : mention « Exemple publicitaire (démo) », croix pour le masquer,
 /// appui pour voir le détail de l'offre.
 class AdBanner extends StatelessWidget {
@@ -209,7 +357,7 @@ class AdBanner extends StatelessWidget {
           Expanded(
             child: Semantics(
               button: true,
-              label: '${s.t('promoLabel')}. ${s.t(promo.titleKey)}',
+              label: '${promoTag(promo)}. ${promo.fictive ? '${promo.brand}. ' : ''}${s.t(promo.titleKey)}',
               excludeSemantics: true,
               child: InkWell(
                 borderRadius: const BorderRadiusDirectional.horizontal(start: Radius.circular(14)).resolve(
@@ -229,7 +377,7 @@ class AdBanner extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(s.t('promoLabel'),
+                            Text(promoTag(promo),
                                 style:
                                     const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.muted)),
                             Text(s.t(promo.titleKey),

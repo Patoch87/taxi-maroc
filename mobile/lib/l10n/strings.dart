@@ -1036,6 +1036,96 @@ class S {
       "5 دراهم بونوس على كل كورصة بريميوم زايدة على التعويض\nالأولوية فالمطار والأوطيلات",
       "5 MAD bonus per premium ride on top of the compensation\nAirport and hotel priority"
     ],
+
+    // Publicités (annonceurs fictifs), offres personnalisées, serveur du test réel
+    'adSoukTitle': [
+      "-15 % sur la nouvelle collection",
+      "-15% على التشكيلة الجديدة",
+      "-15% على الكوليكسيون الجديدة",
+      "15% off the new collection"
+    ],
+    'adSoukText': [
+      "En boutique, sur présentation du bon",
+      "في المتجر، عند تقديم القسيمة",
+      "فالحانوت، ملي تورّي البون",
+      "In store, show the voucher"
+    ],
+    'adTeleTitle': [
+      "20 Go d'internet pour 49 DH",
+      "20 جيجا إنترنت بـ 49 درهما",
+      "20 جيگا ديال الأنترنيت بـ 49 درهم",
+      "20 GB of data for 49 MAD"
+    ],
+    'adTeleText': [
+      "Offre 5G sans engagement, 30 jours",
+      "عرض 5G بدون التزام، 30 يوما",
+      "عرض 5G بلا التزام، 30 يوم",
+      "5G plan, no commitment, 30 days"
+    ],
+    'adBankTitle': [
+      "Ouvrez un compte en 10 minutes",
+      "افتح حسابا في 10 دقائق",
+      "حل كونط ف10 دقايق",
+      "Open an account in 10 minutes"
+    ],
+    'adBankText': [
+      "Carte bancaire offerte la 1re année",
+      "بطاقة بنكية مجانية في السنة الأولى",
+      "كارط بنكية فابور العام الأول",
+      "Free bank card for the first year"
+    ],
+    'adAtlasPlace': ["Café et pâtisseries", "قهوة وحلويات", "قهوة وحلويات", "Coffee and pastries"],
+    'adAmalText': [
+      "Pharmacie de garde, ouverte 24 h/24",
+      "صيدلية الحراسة، مفتوحة 24/24",
+      "فارماسي ديال الگارد، محلولة 24/24",
+      "On-duty pharmacy, open 24/7"
+    ],
+    'adAtlasCouponTitle': [
+      "Un café offert pour un café acheté",
+      "قهوة مجانية مقابل قهوة مشتراة",
+      "قهوة فابور على قهوة شريتيها",
+      "Buy one coffee, get one free"
+    ],
+    'adAtlasCouponText': [
+      "Valable dans tous les Café Atlas",
+      "صالحة في جميع مقاهي أطلس",
+      "صالح فكاع مقاهي أطلس",
+      "Valid in all Café Atlas shops"
+    ],
+    'sponsored': ["Sponsorisé", "إعلان ممول", "سبونسور", "Sponsored"],
+    'personalizedOffers': ["Offres personnalisées", "عروض مخصصة", "عروض على قدك", "Personalized offers"],
+    'personalizedOffersDesc': [
+      "Désactivées : offres selon le trajet en cours seulement, jamais selon le revenu",
+      "معطلة: عروض حسب الرحلة الحالية فقط، وليس حسب الدخل أبدا",
+      "مطفية: العروض غير على حساب الطريق دابا، عمرها على حساب المدخول",
+      "Off: offers based on the current trip only, never on income"
+    ],
+    'connectingServer': [
+      "Connexion au serveur…",
+      "جار الاتصال بالخادم…",
+      "كنتكونيكطاو مع السيرفور…",
+      "Connecting to the server…"
+    ],
+    'demoFallback': [
+      "Mode démo (serveur indisponible)",
+      "الوضع التجريبي (الخادم غير متاح)",
+      "وضع التجربة (السيرفور ماخدامش)",
+      "Demo mode (server unavailable)"
+    ],
+    'demoMode': ["Mode démo", "الوضع التجريبي", "وضع التجربة", "Demo mode"],
+    'demoModeDesc': [
+      "Taxis simulés, sans serveur",
+      "سيارات أجرة افتراضية، بدون خادم",
+      "طاكسيات ديال التجربة، بلا سيرفور",
+      "Simulated taxis, no server"
+    ],
+    'receiptCouponSaved': [
+      "Bon ajouté à Mes offres",
+      "أضيفت القسيمة إلى عروضي",
+      "البون تزاد ف العروض ديالي",
+      "Voucher added to My offers"
+    ],
   };
 
   /// Clés et textes des 4 langues de base (fr, ar, dr, en).
