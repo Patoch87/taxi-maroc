@@ -228,6 +228,10 @@ const { chromium } = require('playwright');
     await tap('Annuler');
     await waitFor('5 étoiles sur 5', 240);
     await page.waitForTimeout(1500);
+    // Le bon du reçu est au-dessus de la note : défilement jusqu'aux étoiles.
+    await page.mouse.move(195, 760);
+    await page.mouse.wheel(0, 250);
+    await page.waitForTimeout(600);
     await tap('5 étoiles sur 5');
     await page.waitForTimeout(600);
     await tap('Ponctuel');
