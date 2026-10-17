@@ -340,10 +340,6 @@ const Map<String, String> it = {
   'plateOptional': "Targa del taxi (facoltativa)",
   'offerCaribou': "20% di sconto sul caffè",
   'offerCaribouDetail': "Mostrando il buono Bab Taxi",
-  'meterWord': "Tassametro",
-  'driverComp': "compenso autista",
-  'babFee': "commissione",
-  'compExplain': "Il compenso paga all’autista i posti che non potrà offrire lungo il percorso.",
   'people': "Persone",
   'morePeople': "Una persona in più",
   'fewerPeople': "Una persona in meno",
@@ -383,4 +379,20 @@ const Map<String, String> it = {
   'giftSharedRide': "1 corsa condivisa gratis fino a 10 MAD",
   'giftDetail': "Presentando il buono, valido 24 h",
   'playLabel': "Gioca",
+  'premiumIncludes':
+      "Auto con meno di 4 anni, climatizzata, acqua offerta, caricatore, Wi-Fi, autista valutato 4,8+ e formato all’accoglienza",
+  'becomePremium': "Diventa autista Premium",
+  'becomePremiumDesc': "Requisiti, controlli e guadagni",
+  'premVehicleTitle': "Veicolo",
+  'premVehicle':
+      "Meno di 4 anni o meno di 80.000 km\nBerlina o monovolume pulita\nAria condizionata funzionante\nRevisione tecnica Bab ogni 6 mesi",
+  'premOnBoardTitle': "A bordo",
+  'premOnBoard': "Acqua offerta\nCaricatori USB-C e iPhone\nWi-Fi\nFazzoletti\nVeicolo non fumatori, profumato",
+  'premDriverTitle': "Autista",
+  'premDriver':
+      "Valutazione ≥ 4,8 sulle ultime 100 corse\nAlmeno 6 mesi e 500 corse su Bab\nNessun reclamo fondato in 6 mesi\nAbbigliamento curato\nParla almeno 2 lingue (arabo/darija + francese, inglese o spagnolo)\nFormazione Bab accoglienza e turismo (1 giorno)\nAiuto con i bagagli",
+  'premControlTitle': "Controlli",
+  'premControl': "Visita a sorpresa\nRitiro del badge Premium se la valutazione scende sotto 4,7",
+  'premGainsTitle': "Guadagni",
+  'premGains': "Bonus di 5 MAD per corsa premium oltre al compenso\nPriorità aeroporto e hotel",
 };

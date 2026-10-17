@@ -7,12 +7,20 @@ export interface FareEstimate {
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-/** Estimation du prix d'une course en petit taxi, affichée avant la course. */
+/**
+ * Estimation du prix d'une course en petit taxi, affichée avant la course.
+ * - Partagé : compteur.
+ * - Seul : compteur + compensation chauffeur (places bloquées × 50 % du compteur : 2 places pour
+ *   1 passager, 1 pour 2, aucune pour 3 ; au moins 10 MAD quand elle n'est pas nulle) + 3 MAD de frais Bab.
+ * - Premium : prix « Seul » (même nombre de passagers) + 10 MAD de supplément premium.
+ */
 export function estimatePetitTaxi(input: {
   distanceM: number;
   mode: RideMode;
   categorie: TaxiCategory;
   date: Date;
+  /** Nombre de personnes du groupe (1 à 3), pour la compensation de la course seule. */
+  passagers?: number;
 }): FareEstimate {
   const t = CASABLANCA_PETIT_TAXI;
   const details: FareEstimate['details'] = [];
@@ -21,21 +29,28 @@ export function estimatePetitTaxi(input: {
   base = Math.max(base, t.minimumMad);
   details.push({ libelle: 'Compteur estimé', montantMad: round(base) });
 
-  let total = base;
+  let compteur = base;
   if (isNight(input.date)) {
     const m = base * t.majorationNuit;
     details.push({ libelle: 'Majoration de nuit', montantMad: round(m) });
-    total += m;
+    compteur += m;
   }
-  if (input.mode === 'seul') {
-    const s = total * t.supplementCourseSeul;
-    details.push({ libelle: 'Supplément course seul', montantMad: round(s) });
-    total += s;
+  compteur = round(compteur);
+  let total = compteur;
+  const premium = input.categorie === 'premium';
+  if (input.mode === 'seul' || premium) {
+    const passagers = Math.min(Math.max(Math.round(input.passagers ?? 1), 1), CAPACITE.petit);
+    const bloquees = CAPACITE.petit - passagers;
+    let compensation = bloquees * t.compensationParPlace * compteur;
+    if (compensation > 0) compensation = Math.max(compensation, t.compensationMinMad);
+    compensation = round(compensation);
+    details.push({ libelle: 'Compensation chauffeur', montantMad: compensation });
+    details.push({ libelle: 'Frais Bab', montantMad: t.fraisBabMad });
+    total += compensation + t.fraisBabMad;
   }
-  if (input.categorie === 'premium') {
-    const p = total * (t.coefficientPremium - 1);
-    details.push({ libelle: 'Service premium', montantMad: round(p) });
-    total += p;
+  if (premium) {
+    details.push({ libelle: 'Supplément premium', montantMad: t.supplementPremiumMad });
+    total += t.supplementPremiumMad;
   }
   return { montantMad: round(total), details };
 }

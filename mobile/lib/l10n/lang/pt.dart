@@ -340,10 +340,6 @@ const Map<String, String> pt = {
   'plateOptional': "Matrícula do táxi (opcional)",
   'offerCaribou': "20% de desconto no seu café",
   'offerCaribouDetail': "Mediante o cupão Bab Taxi",
-  'meterWord': "Taxímetro",
-  'driverComp': "compensação ao motorista",
-  'babFee': "taxa",
-  'compExplain': "A compensação paga ao motorista os lugares que ele não poderá oferecer no caminho.",
   'people': "Pessoas",
   'morePeople': "Mais uma pessoa",
   'fewerPeople': "Uma pessoa a menos",
@@ -383,4 +379,20 @@ const Map<String, String> pt = {
   'giftSharedRide': "1 viagem partilhada grátis até 10 MAD",
   'giftDetail': "Apresentando o cupão, válido 24 h",
   'playLabel': "Jogar",
+  'premiumIncludes':
+      "Carro com menos de 4 anos, com ar condicionado, água oferecida, carregador, Wi-Fi, motorista com nota 4,8+ e formado em atendimento",
+  'becomePremium': "Tornar-se motorista Premium",
+  'becomePremiumDesc': "Critérios, controlo e ganhos",
+  'premVehicleTitle': "Veículo",
+  'premVehicle':
+      "Menos de 4 anos ou menos de 80 000 km\nBerlina ou monovolume limpo\nAr condicionado a funcionar\nInspeção técnica Bab a cada 6 meses",
+  'premOnBoardTitle': "A bordo",
+  'premOnBoard': "Água oferecida\nCarregadores USB-C e iPhone\nWi-Fi\nLenços\nVeículo não fumador, perfumado",
+  'premDriverTitle': "Motorista",
+  'premDriver':
+      "Nota ≥ 4,8 nas últimas 100 viagens\nPelo menos 6 meses e 500 viagens na Bab\nNenhuma reclamação fundamentada em 6 meses\nApresentação cuidada\nFala pelo menos 2 línguas (árabe/darija + francês, inglês ou espanhol)\nFormação Bab em atendimento e turismo (1 dia)\nAjuda com a bagagem",
+  'premControlTitle': "Controlo",
+  'premControl': "Visita surpresa\nRetirada do selo Premium se a nota descer abaixo de 4,7",
+  'premGainsTitle': "Ganhos",
+  'premGains': "Bónus de 5 MAD por viagem premium além da compensação\nPrioridade no aeroporto e hotéis",
 };

@@ -30,13 +30,18 @@ class Api {
     required Map<String, double> destination,
     required bool seul,
     required bool premium,
+    int passengers = 1,
   }) async {
-    if (isDemo) return Demo.estimatePetitTaxi(depart: depart, destination: destination, seul: seul, premium: premium);
+    if (isDemo) {
+      return Demo.estimatePetitTaxi(
+          depart: depart, destination: destination, seul: seul, premium: premium, passengers: passengers);
+    }
     return await _post('/fares/petit-taxi', {
       'depart': depart,
       'destination': destination,
       'mode': seul ? 'seul' : 'partage',
       'categorie': premium ? 'premium' : 'standard',
+      'passagers': passengers,
     }) as Map<String, dynamic>;
   }
 

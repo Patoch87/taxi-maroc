@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taxi_maroc/l10n/strings.dart';
 import 'package:taxi_maroc/main.dart';
+import 'package:taxi_maroc/screens/driver_home.dart';
 import 'package:taxi_maroc/screens/games_screen.dart';
 import 'package:taxi_maroc/services/coupons.dart';
 import 'package:taxi_maroc/services/demo.dart';
@@ -49,28 +50,66 @@ void main() {
     test('compensation minimale de 10 MAD pour un petit compteur', () {
       expect(Demo.seulPrice(compteur: 7.5).compensation, 10);
     });
-    test('options : détail affiché sur « Seul », premium inchangé', () {
+    test('options : prix total seul et premium (premium = seul + 10)', () {
       final noon = DateTime(2026, 10, 2, 12);
       final o = rideOptions(destination: casablancaPlaces.first, routeM: 4000, date: noon);
       final seul = o.firstWhere((x) => x.id == 'seul');
       expect(seul.priceMad, 35);
-      expect(seulBreakdownText(seul.breakdown!), 'Compteur 16 + compensation chauffeur 16 + frais 3 = 35 DH');
-      expect(o.firstWhere((x) => x.id == 'premium').priceMad, 31.2); // 16 × 1,3 × 1,5
+      expect(o.firstWhere((x) => x.id == 'premium').priceMad, 45); // seul 35 + supplément premium 10
       final group = rideOptions(destination: casablancaPlaces.first, routeM: 4000, date: noon, passengers: 3);
       expect(group.firstWhere((x) => x.id == 'seul').priceMad, 19);
+      expect(group.firstWhere((x) => x.id == 'premium').priceMad, 29); // même nombre de personnes
       expect(group.first.priceMad, 16); // partagé inchangé
     });
   });
 
-  testWidgets('choix du taxi : détail du prix seul et explication', (tester) async {
+  group('prix premium : prix « Seul » + 10 MAD de supplément premium', () {
+    test('compteur 20, 1 passager : 20 + 20 + 3 + 10 = 53 MAD', () {
+      final p = Demo.premiumPrice(compteur: 20, passengers: 1);
+      expect([p.compteur, p.compensation, p.frais, p.premium, p.total], [20, 20, 3, 10, 53]);
+    });
+    test('toujours plus cher que « Seul », quel que soit le groupe', () {
+      for (final c in [7.5, 16.0, 20.0, 45.0]) {
+        for (var n = 1; n <= 3; n++) {
+          final seul = Demo.seulPrice(compteur: c, passengers: n).total;
+          expect(Demo.premiumPrice(compteur: c, passengers: n).total, seul + 10);
+        }
+      }
+    });
+  });
+
+  testWidgets('chauffeur : écran « Devenir chauffeur Premium » avec les critères', (tester) async {
+    phone(tester);
+    settings.requestSound = false;
+    await tester.pumpWidget(app(const DriverHome()));
+    await tester.pump();
+    tester.state<ScaffoldState>(find.byType(Scaffold).first).openEndDrawer();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Devenir chauffeur Premium'));
+    await tester.pumpAndSettle();
+    expect(find.text('Moins de 4 ans ou moins de 80 000 km'), findsOneWidget);
+    for (final t in ['Véhicule', 'À bord', 'Chauffeur', 'Contrôle', 'Gains']) {
+      await tester.scrollUntilVisible(find.text(t), 200);
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    await tester.scrollUntilVisible(find.text('Priorité aéroport et hôtels'), 200);
+    expect(find.text('5 MAD de bonus par course premium en plus de la compensation'), findsOneWidget);
+    expect(find.text('Retrait du badge Premium si la note passe sous 4,7'), findsOneWidget);
+  });
+
+  testWidgets('choix du taxi : prix total seulement, premium avec ce qu\'il comprend', (tester) async {
     phone(tester);
     await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
     await tester.pump();
     await tester.tap(find.text('Gare Casa Voyageurs'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('seulBreakdown')), findsOneWidget);
-    expect(find.textContaining('compensation chauffeur'), findsOneWidget);
-    expect(find.text("La compensation paie au chauffeur les places qu'il ne pourra pas proposer sur sa route."),
+    // Pas de détail du prix ni d'explication : seulement le total sur chaque option.
+    expect(find.textContaining('compensation chauffeur'), findsNothing);
+    expect(find.textContaining('La compensation paie'), findsNothing);
+    expect(find.byKey(const ValueKey('premiumIncludes')), findsOneWidget);
+    expect(
+        find.text("Voiture de moins de 4 ans, climatisée, eau offerte, chargeur, Wi-Fi, chauffeur noté 4,8+ et "
+            "formé à l'accueil"),
         findsOneWidget);
   });
 

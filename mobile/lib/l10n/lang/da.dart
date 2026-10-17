@@ -340,10 +340,6 @@ const Map<String, String> da = {
   'plateOptional': "Nummerplade (valgfri)",
   'offerCaribou': "20 % rabat på din kaffe",
   'offerCaribouDetail': "Vis din Bab Taxi-kupon",
-  'meterWord': "Taxameter",
-  'driverComp': "kompensation til chauffør",
-  'babFee': "gebyr",
-  'compExplain': "Kompensationen betaler chaufføren for de pladser, han ikke kan tilbyde på sin rute.",
   'people': "Personer",
   'morePeople': "Én person mere",
   'fewerPeople': "Én person mindre",
@@ -383,4 +379,20 @@ const Map<String, String> da = {
   'giftSharedRide': "1 delt tur gratis op til 10 MAD",
   'giftDetail': "Mod fremvisning af kupon, gyldig 24 t",
   'playLabel': "Spil",
+  'premiumIncludes':
+      "Bil under 4 år, med aircondition, gratis vand, oplader, wi-fi, chauffør med 4,8+ i bedømmelse og uddannet i værtskab",
+  'becomePremium': "Bliv Premium-chauffør",
+  'becomePremiumDesc': "Krav, kontrol og indtjening",
+  'premVehicleTitle': "Køretøj",
+  'premVehicle':
+      "Under 4 år eller under 80.000 km\nRen sedan eller minivan\nVelfungerende aircondition\nBab-syn hver 6. måned",
+  'premOnBoardTitle': "Om bord",
+  'premOnBoard': "Gratis vand\nOpladere til USB-C og iPhone\nWi-fi\nLommetørklæder\nRøgfrit køretøj med frisk duft",
+  'premDriverTitle': "Chauffør",
+  'premDriver':
+      "Bedømmelse ≥ 4,8 over de sidste 100 ture\nMindst 6 måneder og 500 ture på Bab\nIngen berettiget klage i 6 måneder\nPæn påklædning\nTaler mindst 2 sprog (arabisk/darija + fransk, engelsk eller spansk)\nBab-kursus i værtskab og turisme (1 dag)\nHjælp med bagagen",
+  'premControlTitle': "Kontrol",
+  'premControl': "Uanmeldt besøg\nPremium-mærket fjernes, hvis bedømmelsen falder under 4,7",
+  'premGainsTitle': "Indtjening",
+  'premGains': "5 MAD bonus pr. premiumtur oven i kompensationen\nForrang i lufthavnen og ved hoteller",
 };

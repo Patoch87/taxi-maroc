@@ -25,6 +25,9 @@ class Demo {
   /// Compensation minimale du chauffeur quand elle n'est pas nulle.
   static const compensationMin = 10.0;
 
+  /// Supplément premium : 5 MAD pour le chauffeur et 5 MAD pour Bab.
+  static const supplementPremium = 10.0;
+
   /// Places d'un petit taxi.
   static const placesPetitTaxi = 3;
 
@@ -47,16 +50,20 @@ class Demo {
     return SeulPrice(compteur, compensation, fraisBab, _round(compteur + compensation + fraisBab));
   }
 
+  /// Taxi premium : prix « Seul » (même calcul, même nombre de personnes) + 10 MAD de supplément premium.
+  /// Toujours plus cher que « Seul ».
+  static SeulPrice premiumPrice({required double compteur, int passengers = 1}) {
+    final b = seulPrice(compteur: compteur, passengers: passengers);
+    return SeulPrice(b.compteur, b.compensation, b.frais, _round(b.total + supplementPremium),
+        premium: supplementPremium);
+  }
+
   /// Prix du petit taxi pour une distance réelle par la route.
-  /// Seul : nouvelle règle (compteur + compensation + frais). Premium : inchangé.
+  /// Seul : compteur + compensation + frais. Premium : prix « Seul » + 10 MAD de supplément premium.
   static double petitTaxiPrice(
       {required double routeKm, required bool seul, required bool premium, DateTime? date, int passengers = 1}) {
     final compteur = meter(routeKm: routeKm, date: date);
-    if (premium) {
-      var total = compteur;
-      if (seul) total *= 1.3;
-      return _round(total * 1.5);
-    }
+    if (premium) return premiumPrice(compteur: compteur, passengers: passengers).total;
     if (seul) return seulPrice(compteur: compteur, passengers: passengers).total;
     return compteur;
   }
@@ -67,9 +74,10 @@ class Demo {
     required bool seul,
     required bool premium,
     DateTime? date,
+    int passengers = 1,
   }) {
     final km = _distanceKm(depart, destination) * facteurRoute;
-    final total = petitTaxiPrice(routeKm: km, seul: seul, premium: premium, date: date);
+    final total = petitTaxiPrice(routeKm: km, seul: seul, premium: premium, date: date, passengers: passengers);
     return {'montantMad': total, 'details': <dynamic>[]};
   }
 
@@ -89,11 +97,12 @@ class Demo {
   }
 }
 
-/// Détail du prix d'une course seule.
+/// Détail du prix d'une course seule (ou premium : [premium] = supplément premium, 0 sinon).
 class SeulPrice {
-  const SeulPrice(this.compteur, this.compensation, this.frais, this.total);
+  const SeulPrice(this.compteur, this.compensation, this.frais, this.total, {this.premium = 0});
   final double compteur;
   final double compensation;
   final double frais;
+  final double premium;
   final double total;
 }

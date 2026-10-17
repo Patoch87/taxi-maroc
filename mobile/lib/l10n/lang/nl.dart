@@ -340,10 +340,6 @@ const Map<String, String> nl = {
   'plateOptional': "Kenteken (optioneel)",
   'offerCaribou': "20% korting op je koffie",
   'offerCaribouDetail': "Op vertoon van je Bab Taxi-bon",
-  'meterWord': "Meter",
-  'driverComp': "vergoeding chauffeur",
-  'babFee': "kosten",
-  'compExplain': "De vergoeding betaalt de chauffeur voor de plaatsen die hij onderweg niet kan aanbieden.",
   'people': "Personen",
   'morePeople': "Eén persoon meer",
   'fewerPeople': "Eén persoon minder",
@@ -383,4 +379,20 @@ const Map<String, String> nl = {
   'giftSharedRide': "1 gedeelde rit gratis tot 10 MAD",
   'giftDetail': "Op vertoon van de bon, 24 u geldig",
   'playLabel': "Spelen",
+  'premiumIncludes':
+      "Auto jonger dan 4 jaar, met airco, gratis water, oplader, wifi, chauffeur met score 4,8+ en getraind in gastvrijheid",
+  'becomePremium': "Premium-chauffeur worden",
+  'becomePremiumDesc': "Criteria, controles en verdiensten",
+  'premVehicleTitle': "Voertuig",
+  'premVehicle':
+      "Jonger dan 4 jaar of minder dan 80.000 km\nSchone sedan of MPV\nWerkende airco\nBab-keuring elke 6 maanden",
+  'premOnBoardTitle': "Aan boord",
+  'premOnBoard': "Gratis water\nOpladers USB-C en iPhone\nWifi\nZakdoekjes\nRookvrij en fris ruikend voertuig",
+  'premDriverTitle': "Chauffeur",
+  'premDriver':
+      "Score ≥ 4,8 over de laatste 100 ritten\nMinstens 6 maanden en 500 ritten bij Bab\nGeen gegronde klacht in 6 maanden\nNette kleding\nSpreekt minstens 2 talen (Arabisch/Darija + Frans, Engels of Spaans)\nBab-training gastvrijheid en toerisme (1 dag)\nHelpt met de bagage",
+  'premControlTitle': "Controle",
+  'premControl': "Onaangekondigd bezoek\nPremium-badge ingetrokken als de score onder 4,7 zakt",
+  'premGainsTitle': "Verdiensten",
+  'premGains': "5 MAD bonus per premiumrit bovenop de vergoeding\nVoorrang op het vliegveld en bij hotels",
 };

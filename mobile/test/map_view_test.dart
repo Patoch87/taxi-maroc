@@ -84,6 +84,7 @@ void main() {
 
     // Rotation toutes les 15 s, toujours avec la mention.
     await tester.pump(const Duration(seconds: 15));
+    await tester.pump(const Duration(milliseconds: 400)); // fin du fondu entre deux publicités
     expect(find.text('Publicité'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Masquer la publicité'));

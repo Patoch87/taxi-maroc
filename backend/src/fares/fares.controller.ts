@@ -10,7 +10,15 @@ const FACTEUR_ROUTE = 1.3;
 export class FaresController {
   @Post('petit-taxi')
   petitTaxi(
-    @Body() body: { depart: Point; destination: Point; mode?: RideMode; categorie?: TaxiCategory; date?: string },
+    @Body()
+    body: {
+      depart: Point;
+      destination: Point;
+      mode?: RideMode;
+      categorie?: TaxiCategory;
+      date?: string;
+      passagers?: number;
+    },
   ) {
     if (!body?.depart || !body?.destination) throw new BadRequestException('depart et destination sont requis');
     const distanceM = haversine(body.depart, body.destination) * FACTEUR_ROUTE;
@@ -19,6 +27,7 @@ export class FaresController {
       mode: body.mode ?? 'partage',
       categorie: body.categorie ?? 'standard',
       date: body.date ? new Date(body.date) : new Date(),
+      passagers: body.passagers,
     });
   }
 

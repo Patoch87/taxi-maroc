@@ -1609,7 +1609,7 @@ class _RiderHomeState extends State<RiderHome> {
         selected: selected,
         enabled: fits,
         label: '${o.title}, ${dh(o.priceMad)}, ${o.description}, ${o.luggage} ${s.t('suitcasesMax')}'
-            '${o.breakdown == null ? '' : ', ${seulBreakdownText(o.breakdown!)}. ${s.t('compExplain')}'}'
+            '${o.kind == TaxiKind.premium ? ', ${s.t('premiumIncludes')}' : ''}'
             '${fits ? '' : ', ${s.t('tooManyBags')}'}',
         excludeSemantics: true,
         child: GestureDetector(
@@ -1660,13 +1660,12 @@ class _RiderHomeState extends State<RiderHome> {
                   ),
                   Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
                 ]),
-                // Course seule : détail du prix et explication de la compensation, sur toute la largeur.
-                if (o.breakdown != null) ...[
-                  const SizedBox(height: 6),
-                  Text(seulBreakdownText(o.breakdown!),
-                      key: const ValueKey('seulBreakdown'),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                  Text(s.t('compExplain'), style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+                // Premium : seulement le prix total, et ce qu'il comprend (pas de détail du prix).
+                if (o.kind == TaxiKind.premium) ...[
+                  const SizedBox(height: 4),
+                  Text(s.t('premiumIncludes'),
+                      key: const ValueKey('premiumIncludes'),
+                      style: const TextStyle(fontSize: 11, color: AppColors.muted)),
                 ],
               ]),
             ),

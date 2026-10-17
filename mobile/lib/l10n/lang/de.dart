@@ -340,10 +340,6 @@ const Map<String, String> de = {
   'plateOptional': "Kennzeichen (optional)",
   'offerCaribou': "20 % Rabatt auf Ihren Kaffee",
   'offerCaribouDetail': "Bab-Taxi-Gutschein vorzeigen",
-  'meterWord': "Taxameter",
-  'driverComp': "Fahrerausgleich",
-  'babFee': "Gebühr",
-  'compExplain': "Der Ausgleich bezahlt dem Fahrer die Plätze, die er auf seiner Strecke nicht anbieten kann.",
   'people': "Personen",
   'morePeople': "Eine Person mehr",
   'fewerPeople': "Eine Person weniger",
@@ -383,4 +379,20 @@ const Map<String, String> de = {
   'giftSharedRide': "1 geteilte Fahrt gratis bis 10 MAD",
   'giftDetail': "Gegen Vorlage des Gutscheins, 24 h gültig",
   'playLabel': "Spielen",
+  'premiumIncludes':
+      "Auto jünger als 4 Jahre, klimatisiert, Wasser gratis, Ladegerät, WLAN, Fahrer mit 4,8+ bewertet und im Gästeempfang geschult",
+  'becomePremium': "Premium-Fahrer werden",
+  'becomePremiumDesc': "Kriterien, Kontrollen und Verdienst",
+  'premVehicleTitle': "Fahrzeug",
+  'premVehicle':
+      "Jünger als 4 Jahre oder unter 80.000 km\nSaubere Limousine oder Van\nFunktionierende Klimaanlage\nBab-Technikprüfung alle 6 Monate",
+  'premOnBoardTitle': "An Bord",
+  'premOnBoard': "Wasser gratis\nLadekabel USB-C und iPhone\nWLAN\nTaschentücher\nNichtraucherfahrzeug, frisch duftend",
+  'premDriverTitle': "Fahrer",
+  'premDriver':
+      "Bewertung ≥ 4,8 über die letzten 100 Fahrten\nMindestens 6 Monate und 500 Fahrten bei Bab\nKeine berechtigte Beschwerde in 6 Monaten\nGepflegtes Auftreten\nSpricht mindestens 2 Sprachen (Arabisch/Darija + Französisch, Englisch oder Spanisch)\nBab-Schulung Gästeempfang und Tourismus (1 Tag)\nHilfe beim Gepäck",
+  'premControlTitle': "Kontrolle",
+  'premControl': "Überraschungsbesuch\nEntzug des Premium-Abzeichens bei einer Bewertung unter 4,7",
+  'premGainsTitle': "Verdienst",
+  'premGains': "5 MAD Bonus pro Premium-Fahrt zusätzlich zur Entschädigung\nVorrang am Flughafen und bei Hotels",
 };

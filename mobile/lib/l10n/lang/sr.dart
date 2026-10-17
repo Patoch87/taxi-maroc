@@ -340,10 +340,6 @@ const Map<String, String> sr = {
   'plateOptional': "Tablice taksija (opciono)",
   'offerCaribou': "20 % popusta na kafu",
   'offerCaribouDetail': "Uz Bab Taxi kupon",
-  'meterWord': "Taksimetar",
-  'driverComp': "nadoknada vozaču",
-  'babFee': "naknada",
-  'compExplain': "Nadoknada plaća vozaču mesta koja neće moći da ponudi na svojoj ruti.",
   'people': "Osobe",
   'morePeople': "Jedna osoba više",
   'fewerPeople': "Jedna osoba manje",
@@ -383,4 +379,20 @@ const Map<String, String> sr = {
   'giftSharedRide': "1 deljena vožnja besplatno do 10 MAD",
   'giftDetail': "Uz pokazivanje kupona, važi 24 h",
   'playLabel': "Igraj",
+  'premiumIncludes':
+      "Auto mlađe od 4 godine, klimatizovano, besplatna voda, punjač, Wi-Fi, vozač sa ocenom 4,8+ i obučen za doček gostiju",
+  'becomePremium': "Postanite Premium vozač",
+  'becomePremiumDesc': "Kriterijumi, kontrole i zarada",
+  'premVehicleTitle': "Vozilo",
+  'premVehicle':
+      "Mlađe od 4 godine ili manje od 80.000 km\nČista limuzina ili monovolumen\nIspravna klima\nBab tehnički pregled na svakih 6 meseci",
+  'premOnBoardTitle': "U vozilu",
+  'premOnBoard': "Besplatna voda\nPunjači USB-C i iPhone\nWi-Fi\nMaramice\nVozilo za nepušače, osveženo",
+  'premDriverTitle': "Vozač",
+  'premDriver':
+      "Ocena ≥ 4,8 u poslednjih 100 vožnji\nNajmanje 6 meseci i 500 vožnji na Babu\nNijedna osnovana žalba za 6 meseci\nUredna odeća\nGovori bar 2 jezika (arapski/darija + francuski, engleski ili španski)\nBab obuka za doček gostiju i turizam (1 dan)\nPomoć oko prtljaga",
+  'premControlTitle': "Kontrola",
+  'premControl': "Iznenadna poseta\nOduzimanje Premium oznake ako ocena padne ispod 4,7",
+  'premGainsTitle': "Zarada",
+  'premGains': "5 MAD bonusa po premium vožnji uz naknadu\nPrednost na aerodromu i kod hotela",
 };

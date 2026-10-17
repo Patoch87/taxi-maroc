@@ -340,10 +340,6 @@ const Map<String, String> pl = {
   'plateOptional': "Numer rejestracyjny (opcjonalnie)",
   'offerCaribou': "20% zniżki na kawę",
   'offerCaribouDetail': "Za okazaniem kuponu Bab Taxi",
-  'meterWord': "Taksometr",
-  'driverComp': "rekompensata kierowcy",
-  'babFee': "opłata",
-  'compExplain': "Rekompensata płaci kierowcy za miejsca, których nie zaoferuje na swojej trasie.",
   'people': "Osoby",
   'morePeople': "Jedna osoba więcej",
   'fewerPeople': "Jedna osoba mniej",
@@ -383,4 +379,20 @@ const Map<String, String> pl = {
   'giftSharedRide': "1 wspólny przejazd gratis do 10 MAD",
   'giftDetail': "Po okazaniu kuponu, ważny 24 h",
   'playLabel': "Graj",
+  'premiumIncludes':
+      "Auto młodsze niż 4 lata, klimatyzowane, darmowa woda, ładowarka, Wi-Fi, kierowca z oceną 4,8+ przeszkolony w obsłudze gości",
+  'becomePremium': "Zostań kierowcą Premium",
+  'becomePremiumDesc': "Kryteria, kontrole i zarobki",
+  'premVehicleTitle': "Pojazd",
+  'premVehicle':
+      "Młodszy niż 4 lata lub poniżej 80 000 km\nCzysty sedan lub minivan\nSprawna klimatyzacja\nPrzegląd techniczny Bab co 6 miesięcy",
+  'premOnBoardTitle': "Na pokładzie",
+  'premOnBoard': "Darmowa woda\nŁadowarki USB-C i iPhone\nWi-Fi\nChusteczki\nPojazd dla niepalących, odświeżony",
+  'premDriverTitle': "Kierowca",
+  'premDriver':
+      "Ocena ≥ 4,8 z ostatnich 100 kursów\nCo najmniej 6 miesięcy i 500 kursów w Bab\nBrak uzasadnionych skarg od 6 miesięcy\nSchludny strój\nMówi w co najmniej 2 językach (arabski/darija + francuski, angielski lub hiszpański)\nSzkolenie Bab z obsługi gości i turystyki (1 dzień)\nPomoc przy bagażu",
+  'premControlTitle': "Kontrola",
+  'premControl': "Niezapowiedziana wizyta\nOdebranie odznaki Premium, gdy ocena spadnie poniżej 4,7",
+  'premGainsTitle': "Zarobki",
+  'premGains': "5 MAD premii za każdy kurs premium oprócz rekompensaty\nPierwszeństwo na lotnisku i przy hotelach",
 };

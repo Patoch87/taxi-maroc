@@ -867,15 +867,6 @@ class S {
     'ridesShort': ['courses', 'رحلات', 'كورصات', 'rides'],
 
     // Prix seul, réservation de restaurant, jeux pendant le trajet
-    'meterWord': ["Compteur", "العداد", "الكونتور", "Meter"],
-    'driverComp': ["compensation chauffeur", "تعويض السائق", "تعويض الشيفور", "driver compensation"],
-    'babFee': ["frais", "رسوم", "المصاريف", "fee"],
-    'compExplain': [
-      "La compensation paie au chauffeur les places qu'il ne pourra pas proposer sur sa route.",
-      "يدفع التعويض للسائق ثمن المقاعد التي لن يستطيع عرضها في طريقه.",
-      "التعويض كيخلّص الشيفور على البلايص اللي ما غاديش يقدر يعطيها فطريقو.",
-      "The compensation pays the driver for the seats he cannot offer along his route."
-    ],
     'people': ["Personnes", "الأشخاص", "الناس", "People"],
     'morePeople': ["Une personne de plus", "شخص إضافي", "واحد زايد", "One more person"],
     'fewerPeople': ["Une personne de moins", "شخص أقل", "واحد ناقص", "One person less"],
@@ -995,6 +986,56 @@ class S {
       "Show the voucher, valid 24 h"
     ],
     'playLabel': ["Jouer", "العب", "لعب", "Play"],
+
+    // Taxi premium : supplément, ce qu'il comprend, critères pour devenir chauffeur Premium
+    'premiumIncludes': [
+      "Voiture de moins de 4 ans, climatisée, eau offerte, chargeur, Wi-Fi, chauffeur noté 4,8+ et formé à l'accueil",
+      "سيارة عمرها أقل من 4 سنوات، مكيفة، ماء مجاني، شاحن، واي فاي، سائق بتقييم 4,8+ ومدرّب على الاستقبال",
+      "طوموبيل أقل من 4 سنين، فيها الكليماتيزور، الما فابور، شارجور، ويفي، شيفور منقّط 4,8+ ومكوّن فالاستقبال",
+      "Car under 4 years old, air-conditioned, free water, charger, Wi-Fi, driver rated 4.8+ and trained in hospitality"
+    ],
+    'becomePremium': ["Devenir chauffeur Premium", "كن سائق بريميوم", "ولّي شيفور بريميوم", "Become a Premium driver"],
+    'becomePremiumDesc': [
+      "Critères, contrôle et gains",
+      "الشروط والمراقبة والأرباح",
+      "الشروط، المراقبة والربح",
+      "Criteria, checks and earnings"
+    ],
+    'premVehicleTitle': ["Véhicule", "السيارة", "الطوموبيل", "Vehicle"],
+    'premVehicle': [
+      "Moins de 4 ans ou moins de 80 000 km\nBerline ou monospace propre\nClimatisation en état\nContrôle technique Bab tous les 6 mois",
+      "أقل من 4 سنوات أو أقل من 80 000 كم\nسيارة سيدان أو ميني فان نظيفة\nمكيف يعمل جيدا\nفحص تقني من باب كل 6 أشهر",
+      "أقل من 4 سنين ولا أقل من 80 000 كلم\nبيرلين ولا مونوسباس نقية\nالكليماتيزور خدام مزيان\nفحص تقني ديال باب كل 6 شهور",
+      "Under 4 years old or under 80,000 km\nClean sedan or minivan\nWorking air conditioning\nBab inspection every 6 months"
+    ],
+    'premOnBoardTitle': ["À bord", "داخل السيارة", "فالطوموبيل", "On board"],
+    'premOnBoard': [
+      "Eau offerte\nChargeurs USB-C et iPhone\nWi-Fi\nMouchoirs\nVéhicule non-fumeur, désodorisé",
+      "ماء مجاني\nشواحن USB-C وآيفون\nواي فاي\nمناديل\nسيارة لغير المدخنين، معطّرة",
+      "الما فابور\nشارجورات USB-C وآيفون\nويفي\nكلينيكس\nممنوع الكارو، ريحتها زوينة",
+      "Free water\nUSB-C and iPhone chargers\nWi-Fi\nTissues\nNon-smoking, freshened vehicle"
+    ],
+    'premDriverTitle': ["Chauffeur", "السائق", "الشيفور", "Driver"],
+    'premDriver': [
+      "Note ≥ 4,8 sur les 100 dernières courses\nAu moins 6 mois et 500 courses sur Bab\nAucune plainte fondée sur 6 mois\nTenue correcte\nParle au moins 2 langues (arabe/darija + français, anglais ou espagnol)\nFormation Bab accueil et tourisme (1 jour)\nAide aux bagages",
+      "تقييم ≥ 4,8 على آخر 100 رحلة\n6 أشهر و500 رحلة على الأقل في باب\nلا شكوى مؤكدة خلال 6 أشهر\nلباس لائق\nيتحدث لغتين على الأقل (العربية/الدارجة + الفرنسية أو الإنجليزية أو الإسبانية)\nتكوين باب في الاستقبال والسياحة (يوم واحد)\nالمساعدة في الأمتعة",
+      "نقطة ≥ 4,8 فآخر 100 كورصة\nعلى الأقل 6 شهور و500 كورصة فباب\nحتى شكاية صحيحة فـ6 شهور\nلبسة نقية\nكيهضر جوج لغات على الأقل (العربية/الدارجة + الفرنسية، الإنجليزية ولا الإسبانية)\nتكوين باب فالاستقبال والسياحة (نهار واحد)\nكيعاون فالباليزات",
+      "Rating ≥ 4.8 over the last 100 rides\nAt least 6 months and 500 rides on Bab\nNo upheld complaint in 6 months\nNeat dress\nSpeaks at least 2 languages (Arabic/Darija + French, English or Spanish)\nBab hospitality and tourism training (1 day)\nHelps with luggage"
+    ],
+    'premControlTitle': ["Contrôle", "المراقبة", "المراقبة", "Checks"],
+    'premControl': [
+      "Visite surprise\nRetrait du badge Premium si la note passe sous 4,7",
+      "زيارة مفاجئة\nسحب شارة بريميوم إذا نزل التقييم تحت 4,7",
+      "زيارة بلا خبار\nكيتحيد البادج بريميوم إلا نزلات النقطة تحت 4,7",
+      "Surprise visit\nPremium badge removed if the rating drops below 4.7"
+    ],
+    'premGainsTitle': ["Gains", "الأرباح", "الربح", "Earnings"],
+    'premGains': [
+      "5 MAD de bonus par course premium en plus de la compensation\nPriorité aéroport et hôtels",
+      "مكافأة 5 دراهم عن كل رحلة بريميوم إضافة إلى التعويض\nأولوية في المطار والفنادق",
+      "5 دراهم بونوس على كل كورصة بريميوم زايدة على التعويض\nالأولوية فالمطار والأوطيلات",
+      "5 MAD bonus per premium ride on top of the compensation\nAirport and hotel priority"
+    ],
   };
 
   /// Clés et textes des 4 langues de base (fr, ar, dr, en).

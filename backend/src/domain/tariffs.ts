@@ -13,10 +13,16 @@ export const CASABLANCA_PETIT_TAXI = {
   minimumMad: 7.5,
   /** Majoration de nuit (20h à 6h) : +50 %. */
   majorationNuit: 0.5,
-  /** Supplément quand le passager veut le taxi pour lui seul. */
-  supplementCourseSeul: 0.3,
-  /** Coefficient appliqué aux taxis premium. */
-  coefficientPremium: 1.5,
+  /**
+   * Course seule : le chauffeur est compensé pour les places qu'il ne pourra pas proposer
+   * (50 % du compteur par place bloquée, au moins 10 MAD quand elle n'est pas nulle).
+   */
+  compensationParPlace: 0.5,
+  compensationMinMad: 10,
+  /** Frais Bab ajoutés à la course seule. */
+  fraisBabMad: 3,
+  /** Supplément premium, ajouté au prix « Seul » : 5 MAD pour le chauffeur, 5 MAD pour Bab. */
+  supplementPremiumMad: 10,
 };
 
 /** Capacité réglementaire en passagers. */

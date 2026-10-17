@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gm;
 import 'package:latlong2/latlong.dart';
 
+import 'premium_driver_screen.dart';
 import 'search_screen.dart';
 import '../main.dart';
 import '../services/demo.dart';
@@ -1664,6 +1665,15 @@ class _DriverHomeState extends State<DriverHome> {
               ),
             ),
             const Divider(),
+            // Critères, contrôles et gains du badge Premium.
+            ListTile(
+              key: const ValueKey('becomePremium'),
+              leading: const Icon(Icons.workspace_premium_outlined, color: AppColors.gold),
+              title: Text(s.t('becomePremium'), style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(s.t('becomePremiumDesc'), style: const TextStyle(color: AppColors.muted)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumDriverScreen())),
+            ),
             const Divider(),
             ListTile(
               key: const ValueKey('mapEngine'),

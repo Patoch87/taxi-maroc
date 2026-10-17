@@ -313,11 +313,36 @@ const { chromium } = require('playwright');
     await shot('33-chauffeur-quartier-trajet', 2500);
   });
 
-  // Nouveau prix « Seul » : compteur + compensation chauffeur + 3 MAD de frais, avec l'explication.
+  // Prix « Seul » : seulement le prix total sur l'option (pas de détail).
   await step('prix-seul', async () => {
     await open();
     await tap('Gare Casa Voyageurs');
     await shot('38-prix-seul', 4000);
+  });
+
+  // Prix premium : prix « Seul » + 10 MAD, total seulement, avec ce que comprend le premium.
+  await step('prix-premium', async () => {
+    await open();
+    await tap('Gare Casa Voyageurs');
+    await page.waitForTimeout(3500);
+    await tap('Taxi premium');
+    await page.waitForTimeout(800);
+    await page.mouse.move(195, 760);
+    await page.mouse.wheel(0, 200);
+    await shot('39-prix-premium', 1500);
+  });
+
+  // Chauffeur : « Devenir chauffeur Premium » (réglages chauffeur) et ses critères.
+  await step('criteres-premium', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Mode chauffeur');
+    await page.waitForTimeout(2500);
+    await tap('Réglages chauffeur');
+    await page.waitForTimeout(1200);
+    await tap('Devenir chauffeur Premium');
+    await shot('40-criteres-premium', 2000);
   });
 
   // Restaurants : « Réserver une table » (date, heure, personnes, nom prérempli), puis « Table réservée ».
