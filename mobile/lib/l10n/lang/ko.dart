@@ -435,4 +435,10 @@ const Map<String, String> ko = {
   'earnKeepGoing': "계속하세요: Bab Taxi 운행 하나하나가 수입입니다!",
   'earnWeekChip': "이번 주 Bab Taxi로",
   'monthsShort': "1월,2월,3월,4월,5월,6월,7월,8월,9월,10월,11월,12월",
+  'earnSrcRating': "월간 품질 보너스(승객 평점)",
+  'ratingBonusTitle': "월간 품질 보너스",
+  'ratingBonusStatus': "이번 달 평균 평점: {avg} ★ ({rides}회 운행) · 운행당 {per}",
+  'ratingBonusNext': "{avg} ★ 달성 시 운행당 {per}",
+  'ratingBonusRule': "월말에 Bab Taxi가 이번 달 모든 운행에 대해 지급합니다(평가된 운행 {rides}회 이상). 모든 평점이 반영됩니다:",
+  'rateBonusHint': "좋은 평점은 기사님께 도움이 됩니다. Bab Taxi가 월말에 품질 보너스를 지급하며 승객 부담은 없습니다.",
 };

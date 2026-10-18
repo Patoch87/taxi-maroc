@@ -437,4 +437,10 @@ const Map<String, String> fa = {
   'earnKeepGoing': "ادامه دهید: هر سفر با Bab Taxi ارزش دارد!",
   'earnWeekChip': "این هفته با Bab Taxi",
   'monthsShort': "ژانویه,فوریه,مارس,آوریل,مه,ژوئن,ژوئیه,اوت,سپتامبر,اکتبر,نوامبر,دسامبر",
+  'earnSrcRating': "پاداش کیفیت ماه (امتیاز مسافران)",
+  'ratingBonusTitle': "پاداش کیفیت ماه",
+  'ratingBonusStatus': "میانگین امتیاز ماه: {avg} ★ در {rides} سفر · {per} برای هر سفر",
+  'ratingBonusNext': "به {avg} ★ برسید: {per} برای هر سفر",
+  'ratingBonusRule': "Bab Taxi آخر ماه برای همه سفرهای ماه می‌پردازد (دست‌کم {rides} سفر امتیازدار). هر امتیاز مهم است:",
+  'rateBonusHint': "امتیاز خوب به راننده کمک می‌کند: Bab Taxi آخر ماه پاداش کیفیت می‌پردازد، بدون هزینه برای شما.",
 };

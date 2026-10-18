@@ -1152,6 +1152,13 @@ class S {
     'earnKeepGoing': ["Continuez : chaque course Bab Taxi compte !", "واصل: كل رحلة مع Bab Taxi لها قيمتها!", "زيد القدام: كل كورسة مع Bab Taxi كتحسب!", "Keep going: every Bab Taxi ride counts!"],
     'earnWeekChip': ["cette semaine avec Bab Taxi", "هذا الأسبوع مع Bab Taxi", "هاد السيمانة مع Bab Taxi", "this week with Bab Taxi"],
     'monthsShort': ["Janv.,Févr.,Mars,Avr.,Mai,Juin,Juil.,Août,Sept.,Oct.,Nov.,Déc.", "يناير,فبراير,مارس,أبريل,مايو,يونيو,يوليو,أغسطس,سبتمبر,أكتوبر,نوفمبر,ديسمبر", "يناير,فبراير,مارس,أبريل,ماي,يونيو,يوليوز,غشت,شتنبر,أكتوبر,نونبر,دجنبر", "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec"],
+    // Prime qualité du mois (note moyenne de toutes les courses)
+    'earnSrcRating': ["Prime qualité du mois (notes des passagers)", "مكافأة الجودة الشهرية (تقييمات الركاب)", "البريم ديال الجودة ديال الشهر (النوط ديال الكليان)", "Monthly quality bonus (passenger ratings)"],
+    'ratingBonusTitle': ["Prime qualité du mois", "مكافأة الجودة لهذا الشهر", "البريم ديال الجودة ديال الشهر", "Monthly quality bonus"],
+    'ratingBonusStatus': ["Note moyenne du mois : {avg} ★ sur {rides} courses · {per} par course", "متوسط تقييم الشهر: {avg} ★ على {rides} رحلة · {per} لكل رحلة", "المعدل ديال النوط هاد الشهر: {avg} ★ على {rides} كورسة · {per} على كل كورسة", "Average rating this month: {avg} ★ over {rides} rides · {per} per ride"],
+    'ratingBonusNext': ["Visez {avg} ★ : {per} par course", "استهدف {avg} ★: {per} لكل رحلة", "وصل ل {avg} ★: {per} على كل كورسة", "Aim for {avg} ★: {per} per ride"],
+    'ratingBonusRule': ["Versée en fin de mois par Bab Taxi, pour toutes vos courses du mois (au moins {rides} courses notées). Chaque note compte :", "يدفعها Bab Taxi في آخر الشهر عن كل رحلاتك في الشهر (على الأقل {rides} رحلة مقيّمة). كل تقييم مهم:", "كيخلصها Bab Taxi فآخر الشهر على كاع الكورسات ديالك (على الأقل {rides} كورسة منوطة). كل نوط كتحسب:", "Paid by Bab Taxi at the end of the month, for all your rides of the month (at least {rides} rated rides). Every rating counts:"],
+    'rateBonusHint': ["Une bonne note aide votre chauffeur : Bab Taxi lui verse une prime qualité en fin de mois, sans frais pour vous.", "التقييم الجيد يساعد سائقك: يدفع له Bab Taxi مكافأة جودة في آخر الشهر، دون أي تكلفة عليك.", "النوط مزيانة كتعاون الشيفور: Bab Taxi كيعطيه بريم ديال الجودة فآخر الشهر، بلا ما تخلص والو.", "A good rating helps your driver: Bab Taxi pays them a quality bonus at the end of the month, at no cost to you."],
   };
 
   /// Clés et textes des 4 langues de base (fr, ar, dr, en).

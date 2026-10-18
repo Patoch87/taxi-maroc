@@ -2080,6 +2080,12 @@ class _RiderHomeState extends State<RiderHome> {
         const SizedBox(height: 12),
         // Note de 1 à 5 : grandes étoiles faciles à toucher.
         Text(s.t('rate'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+        // Prime qualité : 5 étoiles = une prime pour le chauffeur, payée par Bab Taxi.
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(s.t('rateBonusHint'),
+              textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

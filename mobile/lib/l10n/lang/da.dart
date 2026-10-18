@@ -438,4 +438,10 @@ const Map<String, String> da = {
   'earnKeepGoing': "Fortsæt: hver Bab Taxi-tur tæller!",
   'earnWeekChip': "denne uge med Bab Taxi",
   'monthsShort': "jan.,feb.,mar.,apr.,maj,jun.,jul.,aug.,sep.,okt.,nov.,dec.",
+  'earnSrcRating': "Månedens kvalitetsbonus (bedømmelser)",
+  'ratingBonusTitle': "Månedens kvalitetsbonus",
+  'ratingBonusStatus': "Gennemsnitlig bedømmelse i måneden: {avg} ★ på {rides} ture · {per} pr. tur",
+  'ratingBonusNext': "Sigt efter {avg} ★: {per} pr. tur",
+  'ratingBonusRule': "Udbetales af Bab Taxi ved månedens udgang for alle månedens ture (mindst {rides} bedømte ture). Hver bedømmelse tæller:",
+  'rateBonusHint': "En god bedømmelse hjælper din chauffør: Bab Taxi giver en kvalitetsbonus ved månedens udgang, uden omkostninger for dig.",
 };

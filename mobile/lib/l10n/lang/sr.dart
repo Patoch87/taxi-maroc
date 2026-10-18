@@ -438,4 +438,10 @@ const Map<String, String> sr = {
   'earnKeepGoing': "Samo napred: svaka vožnja sa Bab Taxijem se računa!",
   'earnWeekChip': "ove nedelje sa Bab Taxijem",
   'monthsShort': "jan,feb,mar,apr,maj,jun,jul,avg,sep,okt,nov,dec",
+  'earnSrcRating': "Mesečna nagrada za kvalitet (ocene)",
+  'ratingBonusTitle': "Mesečna nagrada za kvalitet",
+  'ratingBonusStatus': "Prosečna ocena meseca: {avg} ★ na {rides} vožnji · {per} po vožnji",
+  'ratingBonusNext': "Ciljajte {avg} ★: {per} po vožnji",
+  'ratingBonusRule': "Isplaćuje je Bab Taxi na kraju meseca za sve vožnje u mesecu (najmanje {rides} ocenjenih). Svaka ocena se računa:",
+  'rateBonusHint': "Dobra ocena pomaže vašem vozaču: Bab Taxi mu na kraju meseca isplaćuje nagradu za kvalitet, bez troška za vas.",
 };

@@ -438,4 +438,10 @@ const Map<String, String> nl = {
   'earnKeepGoing': "Ga zo door: elke Bab Taxi-rit telt!",
   'earnWeekChip': "deze week met Bab Taxi",
   'monthsShort': "jan,feb,mrt,apr,mei,jun,jul,aug,sep,okt,nov,dec",
+  'earnSrcRating': "Kwaliteitsbonus van de maand (beoordelingen)",
+  'ratingBonusTitle': "Kwaliteitsbonus van de maand",
+  'ratingBonusStatus': "Gemiddelde score deze maand: {avg} ★ over {rides} ritten · {per} per rit",
+  'ratingBonusNext': "Mik op {avg} ★: {per} per rit",
+  'ratingBonusRule': "Aan het eind van de maand betaald door Bab Taxi, voor al uw ritten van de maand (minstens {rides} beoordeeld). Elke score telt:",
+  'rateBonusHint': "Een goede score helpt uw chauffeur: Bab Taxi betaalt hem aan het eind van de maand een kwaliteitsbonus, zonder kosten voor u.",
 };

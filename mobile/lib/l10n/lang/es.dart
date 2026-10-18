@@ -438,4 +438,10 @@ const Map<String, String> es = {
   'earnKeepGoing': "¡Siga así: cada viaje con Bab Taxi cuenta!",
   'earnWeekChip': "esta semana con Bab Taxi",
   'monthsShort': "ene.,feb.,mar.,abr.,may.,jun.,jul.,ago.,sept.,oct.,nov.,dic.",
+  'earnSrcRating': "Prima de calidad del mes (valoraciones)",
+  'ratingBonusTitle': "Prima de calidad del mes",
+  'ratingBonusStatus': "Nota media del mes: {avg} ★ en {rides} viajes · {per} por viaje",
+  'ratingBonusNext': "Apunte a {avg} ★: {per} por viaje",
+  'ratingBonusRule': "La paga Bab Taxi a fin de mes, por todos sus viajes del mes (al menos {rides} valorados). Cada nota cuenta:",
+  'rateBonusHint': "Una buena nota ayuda a su conductor: Bab Taxi le paga una prima de calidad a fin de mes, sin coste para usted.",
 };

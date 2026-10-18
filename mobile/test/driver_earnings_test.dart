@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taxi_maroc/main.dart';
 import 'package:taxi_maroc/screens/earnings_screen.dart';
 import 'package:taxi_maroc/services/driver_earnings.dart';
+import 'package:taxi_maroc/services/driver_shift.dart';
 
 void main() {
   final now = DateTime(2026, 10, 22, 18); // jeudi
@@ -27,6 +28,33 @@ void main() {
     for (final m in months.take(5)) {
       expect(m.extraTotal, inInclusiveRange(1500, 2000), reason: '${m.start}');
     }
+  });
+
+  test('prime qualité : versée en fin de mois selon la note moyenne de toutes les courses', () {
+    expect(RatingBonus.perRide(4.95), 2.0);
+    expect(RatingBonus.perRide(4.9), 2.0);
+    expect(RatingBonus.perRide(4.85), 1.5);
+    expect(RatingBonus.perRide(4.6), 1.0);
+    expect(RatingBonus.perRide(4.5), 0);
+    expect(RatingBonus.forMonth(average: 4.9, rides: 120), 240); // 2 DH × 120 courses
+    expect(RatingBonus.forMonth(average: 4.9, rides: 10), 0); // trop peu de courses notées
+    final months = DriverEarnings().months(now);
+    expect(months.first.extra[ExtraSource.rating], 95); // 4,62 : 1 DH × 95 courses
+    expect(months[4].extra[ExtraSource.rating], greaterThan(95));
+    expect(DriverEarnings().weeks(now).last.extra.containsKey(ExtraSource.rating), isFalse);
+    // Les notes du jour comptent dans la moyenne du mois en cours.
+    final low = DriverEarnings().months(now, todayRatingSum: 3 * 20, todayRated: 20).last;
+    final high = DriverEarnings().months(now, todayRatingSum: 5 * 20, todayRated: 20).last;
+    expect(high.rating, greaterThan(low.rating));
+  });
+
+  test('chaque note du jour est comptée pour la prime du mois', () {
+    final shift = DriverShift();
+    shift.accept(ShiftRider(name: 'Amina', pickupIdx: 1, dropIdx: 2, fare: 10, rating: 5));
+    shift.accept(ShiftRider(name: 'Karim', pickupIdx: 1, dropIdx: 3, fare: 10, rating: 4));
+    shift.advance(3);
+    expect(shift.ratedToday, 2);
+    expect(shift.ratingSumToday, 9);
   });
 
   test('le service du jour s\'ajoute à la période en cours', () {
@@ -57,5 +85,6 @@ void main() {
     expect(find.text('Ce mois-ci'), findsOneWidget);
     await tester.dragUntilVisible(find.text('Oct.'), find.byType(ListView), const Offset(0, -200));
     expect(find.text('Oct.'), findsOneWidget);
+    expect(find.text('Prime qualité du mois'), findsOneWidget);
   });
 }

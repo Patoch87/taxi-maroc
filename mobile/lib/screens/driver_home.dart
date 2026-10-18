@@ -254,7 +254,17 @@ class _DriverHomeState extends State<DriverHome> {
   void _openEarnings() => Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) => EarningsScreen(todayRides: _shift.earningsToday, todayTips: _shift.tipsToday)));
+          builder: (_) => EarningsScreen(
+              todayRides: _shift.earningsToday,
+              todayTips: _shift.tipsToday,
+              todayRatingSum: _shift.ratingSumToday,
+              todayRated: _shift.ratedToday)));
+
+  /// « Passager déposé : Salma · +11,25 DH · ★ 5 » : la note compte pour la prime qualité du mois.
+  String _droppedText(ShiftRider r) {
+    final txt = '${s.t('riderDropped')} : ${r.name} · +${dh(r.fare)}';
+    return r.rating > 0 ? '$txt · ★ ${r.rating}' : txt;
+  }
 
   void _onTick() {
     if (!mounted || _route.length < 2) return;
@@ -282,7 +292,7 @@ class _DriverHomeState extends State<DriverHome> {
         _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
       }
       for (final r in events.dropped) {
-        _toast(Icons.check_circle, '${s.t('riderDropped')} : ${r.name} · +${dh(r.fare)}');
+        _toast(Icons.check_circle, _droppedText(r));
       }
       if (_follow) _moveCamera(_taxi, null);
     }
@@ -366,8 +376,9 @@ class _DriverHomeState extends State<DriverHome> {
           dropIdx: drop,
           fare: fare,
           seats: seats,
-          // Démo : un passager sur deux laisse un pourboire par carte.
-          tip: _rnd.nextBool() ? const [5.0, 10.0, 20.0][_rnd.nextInt(3)] : 0),
+          // Démo : un passager sur deux laisse un pourboire par carte ; la plupart notent 5 étoiles.
+          tip: _rnd.nextBool() ? const [5.0, 10.0, 20.0][_rnd.nextInt(3)] : 0,
+          rating: _rnd.nextInt(10) < 7 ? 5 : 4),
       _nearestPlaceName(_route[drop]),
       4.5 + _rnd.nextInt(5) / 10,
       takenAfter: !first && _rnd.nextInt(4) == 0 ? Duration(milliseconds: 4000 + _rnd.nextInt(6000)) : null,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../l10n/strings.dart';
 import '../services/driver_earnings.dart';
+import '../services/driver_shift.dart';
 import '../services/rides.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
@@ -9,11 +11,16 @@ import '../widgets/app_logo.dart';
 /// « Mes gains » : ce que le chauffeur gagne de plus avec Bab Taxi, comparé à ce qu'il gagnait
 /// avant (moyenne qu'il indique), par semaine ou par mois, et d'où viennent ces gains en plus.
 class EarningsScreen extends StatefulWidget {
-  const EarningsScreen({super.key, this.todayRides = 0, this.todayTips = 0, this.now});
+  const EarningsScreen(
+      {super.key, this.todayRides = 0, this.todayTips = 0, this.todayRatingSum = 0, this.todayRated = 0, this.now});
 
   /// Gains du service en cours (courses Bab Taxi et pourboires), ajoutés à la période en cours.
   final double todayRides;
   final double todayTips;
+
+  /// Notes du service en cours (somme et nombre), pour la prime qualité du mois.
+  final int todayRatingSum;
+  final int todayRated;
 
   /// Date du jour (tests).
   final DateTime? now;
@@ -27,6 +34,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
   static const _sources = [
     (ExtraSource.rides, Icons.alt_route, 'earnSrcRides'),
+    (ExtraSource.rating, Icons.star_rounded, 'earnSrcRating'),
     (ExtraSource.tips, Icons.volunteer_activism_outlined, 'earnSrcTips'),
     (ExtraSource.ads, Icons.campaign_outlined, 'earnSrcAds'),
     (ExtraSource.fuel, Icons.local_gas_station_outlined, 'earnSrcFuel'),
@@ -35,7 +43,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
   List<EarningsPeriod> get _periods {
     final now = widget.now ?? DateTime.now();
     return _monthly
-        ? driverEarnings.months(now, todayRides: widget.todayRides, todayTips: widget.todayTips)
+        ? driverEarnings.months(now,
+            todayRides: widget.todayRides,
+            todayTips: widget.todayTips,
+            todayRatingSum: widget.todayRatingSum,
+            todayRated: widget.todayRated)
         : driverEarnings.weeks(now, todayRides: widget.todayRides, todayTips: widget.todayTips);
   }
 
@@ -80,23 +92,31 @@ class _EarningsScreenState extends State<EarningsScreen> {
             title: s.t('earnSources'),
             child: Column(children: [
               for (final (src, icon, key) in _sources)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Row(children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(10)),
-                      child: Icon(icon, size: 19, color: AppColors.moroccoGreen),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(s.t(key), style: const TextStyle(fontSize: 14))),
-                    Text('+${_dh(cur.extra[src] ?? 0)}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.moroccoGreen)),
-                  ]),
-                ),
+                if (cur.extra.containsKey(src))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(10)),
+                        child: Icon(icon, size: 19, color: AppColors.moroccoGreen),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(s.t(key), style: const TextStyle(fontSize: 14))),
+                      Text('+${_dh(cur.extra[src] ?? 0)}',
+                          style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.moroccoGreen)),
+                    ]),
+                  ),
             ]),
           ),
+          const SizedBox(height: 12),
+          _ratingBonusBox(_monthly
+              ? cur
+              : driverEarnings
+                  .months(widget.now ?? DateTime.now(),
+                      todayRatingSum: widget.todayRatingSum, todayRated: widget.todayRated)
+                  .last),
           const SizedBox(height: 12),
           _box(title: s.t('earnHistory'), child: _chart(periods)),
           const SizedBox(height: 12),
@@ -118,12 +138,12 @@ class _EarningsScreenState extends State<EarningsScreen> {
           Text('+${_dh(cur.extraTotal)}',
               key: const ValueKey('earnExtraTotal'),
               style: const TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.w900, height: 1.1)),
-          Text(s.t('earnExtra'), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(s.t('earnExtra'),
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 6, children: [
             _pill('${_pct(cur.increase)} ${s.t('earnVsBefore')}'),
-            if (streak >= 2)
-              _pill(s.t(_monthly ? 'earnStreakMonths' : 'earnStreakWeeks').replaceAll('{n}', '$streak')),
+            if (streak >= 2) _pill(s.t(_monthly ? 'earnStreakMonths' : 'earnStreakWeeks').replaceAll('{n}', '$streak')),
           ]),
           const SizedBox(height: 10),
           Text(s.t('earnKeepGoing'), style: const TextStyle(color: Colors.white, fontSize: 14)),
@@ -153,7 +173,9 @@ class _EarningsScreenState extends State<EarningsScreen> {
                   width: c.maxWidth * value / max,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: extra > 0 ? AppColors.moroccoGreen.withValues(alpha: .45) : AppColors.muted.withValues(alpha: .35),
+                    color: extra > 0
+                        ? AppColors.moroccoGreen.withValues(alpha: .45)
+                        : AppColors.muted.withValues(alpha: .35),
                     borderRadius: BorderRadius.horizontal(
                         left: const Radius.circular(8), right: Radius.circular(extra > 0 ? 0 : 8)),
                   ),
@@ -229,6 +251,58 @@ class _EarningsScreenState extends State<EarningsScreen> {
             style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.moroccoGreen)),
       ]),
     ]);
+  }
+
+  /// Prime qualité du mois : note moyenne de toutes les courses du mois, prime estimée (versée en
+  /// fin de mois) et paliers.
+  Widget _ratingBonusBox(EarningsPeriod month) {
+    final dec = S(langNotifier.value).decimalPoint;
+    String num(double v, int d) => dec ? v.toStringAsFixed(d) : v.toStringAsFixed(d).replaceAll('.', ',');
+    final per = RatingBonus.perRide(month.rating);
+    final bonus = month.extra[ExtraSource.rating] ?? 0;
+    final next = RatingBonus.tiers.reversed.where((t) => t.$1 > month.rating + 1e-9).firstOrNull;
+    return Container(
+      key: const ValueKey('ratingBonus'),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF6E0),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gold, width: 1.5),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.star_rounded, color: AppColors.gold, size: 26),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(s.t('ratingBonusTitle'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900))),
+          Text('+${_dh(bonus)}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.gold)),
+        ]),
+        const SizedBox(height: 6),
+        Text(
+          s
+              .t('ratingBonusStatus')
+              .replaceAll('{avg}', num(month.rating, 2))
+              .replaceAll('{rides}', '${month.ratedRides}')
+              .replaceAll('{per}', dh(per)),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        if (next != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              s.t('ratingBonusNext').replaceAll('{avg}', num(next.$1, 1)).replaceAll('{per}', dh(next.$2)),
+              style: const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w700),
+            ),
+          ),
+        const SizedBox(height: 6),
+        Text(
+          s.t('ratingBonusRule').replaceAll('{rides}', '${RatingBonus.minRides}') +
+              RatingBonus.tiers.map((t) => '\n★ ${num(t.$1, 1)} → ${dh(t.$2)}').join(),
+          style: const TextStyle(fontSize: 13, color: AppColors.muted),
+        ),
+      ]),
+    );
   }
 
   Widget _beforeSetting() => _box(

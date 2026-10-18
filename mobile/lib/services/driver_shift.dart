@@ -7,7 +7,8 @@ class ShiftRider {
       required this.dropIdx,
       required this.fare,
       this.seats = 1,
-      this.tip = 0});
+      this.tip = 0,
+      this.rating = 0});
   final String name;
 
   /// Positions sur l'itinéraire du taxi (indices des points).
@@ -17,8 +18,34 @@ class ShiftRider {
 
   /// Pourboire laissé par carte à la fin de la course (démo).
   final double tip;
+
+  /// Note laissée par le passager à la fin de la course (démo ; 0 = pas de note).
+  final int rating;
   final int seats;
   bool onBoard = false;
+}
+
+/// Prime qualité payée par Bab Taxi au chauffeur en fin de mois (rien n'est demandé au passager).
+/// Elle dépend de la note moyenne de toutes les courses notées du mois : chaque course compte,
+/// et la prime est versée pour chaque course Bab Taxi du mois.
+class RatingBonus {
+  /// Paliers : note moyenne minimale → prime par course du mois.
+  static const tiers = [(4.9, 2.0), (4.8, 1.5), (4.6, 1.0)];
+
+  /// Nombre minimum de courses notées dans le mois pour toucher la prime.
+  static const minRides = 20;
+
+  /// Prime par course pour une note moyenne donnée (0 sous le dernier palier).
+  static double perRide(double average) {
+    for (final (min, amount) in tiers) {
+      if (average >= min - 1e-9) return amount;
+    }
+    return 0;
+  }
+
+  /// Prime du mois : prime par course × nombre de courses du mois.
+  static double forMonth({required double average, required int rides}) =>
+      rides >= minRides ? perRide(average) * rides : 0;
 }
 
 class DriverShift {
@@ -39,6 +66,16 @@ class DriverShift {
 
   /// Pourboires reçus aujourd'hui (payés par carte par les passagers).
   double tipsToday = 0;
+
+  /// Notes reçues aujourd'hui (somme et nombre), pour la prime qualité du mois.
+  int ratingSumToday = 0;
+  int ratedToday = 0;
+
+  void _rated(ShiftRider r) {
+    if (r.rating <= 0) return;
+    ratingSumToday += r.rating;
+    ratedToday++;
+  }
 
   int get onBoard => riders.where((r) => r.onBoard).fold(0, (n, r) => n + r.seats) + hailOnBoard;
 
@@ -82,6 +119,7 @@ class DriverShift {
     ridesToday++;
     earningsToday += r.fare;
     tipsToday += r.tip;
+    _rated(r);
   }
 
   /// Met à jour les montées et descentes quand le taxi atteint la position [pos].
@@ -101,6 +139,7 @@ class DriverShift {
       ridesToday++;
       earningsToday += r.fare;
       tipsToday += r.tip;
+      _rated(r);
       dropped.add(r);
     }
     return (pickedUp: pickedUp, dropped: dropped);
