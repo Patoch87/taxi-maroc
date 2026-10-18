@@ -359,6 +359,24 @@ const { chromium } = require('playwright');
     await shot('40-criteres-premium', 2000);
   });
 
+  // Chauffeur : « Mes gains », ce que Bab Taxi rapporte en plus par rapport à avant.
+  await step('mes-gains', async () => {
+    await open();
+    await page.mouse.click(32, 34); // menu
+    await page.waitForTimeout(1000);
+    await tap('Mode chauffeur');
+    await shot('48-chauffeur-gains-de-la-semaine', 2500);
+    await tap('cette semaine avec Bab Taxi');
+    await shot('49-mes-gains-semaine', 2000);
+    await page.mouse.move(195, 500);
+    await page.mouse.wheel(0, 700);
+    await shot('50-mes-gains-historique', 1200);
+    await page.mouse.wheel(0, -1400);
+    await page.waitForTimeout(600);
+    await page.mouse.click(285, 76); // « Mois »
+    await shot('51-mes-gains-mois', 1500);
+  });
+
   // Publicités (annonceurs fictifs, « exemple fictif ») : les six emplacements.
   // Bannière d'accueil : logo, titre court et bon de réduction.
   await step('pub-accueil', async () => {

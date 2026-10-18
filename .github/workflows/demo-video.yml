@@ -3,6 +3,7 @@ name: Vidéo de démo
 # Vidéo de démonstration (MP4, portrait) enregistrée sur la version web de l'application.
 # Publiée sur la branche « captures » (demo/taxi-maroc-demo.mp4) et dans la version « demo » :
 # https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc-demo.mp4
+# Vidéo pour les chauffeurs (avec « Mes gains ») : taxi-maroc-demo-chauffeurs.mp4, mêmes emplacements.
 on:
   workflow_run:
     workflows: [CI]
@@ -62,15 +63,28 @@ jobs:
           if-no-files-found: ignore
       - name: Montage
         run: python3 .github/demo/compose.py video taxi-maroc-demo.mp4
+      # Vidéo pour les chauffeurs : service, course, puis « Mes gains » (sans la partie passager).
+      # En cas d'échec, la vidéo principale est quand même publiée.
+      - name: Enregistrement (vidéo chauffeurs)
+        id: chauffeurs
+        continue-on-error: true
+        env:
+          DEMO_SCENARIO: chauffeur
+        run: |
+          (cd mobile/build/web && python3 -m http.server 8765 >/dev/null 2>&1 &) || true
+          sleep 2
+          mkdir -p video-chauffeurs
+          node .github/demo/record.js http://localhost:8765/ video-chauffeurs
+          python3 .github/demo/compose.py video-chauffeurs taxi-maroc-demo-chauffeurs.mp4
       - uses: actions/upload-artifact@v4
         with:
           name: taxi-maroc-demo
-          path: taxi-maroc-demo.mp4
+          path: taxi-maroc-demo*.mp4
       - name: Publier dans la version « demo »
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload demo taxi-maroc-demo.mp4 --clobber -R "${{ github.repository }}" \
+          gh release upload demo taxi-maroc-demo*.mp4 --clobber -R "${{ github.repository }}" \
             || echo "Version « demo » absente : vidéo publiée seulement sur la branche captures."
       - name: Publier sur la branche captures
         run: |
@@ -81,7 +95,7 @@ jobs:
               mkdir -p /tmp/cap && git -C /tmp/cap init -q -b captures
             fi
             mkdir -p /tmp/cap/demo
-            cp taxi-maroc-demo.mp4 /tmp/cap/demo/
+            cp "$GITHUB_WORKSPACE"/taxi-maroc-demo*.mp4 /tmp/cap/demo/
             cd /tmp/cap
             git config user.name "github-actions"
             git config user.email "github-actions@users.noreply.github.com"

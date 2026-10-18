@@ -8,8 +8,12 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
+// Scénario : « complet » (passager, chauffeur, rentabilité) ou « chauffeur » (vidéo pour les
+// chauffeurs : service, course, puis « Mes gains »). Variable d'environnement DEMO_SCENARIO.
+const SCENARIO = process.env.DEMO_SCENARIO || 'complet';
+const DRIVERS = SCENARIO === 'chauffeur';
 // Texte de la carte de fin (modifiable ici).
-const END_LINE = 'Casablanca 2026 → Mondial 2030';
+const END_LINE = DRIVERS ? 'Plus de courses sur votre route, zéro commission' : 'Casablanca 2026 → Mondial 2030';
 // Écran de téléphone 390 x 634 points, densité 2 : images 780 x 1268, ramenées à 720 x 1170 au montage ;
 // la légende (110 px) est ajoutée dessous.
 const VIEW = { width: 390, height: 634 };
@@ -206,7 +210,12 @@ const [url, out] = process.argv.slice(2);
   const ONLY = process.env.DEMO_ONLY; // tests : « client » ou « driver » seulement
 
   // Carte de titre
-  await page.goto(card({ title: 'Bab Taxi', line: 'Le taxi officiel marocain, simple, juste et sûr' }));
+  await page.goto(
+    card({
+      title: 'Bab Taxi',
+      line: DRIVERS ? 'Chauffeurs de taxi : gagnez plus avec Bab Taxi' : 'Le taxi officiel marocain, simple, juste et sûr',
+    }),
+  );
   await wait(3500);
 
   // Chargement de l'application : coupé au montage. « video=1 » : sans suggestions de restaurants ;
@@ -219,7 +228,7 @@ const [url, out] = process.argv.slice(2);
   skip(false);
 
   // ---------------------------------------------------------------- Chapitre 2 : expérience client
-  if (!ONLY || ONLY === 'client') {
+  if (!DRIVERS && (!ONLY || ONLY === 'client')) {
     await chapterCard(
       {
         kicker: 'Chapitre 1/3 · Passagers',
@@ -351,14 +360,19 @@ const [url, out] = process.argv.slice(2);
     skip(false);
     await chapterCard(
       {
-        kicker: 'Chapitre 2/3 · Chauffeurs',
+        kicker: DRIVERS ? 'Démonstration en direct' : 'Chapitre 2/3 · Chauffeurs',
         title: 'Pour les chauffeurs',
-        items:
-          'Il garde 100 % du prix du compteur~Aucune commission sur les courses|' +
-          'Les passagers sur son chemin~Fini les arrêts à répétition|' +
-          '« Je rentre chez moi »~Seulement des passagers sur sa route|' +
-          'Dans Waze ou Google Maps~Les demandes arrivent en notification|' +
-          'Revenus en plus~50 % de la publicité des écrans de son taxi',
+        items: DRIVERS
+          ? 'Il garde 100 % du prix du compteur~Aucune commission sur les courses|' +
+            'Les passagers sur son chemin~Ses places vides deviennent des courses|' +
+            '« Je rentre chez moi »~Seulement des passagers sur sa route|' +
+            'Dans Waze ou Google Maps~Les demandes arrivent en notification|' +
+            'Mes gains~Chaque semaine, ce qu’il gagne de plus qu’avant'
+          : 'Il garde 100 % du prix du compteur~Aucune commission sur les courses|' +
+            'Les passagers sur son chemin~Fini les arrêts à répétition|' +
+            '« Je rentre chez moi »~Seulement des passagers sur sa route|' +
+            'Dans Waze ou Google Maps~Les demandes arrivent en notification|' +
+            'Revenus en plus~50 % de la publicité des écrans de son taxi',
       },
       8000,
     );
@@ -437,27 +451,82 @@ const [url, out] = process.argv.slice(2);
     await expectScreen('dépose', 'Passager déposé', 2);
     caption('Course terminée : gains et pourboires du jour');
     await wait(4500);
+
+    // Vidéo chauffeurs : « Mes gains », ce que Bab Taxi rapporte en plus par rapport à avant.
+    if (DRIVERS) {
+      caption(null);
+      skip(true);
+      // Une demande peut recouvrir le bandeau des gains : on la refuse d'abord.
+      if (await present('Refuser')) await tap('Refuser').catch(() => {});
+      await tapFor('mes gains', 'Mes gains', 'de plus grâce à Bab Taxi', 15);
+      await wait(800);
+      skip(false);
+      caption('Mes gains : ce que Bab Taxi rapporte en plus cette semaine');
+      await wait(5000);
+      caption('Avant Bab Taxi, avec Bab Taxi : la différence se voit');
+      await wait(3500);
+      caption("D'où viennent les gains en plus");
+      await page.mouse.move(VIEW.width / 2, VIEW.height / 2);
+      for (let i = 0; i < 4; i++) {
+        await page.mouse.wheel(0, 90);
+        await wait(250);
+      }
+      await expectScreen('origine des gains', 'Courses en plus sur votre route', 5);
+      await wait(3500);
+      caption('Semaine après semaine, les gains en plus montent');
+      for (let i = 0; i < 4; i++) {
+        await page.mouse.wheel(0, 110);
+        await wait(250);
+      }
+      await expectScreen('historique', 'En plus sur les périodes terminées', 5);
+      await wait(4000);
+      caption(null);
+      skip(true);
+      for (let i = 0; i < 10; i++) {
+        await page.mouse.wheel(0, -200);
+        await wait(120);
+      }
+      await tapFor('mois', 'Mois', 'Ce mois-ci', 10);
+      await wait(800);
+      skip(false);
+      caption('Le bilan du mois, pour garder la motivation');
+      await wait(5500);
+      await chapterCard(
+        {
+          kicker: 'En résumé',
+          title: 'Ce que Bab Taxi change pour vous',
+          items:
+            'Plus de courses~Des passagers sur votre route, payés au compteur|' +
+            'Zéro commission~Le prix de la course reste à vous|' +
+            'Mes gains~Chaque semaine, ce que vous gagnez de plus qu’avant|' +
+            'Gratuit~Aucun abonnement obligatoire',
+        },
+        8000,
+      );
+    }
   }
 
   // ---------------------------------------------------------------- Chapitre 3 : rentabilité
   caption(null);
-  await page.goto(
-    card({
-      kicker: 'Chapitre 3/3 · Rentabilité',
-      title: "D'où vient l'argent",
-      items:
-        'Courses partagées : 0 MAD~Le passager paie le compteur, le chauffeur garde tout|' +
-        'Licences État et villes~Suivi en temps réel pour l’Intérieur et le Transport|' +
-        'Publicité dans l’appli et les taxis~Selon le trajet, jamais selon le revenu|' +
-        'Options payées~Seul (+3 MAD), premium, touristes et aéroport|' +
-        'Données anonymisées et entreprises~Conformes à la loi 09-08 (CNDP)',
-    }),
-  );
-  await wait(8000);
-  await page.goto(card({ kicker: 'Rentabilité', title: 'Rentable dès 2028', slide: 'chart' }));
-  await wait(7000);
-  await page.goto(card({ kicker: 'Rentabilité', title: 'Les chiffres clés', slide: 'kpis' }));
-  await wait(7000);
+  if (!DRIVERS) {
+    await page.goto(
+      card({
+        kicker: 'Chapitre 3/3 · Rentabilité',
+        title: "D'où vient l'argent",
+        items:
+          'Courses partagées : 0 MAD~Le passager paie le compteur, le chauffeur garde tout|' +
+          'Licences État et villes~Suivi en temps réel pour l’Intérieur et le Transport|' +
+          'Publicité dans l’appli et les taxis~Selon le trajet, jamais selon le revenu|' +
+          'Options payées~Seul (+3 MAD), premium, touristes et aéroport|' +
+          'Données anonymisées et entreprises~Conformes à la loi 09-08 (CNDP)',
+      }),
+    );
+    await wait(8000);
+    await page.goto(card({ kicker: 'Rentabilité', title: 'Rentable dès 2028', slide: 'chart' }));
+    await wait(7000);
+    await page.goto(card({ kicker: 'Rentabilité', title: 'Les chiffres clés', slide: 'kpis' }));
+    await wait(7000);
+  }
 
   // Carte de fin
   caption(null);

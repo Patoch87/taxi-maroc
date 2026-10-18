@@ -1126,6 +1126,32 @@ class S {
       "البون تزاد ف العروض ديالي",
       "Voucher added to My offers"
     ],
+    // Tableau de bord des gains du chauffeur (« Mes gains »)
+    'myEarnings': ["Mes gains", "أرباحي", "الربح ديالي", "My earnings"],
+    'myEarningsDesc': ["Ce que Bab Taxi vous rapporte en plus", "ما يضيفه لك Bab Taxi من دخل", "شحال كتربح كثر مع Bab Taxi", "What Bab Taxi adds to your income"],
+    'earnWeek': ["Semaine", "الأسبوع", "السيمانة", "Week"],
+    'earnMonth': ["Mois", "الشهر", "الشهر", "Month"],
+    'earnThisWeek': ["Cette semaine", "هذا الأسبوع", "هاد السيمانة", "This week"],
+    'earnThisMonth': ["Ce mois-ci", "هذا الشهر", "هاد الشهر", "This month"],
+    'earnExtra': ["de plus grâce à Bab Taxi", "إضافية بفضل Bab Taxi", "زايدين بفضل Bab Taxi", "extra thanks to Bab Taxi"],
+    'earnVsBefore': ["par rapport à avant", "مقارنة بما قبل", "على قبل", "compared with before"],
+    'earnBefore': ["Avant Bab Taxi", "قبل Bab Taxi", "قبل Bab Taxi", "Before Bab Taxi"],
+    'earnWithBab': ["Avec Bab Taxi", "مع Bab Taxi", "مع Bab Taxi", "With Bab Taxi"],
+    'earnSources': ["D'où viennent vos gains en plus", "من أين تأتي أرباحك الإضافية", "منين جا الربح الزايد", "Where your extra earnings come from"],
+    'earnSrcRides': ["Courses en plus sur votre route", "رحلات إضافية على طريقك", "كورسات زايدين فطريقك", "Extra rides along your route"],
+    'earnSrcTips': ["Pourboires par carte", "إكراميات بالبطاقة", "البوربوار بالكارط", "Card tips"],
+    'earnSrcAds': ["Votre part de la publicité", "حصتك من الإعلانات", "النصيب ديالك من الإشهار", "Your share of advertising"],
+    'earnSrcFuel': ["Carburant économisé (moins de km à vide)", "وقود موفر (كيلومترات فارغة أقل)", "المازوط اللي وفرتي (كيلومترات خاوية قل)", "Fuel saved (fewer empty km)"],
+    'earnHistory': ["Vos gains en plus, période après période", "أرباحك الإضافية، فترة بعد فترة", "الربح الزايد، مرة على مرة", "Your extra earnings over time"],
+    'earnStreakWeeks': ["{n} semaines de suite en hausse 🔥", "{n} أسابيع متتالية في ارتفاع 🔥", "{n} سيمانات تابعين وهو طالع 🔥", "{n} weeks in a row going up 🔥"],
+    'earnStreakMonths': ["{n} mois de suite en hausse 🔥", "{n} أشهر متتالية في ارتفاع 🔥", "{n} شهورا تابعين وهو طالع 🔥", "{n} months in a row going up 🔥"],
+    'earnTotal': ["En plus sur les périodes terminées", "الإضافي في الفترات المنتهية", "الزايد فالمدة اللي سالات", "Extra over completed periods"],
+    'earnBeforeSetting': ["Ce que je gagnais avant, par jour", "ما كنت أكسبه قبل، في اليوم", "شحال كنت كنربح قبل، فالنهار", "What I earned before, per day"],
+    'earnBeforeHelp': ["Indiquez votre moyenne avant Bab Taxi : la comparaison se fait avec elle.", "أدخل متوسط دخلك قبل Bab Taxi: المقارنة تتم معه.", "حط المعدل ديالك قبل Bab Taxi: المقارنة كتكون معاه.", "Enter your average before Bab Taxi: the comparison uses it."],
+    'earnNote': ["Démo : historique simulé. « Avant » est la moyenne que vous indiquez ; le carburant économisé est estimé.", "تجريبي: سجل افتراضي. «قبل» هو المتوسط الذي تدخله؛ الوقود الموفر تقديري.", "تجربة: التاريخ ماشي حقيقي. «قبل» هو المعدل اللي دخلتي؛ المازوط الموفر تقدير.", "Demo: simulated history. “Before” is the average you enter; fuel saved is an estimate."],
+    'earnKeepGoing': ["Continuez : chaque course Bab Taxi compte !", "واصل: كل رحلة مع Bab Taxi لها قيمتها!", "زيد القدام: كل كورسة مع Bab Taxi كتحسب!", "Keep going: every Bab Taxi ride counts!"],
+    'earnWeekChip': ["cette semaine avec Bab Taxi", "هذا الأسبوع مع Bab Taxi", "هاد السيمانة مع Bab Taxi", "this week with Bab Taxi"],
+    'monthsShort': ["Janv.,Févr.,Mars,Avr.,Mai,Juin,Juil.,Août,Sept.,Oct.,Nov.,Déc.", "يناير,فبراير,مارس,أبريل,مايو,يونيو,يوليو,أغسطس,سبتمبر,أكتوبر,نوفمبر,ديسمبر", "يناير,فبراير,مارس,أبريل,ماي,يونيو,يوليوز,غشت,شتنبر,أكتوبر,نونبر,دجنبر", "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec"],
   };
 
   /// Clés et textes des 4 langues de base (fr, ar, dr, en).

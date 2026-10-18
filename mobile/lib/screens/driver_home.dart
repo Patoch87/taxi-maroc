@@ -7,10 +7,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gm;
 import 'package:latlong2/latlong.dart';
 
+import 'earnings_screen.dart';
 import 'premium_driver_screen.dart';
 import 'search_screen.dart';
 import '../main.dart';
 import '../services/demo.dart';
+import '../services/driver_earnings.dart';
 import '../services/driver_shift.dart';
 import '../services/live.dart';
 import '../services/location.dart';
@@ -248,6 +250,11 @@ class _DriverHomeState extends State<DriverHome> {
       _shift.hailOnBoard = 0;
     });
   }
+
+  void _openEarnings() => Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (_) => EarningsScreen(todayRides: _shift.earningsToday, todayTips: _shift.tipsToday)));
 
   void _onTick() {
     if (!mounted || _route.length < 2) return;
@@ -925,7 +932,16 @@ class _DriverHomeState extends State<DriverHome> {
         ),
       );
 
-  Widget _earningsCard() => Container(
+  Widget _earningsCard() => Semantics(
+        button: true,
+        label: s.t('myEarnings'),
+        child: GestureDetector(
+          onTap: _openEarnings,
+          child: _earningsBar(),
+        ),
+      );
+
+  Widget _earningsBar() => Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
@@ -1399,6 +1415,8 @@ class _DriverHomeState extends State<DriverHome> {
   }
 
   Widget _offlinePanel() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _weekGainsChip(),
+        const SizedBox(height: 12),
         Text(s.t('chooseTaxiType'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         Row(children: [
@@ -1451,6 +1469,43 @@ class _DriverHomeState extends State<DriverHome> {
           label: Text(s.t('goOnline'), style: const TextStyle(fontSize: 18)),
         ),
       ]);
+
+  /// Hors service : ce que Bab Taxi a rapporté en plus cette semaine, pour donner envie de continuer.
+  Widget _weekGainsChip() {
+    final week = driverEarnings
+        .weeks(DateTime.now(), todayRides: _shift.earningsToday, todayTips: _shift.tipsToday)
+        .last;
+    return Semantics(
+      button: true,
+      child: Material(
+        color: AppColors.greenSoft,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _openEarnings,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(children: [
+              const Icon(Icons.trending_up, color: AppColors.moroccoGreen),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                        text: '+${dh(week.extraTotal)} ',
+                        style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.moroccoGreen)),
+                    TextSpan(text: s.t('earnWeekChip')),
+                  ]),
+                  style: const TextStyle(fontSize: 15),
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.moroccoGreen),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _searchMyDest() async {
     final place = await Navigator.push<Place>(context, MaterialPageRoute(builder: (_) => SearchScreen(near: _me)));
@@ -1665,6 +1720,15 @@ class _DriverHomeState extends State<DriverHome> {
               ),
             ),
             const Divider(),
+            // Ce que Bab Taxi rapporte en plus, comparé à avant.
+            ListTile(
+              key: const ValueKey('myEarnings'),
+              leading: const Icon(Icons.trending_up, color: AppColors.moroccoGreen),
+              title: Text(s.t('myEarnings'), style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(s.t('myEarningsDesc'), style: const TextStyle(color: AppColors.muted)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _openEarnings,
+            ),
             // Critères, contrôles et gains du badge Premium.
             ListTile(
               key: const ValueKey('becomePremium'),
