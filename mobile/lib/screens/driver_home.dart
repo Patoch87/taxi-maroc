@@ -1839,12 +1839,12 @@ class _DriverHomeState extends State<DriverHome> {
           alignment: Alignment.bottomCenter,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             // Une demande remplace le panneau le temps de la réponse : la carte reste visible au maximum.
+            // « Démarrer la course » reste visible, même quand une nouvelle demande arrive.
+            if (_online) ..._readyToStart.map(_startRideCard),
             if (_request != null)
               _requestCard()
-            else ...[
-              if (_online) ..._readyToStart.map(_startRideCard),
+            else
               Flexible(child: BottomPanel(child: _online ? _onlinePanel() : _offlinePanel())),
-            ],
           ]),
         ),
       ]),
