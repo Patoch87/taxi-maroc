@@ -1,0 +1,75 @@
+name: Captures Google Maps
+
+# Captures et vidéos de démo avec la vraie carte Google Maps (pour la vidéo de présentation).
+# La version web construite avec la clé n'est jamais publiée : seules les images et vidéos le sont,
+# sur la branche « captures-google ».
+on:
+  push:
+    branches: [captures-google-maps]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  captures:
+    runs-on: ubuntu-latest
+    environment: MAPS_API_KEY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+      - name: Version web avec Google Maps
+        working-directory: mobile
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: |
+          flutter pub get
+          flutter build web --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=WEB_GOOGLE_MAPS=true
+          sed -i "s|</head>|<script src=\"https://maps.googleapis.com/maps/api/js?key=$MAPS_API_KEY\"></script></head>|" build/web/index.html
+          cp ../.github/demo/card.html build/web/demo-card.html
+          cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png build/web/logo.png
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Navigateur, polices et ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-color-emoji fonts-noto-core fonts-noto-extra ffmpeg
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Captures
+        continue-on-error: true
+        run: |
+          (cd mobile/build/web && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          mkdir -p out/captures
+          node .github/captures/capture.js http://localhost:8765/ out/captures
+      - name: Vidéo passager et chauffeur
+        continue-on-error: true
+        run: |
+          mkdir -p video
+          node .github/demo/record.js http://localhost:8765/ video
+          python3 .github/demo/compose.py video out/demo-google.mp4
+      - name: Vidéo chauffeurs
+        continue-on-error: true
+        env:
+          DEMO_SCENARIO: chauffeur
+        run: |
+          mkdir -p video-chauffeurs
+          node .github/demo/record.js http://localhost:8765/ video-chauffeurs
+          python3 .github/demo/compose.py video-chauffeurs out/demo-google-chauffeurs.mp4
+      - name: Publier sur la branche captures-google
+        run: |
+          cp video/echec.png out/echec-passager.png 2>/dev/null || true
+          cp video-chauffeurs/echec.png out/echec-chauffeur.png 2>/dev/null || true
+          cd out
+          git init -q -b captures-google
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Captures Google Maps du commit $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" captures-google

@@ -10,8 +10,12 @@ enum NavApp { ask, inApp, waze, googleMaps }
 /// Clé Google Maps fournie à la compilation (`--dart-define=MAPS_API_KEY=…`), jamais dans le dépôt.
 const mapsApiKey = String.fromEnvironment('MAPS_API_KEY');
 
-/// La carte de l'application est Google Maps seulement avec une clé, et pas sur le web (démo).
-bool get useGoogleMaps => mapsApiKey.isNotEmpty && !kIsWeb;
+/// Version web avec Google Maps (`--dart-define=WEB_GOOGLE_MAPS=true`), pour les captures de la vidéo.
+const _webGoogleMaps = bool.fromEnvironment('WEB_GOOGLE_MAPS');
+
+/// La carte de l'application est Google Maps seulement avec une clé, et pas sur le web (démo),
+/// sauf pour les captures Google Maps.
+bool get useGoogleMaps => mapsApiKey.isNotEmpty && (!kIsWeb || _webGoogleMaps);
 
 /// Nom affiché des applications externes (noms de marque, identiques dans toutes les langues).
 String navAppName(NavApp app) => switch (app) {
