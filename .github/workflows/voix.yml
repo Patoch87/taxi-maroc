@@ -1,0 +1,35 @@
+name: Voix off ElevenLabs
+
+# Voix off du film de présentation Bab Taxi (textes dans .github/video/voix-textes.json).
+# Résultat publié sur la branche « voix-off ». Secret nécessaire : ELEVENLABS_API_KEY.
+# Variable VOICE_ID (dans voix-textes.json) vide : essais de voix ; renseignée : voix complète.
+on:
+  push:
+    branches: [video-voix]
+    paths: ['.github/video/**', '.github/workflows/voix.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  voix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Voix
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          if [ -z "$ELEVENLABS_API_KEY" ]; then echo "Secret ELEVENLABS_API_KEY absent"; exit 1; fi
+          export VOICE_ID=$(python3 -c "import json;print(json.load(open('.github/video/voix-textes.json')).get('voice_id',''))")
+          python3 .github/video/voix.py .github/video/voix-textes.json out
+      - name: Publier sur la branche voix-off
+        run: |
+          cd out
+          git init -q -b voix-off
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Voix off du commit $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" voix-off
