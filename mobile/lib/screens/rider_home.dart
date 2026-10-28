@@ -124,6 +124,9 @@ class _RiderHomeState extends State<RiderHome> {
   Duration _elapsed = Duration.zero;
   int _speed = 1;
   Timer? _moveTimer;
+
+  /// Démo : le chauffeur démarre la course quelques secondes après l'arrivée du taxi.
+  Timer? _boardTimer;
   int _rating = 0;
   double _tip = 0;
   final _tags = <String>{};
@@ -188,6 +191,7 @@ class _RiderHomeState extends State<RiderHome> {
     _ambientTimer?.cancel();
     _adTimer?.cancel();
     _moveTimer?.cancel();
+    _boardTimer?.cancel();
     _livePoll?.cancel();
     for (final t in _dispatchTimers) {
       t.cancel();
@@ -426,6 +430,8 @@ class _RiderHomeState extends State<RiderHome> {
     _startLeg(path, Duration(seconds: realSeconds.clamp(30, 75).round()), RiderStep.arriving, onEnd: () {
       setState(() => _step = RiderStep.arrived);
       _announceArrival();
+      // C'est le chauffeur qui démarre la course, une fois le passager à bord (simulé dans la démo).
+      _boardTimer = Timer(const Duration(seconds: 6), _driverStartedTrip);
     });
     _fit([...path, _me]);
     _announceDriver(c.driver);
@@ -536,7 +542,7 @@ class _RiderHomeState extends State<RiderHome> {
           _announceArrival();
         }
       case LiveStatus.onBoard:
-        if (_step != RiderStep.onTrip) return _liveStartTrip();
+        if (_step != RiderStep.onTrip) return _driverStartedTrip();
       case LiveStatus.done:
         _stopLive();
         setState(() => _step = RiderStep.done);
@@ -569,7 +575,7 @@ class _RiderHomeState extends State<RiderHome> {
     if (_forOther != null) _sharePassenger();
   }
 
-  /// Le chauffeur a confirmé la prise en charge (ou le passager a touché « Je suis dans le taxi »).
+  /// Test réel : le chauffeur a touché « Démarrer la course ».
   void _liveStartTrip() {
     _tripId = 'T${(DateTime.now().millisecondsSinceEpoch % 1000000).toString().padLeft(6, '0')}';
     setState(() {
@@ -680,8 +686,25 @@ class _RiderHomeState extends State<RiderHome> {
 
   String _clock(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-  void _startTrip() {
+  /// Le chauffeur a démarré la course : le passager le voit et le suivi du trajet commence.
+  void _driverStartedTrip() {
+    _boardTimer?.cancel();
+    if (!mounted || (_step != RiderStep.arrived && _step != RiderStep.arriving)) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      backgroundColor: AppColors.moroccoGreen,
+      content: Row(children: [
+        const Icon(Icons.play_circle_fill, color: Colors.white),
+        const SizedBox(width: 10),
+        Expanded(child: Text(s.t('tripStartedByDriver'), style: const TextStyle(fontWeight: FontWeight.w700))),
+      ]),
+    ));
+    _say(s.t('tripStartedByDriver'));
+    HapticFeedback.mediumImpact();
     if (live.enabled) return _liveStartTrip();
+    _startTrip();
+  }
+
+  void _startTrip() {
     // Identifiant de la course, repris dans le code des bons de réduction.
     _tripId = 'T${(DateTime.now().millisecondsSinceEpoch % 1000000).toString().padLeft(6, '0')}';
     // Durée réelle du trajet à 25 km/h, décomptée en temps réel.
@@ -1209,6 +1232,7 @@ class _RiderHomeState extends State<RiderHome> {
 
   void _reset() {
     _moveTimer?.cancel();
+    _boardTimer?.cancel();
     // Test réel : annuler la demande ou la course pas encore commencée.
     _stopLive(cancel: _step == RiderStep.dispatching || _step == RiderStep.arriving);
     for (final t in _dispatchTimers) {
@@ -1815,6 +1839,29 @@ class _RiderHomeState extends State<RiderHome> {
     );
   }
 
+  /// Taxi arrivé : le passager monte, c'est le chauffeur qui démarre la course.
+  Widget _waitDriverStart() => Semantics(
+        liveRegion: true,
+        child: Container(
+          key: const ValueKey('waitDriverStart'),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.moroccoGreen.withValues(alpha: .1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.moroccoGreen),
+          ),
+          child: Row(children: [
+            const SizedBox(
+                width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.moroccoGreen)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(s.t('waitDriverStart'),
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.moroccoGreen)),
+            ),
+          ]),
+        ),
+      );
+
   Widget _tripPanel() {
     final d = _driver!;
     final title = switch (_step) {
@@ -1903,7 +1950,7 @@ class _RiderHomeState extends State<RiderHome> {
           ),
         if (_step == RiderStep.arrived) ...[
           const SizedBox(height: 10),
-          FilledButton(onPressed: _startTrip, child: Text(s.t('startTrip'))),
+          _waitDriverStart(),
         ],
         if (_step != RiderStep.arrived)
           Row(children: [
@@ -2425,7 +2472,7 @@ class _RiderHomeState extends State<RiderHome> {
           driver: _driver!,
           countdown: _step == RiderStep.arrived ? null : _countdown,
           countdownLabel: _step == RiderStep.onTrip ? '${s.t('arrivalAt')} ${_clock(_arrivalTime)}' : null,
-          onStart: _step == RiderStep.arrived ? _startTrip : null,
+          note: _step == RiderStep.arrived ? s.t('waitDriverStart') : null,
           onSos: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
           onFastForward: _step == RiderStep.arrived ? null : _nextSpeed,
           speed: _speed,

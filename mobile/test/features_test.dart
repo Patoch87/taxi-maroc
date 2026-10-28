@@ -206,7 +206,7 @@ void main() {
     expect(find.text('SOS urgence'), findsOneWidget);
     final plate = tester.widget<SeniorPlate>(find.byType(SeniorPlate)).plate;
     expect(tester.widget<Text>(find.text(plate)).style!.fontSize, greaterThanOrEqualTo(40));
-    expect(find.text('Je suis dans le taxi'), findsNothing);
+    expect(find.text('Montez à bord : le chauffeur démarre la course'), findsNothing);
     expect(find.byType(FlutterMap), findsNothing);
     expect(tripHistory.isEmpty || !tripHistory.first.scheduled, isTrue);
 

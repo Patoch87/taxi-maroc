@@ -176,11 +176,10 @@ void main() {
     // Le taxi arrive : toujours pas d'offre.
     expect(find.text('Votre taxi arrive dans'), findsOneWidget);
     expect(find.text('Publicité'), findsNothing);
-    for (var i = 0; i < 90 && find.text('Je suis dans le taxi').evaluate().isEmpty; i++) {
+    // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+    for (var i = 0; i < 100 && find.textContaining('En route vers').evaluate().isEmpty; i++) {
       await tester.pump(const Duration(seconds: 1));
     }
-    await tester.ensureVisible(find.text('Je suis dans le taxi'));
-    await tester.tap(find.text('Je suis dans le taxi'));
     await tester.pump();
 
     // Passager à bord : l'offre apparaît, avec le badge de l'annonceur.

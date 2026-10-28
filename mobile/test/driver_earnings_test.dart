@@ -52,6 +52,7 @@ void main() {
     final shift = DriverShift();
     shift.accept(ShiftRider(name: 'Amina', pickupIdx: 1, dropIdx: 2, fare: 10, rating: 5));
     shift.accept(ShiftRider(name: 'Karim', pickupIdx: 1, dropIdx: 3, fare: 10, rating: 4));
+    shift.waitingAt(1).forEach(shift.pickUp);
     shift.advance(3);
     expect(shift.ratedToday, 2);
     expect(shift.ratingSumToday, 9);

@@ -271,7 +271,7 @@ class SeniorTrip extends StatelessWidget {
     required this.onSos,
     this.countdown,
     this.countdownLabel,
-    this.onStart,
+    this.note,
     this.onFastForward,
     this.speed = 1,
     this.extra,
@@ -281,7 +281,9 @@ class SeniorTrip extends StatelessWidget {
   final String? countdown;
   final String? countdownLabel;
   final VoidCallback onSos;
-  final VoidCallback? onStart;
+
+  /// Message sous le compte à rebours (taxi arrivé : le chauffeur démarre la course).
+  final String? note;
   final VoidCallback? onFastForward;
 
   /// Vitesse de la démo (×1 à ×4).
@@ -338,9 +340,16 @@ class SeniorTrip extends StatelessWidget {
               ),
             ),
           ],
-          if (onStart != null) ...[
+          if (note != null) ...[
             const SizedBox(height: 18),
-            SeniorButton(icon: Icons.directions_car, label: s.t('startTrip'), onTap: onStart!),
+            Semantics(
+              liveRegion: true,
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(color: AppColors.moroccoGreen, borderRadius: BorderRadius.circular(28)),
+                child: Text(note!, textAlign: TextAlign.center, style: seniorSmall.copyWith(color: Colors.white)),
+              ),
+            ),
           ],
           const SizedBox(height: 18),
           SeniorButton(icon: Icons.sos, label: s.t('sos'), onTap: onSos, color: AppColors.taxiRed),

@@ -1,0 +1,151 @@
+name: iPhone
+
+# Application iPhone (iOS), compilée sur un Mac de GitHub.
+# - Toujours : IPA non signée, publiée dans la version « ios »
+#   https://github.com/Patoch87/taxi-maroc/releases/download/ios/bab-taxi-ios-non-signe.ipa
+# - Si les secrets Apple sont présents : IPA signée et envoyée sur TestFlight
+#   (secrets IOS_CERTIFICATE_P12, IOS_CERTIFICATE_PASSWORD, IOS_PROVISIONING_PROFILE,
+#   APPSTORE_KEY_ID, APPSTORE_ISSUER_ID, APPSTORE_PRIVATE_KEY ; variables IOS_TEAM_ID, IOS_BUNDLE_ID).
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: ios
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    # Même clé Google Maps que l'APK (environnement GitHub « MAPS_API_KEY »).
+    environment: MAPS_API_KEY
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+      API_URL: ${{ vars.API_URL || 'https://bab-taxi.onrender.com' }}
+      BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'ma.taxi.taxiMaroc' }}
+      SIGNED: ${{ secrets.IOS_CERTIFICATE_P12 != '' && secrets.IOS_PROVISIONING_PROFILE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+      - run: flutter pub get
+
+      # Clé Google Maps pour iOS, lue au démarrage par AppDelegate.swift.
+      - name: Clé Google Maps
+        run: |
+          if [ -n "$MAPS_API_KEY" ]; then
+            /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $MAPS_API_KEY" ios/Runner/Info.plist
+            echo "::notice title=Google Maps::Clé présente"
+          else
+            echo "::warning title=Google Maps::Aucune clé MAPS_API_KEY : carte OpenStreetMap"
+          fi
+
+      - name: Identifiant de l'application
+        run: sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = ma\.taxi\.taxiMaroc/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID/g" ios/Runner.xcodeproj/project.pbxproj
+
+      # Version non signée : vérifie que l'application iPhone se compile, installable seulement
+      # après signature (compte Apple Developer, ou outil de type Sideloadly avec un identifiant Apple).
+      - name: Compilation non signée
+        run: |
+          flutter build ios --release --no-codesign --build-number=${{ github.run_number }} \
+            --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL"
+          mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          (cd build/ipa && zip -qry bab-taxi-ios-non-signe.ipa Payload)
+
+      # ---- Signature et TestFlight (seulement si les secrets Apple sont configurés)
+      - name: Certificat et profil Apple
+        if: env.SIGNED == 'true'
+        env:
+          P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          TEAM_ID: ${{ vars.IOS_TEAM_ID }}
+        run: |
+          KC=$RUNNER_TEMP/bab.keychain-db
+          security create-keychain -p bab "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p bab "$KC"
+          echo "$P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -k bab "$KC"
+          security list-keychain -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          echo "$PROFILE" | base64 --decode > $RUNNER_TEMP/bab.mobileprovision
+          security cms -D -i $RUNNER_TEMP/bab.mobileprovision > $RUNNER_TEMP/profile.plist
+          UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" $RUNNER_TEMP/profile.plist)
+          NAME=$(/usr/libexec/PlistBuddy -c "Print Name" $RUNNER_TEMP/profile.plist)
+          TEAM=${TEAM_ID:-$(/usr/libexec/PlistBuddy -c "Print TeamIdentifier:0" $RUNNER_TEMP/profile.plist)}
+          for d in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$d" && cp $RUNNER_TEMP/bab.mobileprovision "$d/$UUID.mobileprovision"
+          done
+          # Signature manuelle de l'application (pas des tests).
+          P=ios/Runner.xcodeproj/project.pbxproj
+          sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID; CODE_SIGN_STYLE = Manual; DEVELOPMENT_TEAM = $TEAM; CODE_SIGN_IDENTITY = \"Apple Distribution\"; PROVISIONING_PROFILE_SPECIFIER = \"$NAME\";/g" $P
+          cat > $RUNNER_TEMP/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$NAME</string></dict>
+          </dict></plist>
+          PLIST
+          sed -i '' 's/^          //' $RUNNER_TEMP/ExportOptions.plist
+
+      - name: IPA signée
+        if: env.SIGNED == 'true'
+        run: |
+          flutter build ipa --release --build-number=${{ github.run_number }} \
+            --export-options-plist=$RUNNER_TEMP/ExportOptions.plist \
+            --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL"
+          cp build/ios/ipa/*.ipa build/ipa/bab-taxi-ios.ipa
+
+      - name: Envoi sur TestFlight
+        if: env.SIGNED == 'true' && github.event_name != 'pull_request'
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          if [ -z "$KEY_ID" ] || [ -z "$ISSUER_ID" ] || [ -z "$PRIVATE_KEY" ]; then
+            echo "::warning title=TestFlight::Clé App Store Connect absente : IPA signée publiée, mais pas envoyée sur TestFlight"
+            exit 0
+          fi
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$PRIVATE_KEY" > ~/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8
+          xcrun altool --upload-app -t ios -f build/ipa/bab-taxi-ios.ipa --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+          echo "::notice title=TestFlight::Version ${{ github.run_number }} envoyée sur TestFlight"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bab-taxi-ios
+          path: mobile/build/ipa/*.ipa
+
+      - name: Publier l'application iPhone
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete ios --yes --cleanup-tag || true
+          # Pré-version : le lien « latest » reste celui de l'APK Android.
+          gh release create ios build/ipa/*.ipa \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Bab Taxi iPhone" \
+            --notes "bab-taxi-ios-non-signe.ipa : application iPhone non signée (à signer avant installation). bab-taxi-ios.ipa (si présente) : version signée, aussi envoyée sur TestFlight. Commit $GITHUB_SHA."
+
+      - name: Nettoyage du trousseau
+        if: always() && env.SIGNED == 'true'
+        run: security delete-keychain $RUNNER_TEMP/bab.keychain-db || true

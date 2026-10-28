@@ -9,14 +9,20 @@ void main() {
     expect(shift.onBoard, 0);
     expect(shift.freeSeats, 1); // deux places promises
 
+    // Le taxi arrive chez Amina : il l'attend, c'est le chauffeur qui démarre la course.
     shift.advance(10);
+    expect(shift.onBoard, 0);
+    expect(shift.waitingAt(10).map((x) => x.name), ['Amina']);
+    shift.pickUp(shift.waitingAt(10).single);
     expect(shift.onBoard, 1);
+    expect(shift.waitingAt(10), isEmpty);
     shift.advance(20);
+    shift.pickUp(shift.waitingAt(20).single);
     expect(shift.onBoard, 2);
     expect(shift.passengersToday, 2);
 
     final r = shift.advance(40);
-    expect(r.dropped.map((x) => x.name), ['Karim']);
+    expect(r.map((x) => x.name), ['Karim']);
     expect(shift.onBoard, 1);
     expect(shift.earningsToday, 9);
 
@@ -35,7 +41,7 @@ void main() {
     expect(shift.addHail(), isFalse);
     expect(shift.canAccept(1), isFalse);
     expect(shift.onBoard, 2);
-    shift.advance(5);
+    shift.pickUp(shift.waitingAt(5).single);
     expect(shift.onBoard, 3);
     expect(shift.passengersToday, 3);
     expect(shift.removeHail(), isTrue);
@@ -45,7 +51,7 @@ void main() {
   test('grand taxi : 6 places, réservation de 2 places', () {
     final shift = DriverShift(capacity: 6);
     shift.accept(ShiftRider(name: 'Omar', pickupIdx: 1, dropIdx: 3, fare: 24, seats: 2));
-    shift.advance(1);
+    shift.pickUp(shift.waitingAt(1).single);
     expect(shift.onBoard, 2);
     expect(shift.freeSeats, 4);
     expect(shift.nextStops().single.pickup, isFalse);

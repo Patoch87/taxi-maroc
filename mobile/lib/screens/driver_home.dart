@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gm;
 import 'package:latlong2/latlong.dart';
@@ -274,10 +275,13 @@ class _DriverHomeState extends State<DriverHome> {
         .where((r) => !r.onBoard)
         .map((r) => _exactMetersTo(r.pickupIdx))
         .fold<double?>(null, (m, v) => m == null || v < m ? v : m);
-    _carry += nextPickup != null && nextPickup <= 60 ? 1.0 : _metersPerTick;
+    // Passager au point de prise en charge : le taxi l'attend jusqu'à « Démarrer la course ».
+    final waiting = _shift.waitingAt(_pos).isNotEmpty;
+    _carry = waiting ? 0 : _carry + (nextPickup != null && nextPickup <= 60 ? 1.0 : _metersPerTick);
     const d = Distance();
     var moved = false;
-    while (_pos < _route.length - 1) {
+    while (!waiting && _pos < _route.length - 1) {
+      if (_shift.waitingAt(_pos).isNotEmpty) break;
       final seg = d(_route[_pos], _route[_pos + 1]);
       if (_carry < seg) break;
       _carry -= seg;
@@ -286,12 +290,7 @@ class _DriverHomeState extends State<DriverHome> {
     }
     if (moved) {
       // Démo : une Dacia Spring consomme environ 1 % tous les 2 km.
-      final events = _shift.advance(_pos);
-      if (_hazardFor != null && events.pickedUp.contains(_hazardFor)) _hideHazard();
-      for (final r in events.pickedUp) {
-        _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
-      }
-      for (final r in events.dropped) {
+      for (final r in _shift.advance(_pos)) {
         _toast(Icons.check_circle, _droppedText(r));
       }
       if (_follow) _moveCamera(_taxi, null);
@@ -465,6 +464,55 @@ class _DriverHomeState extends State<DriverHome> {
   final _liveTimers = <Timer>[];
   StreamSubscription<LatLng>? _gps;
   final _liveIds = <ShiftRider, String>{};
+
+  /// Test réel : passagers dont le taxi est arrivé près du point de prise en charge (GPS).
+  final _atPickup = <ShiftRider>{};
+
+  /// Passagers à prendre maintenant : le chauffeur démarre leur course quand ils sont à bord.
+  List<ShiftRider> get _readyToStart => _liveOn
+      ? [
+          for (final r in _shift.riders)
+            if (!r.onBoard && _atPickup.contains(r)) r
+        ]
+      : _shift.waitingAt(_pos);
+
+  /// « Démarrer la course » : le passager est à bord, il voit la course commencer sur son téléphone.
+  void _startRide(ShiftRider r) {
+    setState(() {
+      _shift.pickUp(r);
+      _atPickup.remove(r);
+    });
+    if (_hazardFor == r) _hideHazard();
+    final id = _liveIds[r];
+    if (id != null) _liveApi.pickedUp(id, live.deviceId).ignore();
+    HapticFeedback.mediumImpact();
+    _toast(Icons.play_circle_fill, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
+  }
+
+  /// Carte « Démarrer la course », toujours visible au-dessus du panneau : un seul grand bouton.
+  Widget _startRideCard(ShiftRider r) => Container(
+        key: ValueKey('startRide-${r.name}'),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          Text('${r.name}${r.seats > 1 ? ' (${r.seats})' : ''} · ${s.t('boardThenStart')}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.moroccoGreen, minimumSize: const Size(0, 54)),
+            onPressed: () => _startRide(r),
+            icon: const Icon(Icons.play_arrow_rounded, size: 28),
+            label: Text(s.t('startRide'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          ),
+        ]),
+      );
   final _declined = <String>{};
   String _plate = '';
 
@@ -534,6 +582,7 @@ class _DriverHomeState extends State<DriverHome> {
     _gps?.cancel();
     _gps = null;
     _liveIds.clear();
+    _atPickup.clear();
     _previewRoute = false;
     if (live.enabled) _liveApi.goOffline(live.deviceId).ignore();
   }
@@ -584,12 +633,8 @@ class _DriverHomeState extends State<DriverHome> {
       if (!r.onBoard) {
         final m = d(p, _route[min(r.pickupIdx, _route.length - 1)]);
         if (_pickupAlerts.check(r, m)) _showHazard(r);
-        if (m <= 40) {
-          setState(() => _shift.pickUp(r));
-          if (_hazardFor == r) _hideHazard();
-          if (id != null) _liveApi.pickedUp(id, live.deviceId).ignore();
-          _toast(Icons.person_add_alt_1, '${s.t('riderPickedUp')} : ${r.name} · ${_shift.onBoard}/${_shift.capacity}');
-        }
+        // Près du point de prise en charge : le bouton « Démarrer la course » apparaît.
+        if (m <= 150 && _atPickup.add(r)) setState(() {});
       } else if (d(p, _route[min(r.dropIdx, _route.length - 1)]) <= 60) {
         setState(() => _shift.dropOff(r));
         _liveIds.remove(r);
@@ -1796,8 +1841,10 @@ class _DriverHomeState extends State<DriverHome> {
             // Une demande remplace le panneau le temps de la réponse : la carte reste visible au maximum.
             if (_request != null)
               _requestCard()
-            else
+            else ...[
+              if (_online) ..._readyToStart.map(_startRideCard),
               Flexible(child: BottomPanel(child: _online ? _onlinePanel() : _offlinePanel())),
+            ],
           ]),
         ),
       ]),

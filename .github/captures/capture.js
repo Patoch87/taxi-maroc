@@ -76,7 +76,11 @@ const { chromium } = require('playwright');
   await target('Accepter').waitFor({ timeout: 40000 });
   await shot('7-chauffeur-demande', 1500);
   await tap('Accepter');
-  await shot('8-chauffeur-passager-a-bord', 12000);
+  // Arrivé chez le passager : le chauffeur démarre la course quand il est à bord.
+  await waitFor('Démarrer la course', 180);
+  await shot('8b-chauffeur-demarrer-la-course', 800);
+  await tap('Démarrer la course');
+  await shot('8-chauffeur-passager-a-bord', 3000);
 
   // Nouveautés : chaque partie est indépendante, un échec n'empêche pas les autres captures.
   const step = async (name, fn) => {
@@ -186,8 +190,8 @@ const { chromium } = require('playwright');
     await tap('Commander');
     await page.waitForTimeout(9000);
     await fast();
-    await waitFor('Je suis dans le taxi');
-    await tap('Je suis dans le taxi');
+    // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+    await waitFor('En route vers');
     await page.waitForTimeout(2000);
     // Passager à bord : l'offre apparaît en bas du panneau.
     await page.mouse.move(195, 760);
@@ -212,8 +216,8 @@ const { chromium } = require('playwright');
     await tap('Commander');
     await page.waitForTimeout(9000);
     await fast();
-    await waitFor('Je suis dans le taxi');
-    await tap('Je suis dans le taxi');
+    // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+    await waitFor('En route vers');
     await page.waitForTimeout(1500);
     await fast();
     await shot('28-acceleration-x4', 1500);
@@ -416,8 +420,8 @@ const { chromium } = require('playwright');
     await tap('Commander');
     await page.waitForTimeout(9000);
     await fast();
-    await waitFor('Je suis dans le taxi');
-    await tap('Je suis dans le taxi');
+    // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+    await waitFor('En route vers');
     await page.waitForTimeout(1500);
     await page.mouse.move(195, 760);
     for (let i = 0; i < 4; i++) {
@@ -466,8 +470,8 @@ const { chromium } = require('playwright');
     await tap('Commander');
     await page.waitForTimeout(9000);
     await fast();
-    await waitFor('Je suis dans le taxi');
-    await tap('Je suis dans le taxi');
+    // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+    await waitFor('En route vers');
     await page.waitForTimeout(2000);
     await page.mouse.move(195, 760);
     for (let i = 0; i < 3; i++) {

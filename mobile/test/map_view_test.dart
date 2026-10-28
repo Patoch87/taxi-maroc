@@ -69,12 +69,14 @@ void main() {
     expect(find.byTooltip('Appeler'), findsOneWidget);
     await tester.tap(handle);
     await tester.pump();
-    for (var i = 0; i < 100 && find.text('Je suis dans le taxi').evaluate().isEmpty; i++) {
+    // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+    for (var i = 0; i < 110 && find.textContaining('En route vers').evaluate().isEmpty; i++) {
       await tester.pump(const Duration(seconds: 1));
     }
-    await tester.ensureVisible(find.text('Je suis dans le taxi'));
-    await tester.tap(find.text('Je suis dans le taxi'));
-    await tester.pump();
+    // Le message « Le chauffeur a démarré la course » disparaît après quelques secondes.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
 
     await tester.drag(handle, const Offset(0, 300));
     await tester.pump();

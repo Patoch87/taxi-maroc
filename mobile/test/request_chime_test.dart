@@ -136,4 +136,32 @@ void main() {
     expect(find.byKey(const ValueKey('hazardBanner')), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('chez le passager : le taxi attend, c\'est le chauffeur qui démarre la course', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    settings.requestSound = false;
+    await tester.pumpWidget(MaterialApp(theme: buildTheme(), home: const DriverHome()));
+    await tester.pump();
+    await tester.tap(find.text('Commencer le service'));
+    var accepted = false;
+    for (var i = 0; i < 3000 && find.text('Démarrer la course').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      // Une seule demande acceptée : le passager à prendre est connu.
+      if (!accepted && find.text('Accepter').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Accepter'), warnIfMissed: false);
+        accepted = true;
+      }
+    }
+    expect(find.text('Démarrer la course'), findsOneWidget);
+    // Le taxi attend : la carte reste affichée tant que le chauffeur n'a pas démarré la course.
+    await tester.pump(const Duration(seconds: 5));
+    expect(find.text('Démarrer la course'), findsOneWidget);
+    await tester.tap(find.text('Démarrer la course'));
+    await tester.pump();
+    expect(find.text('Démarrer la course'), findsNothing);
+    expect(find.textContaining('Passager pris en charge'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

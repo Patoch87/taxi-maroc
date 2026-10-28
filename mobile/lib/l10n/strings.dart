@@ -212,7 +212,25 @@ class S {
     // Course
     'arrivingIn': ['Votre taxi arrive dans', 'الطاكسي سيصل خلال', 'الطاكسي غادي يوصل فـ', 'Your taxi arrives in'],
     'arrived': ['Votre taxi est arrivé', 'وصل الطاكسي', 'الطاكسي وصل', 'Your taxi has arrived'],
-    'startTrip': ['Je suis dans le taxi', 'أنا في الطاكسي', 'راني فالطاكسي', 'I\'m in the taxi'],
+    'waitDriverStart': [
+      'Montez à bord : le chauffeur démarre la course',
+      'اركب: السائق سيبدأ الرحلة',
+      'طلع: الشيفور غادي يبدا الكورصة',
+      'Get in: the driver will start the ride'
+    ],
+    'tripStartedByDriver': [
+      'Le chauffeur a démarré la course',
+      'بدأ السائق الرحلة',
+      'الشيفور بدا الكورصة',
+      'The driver started the ride'
+    ],
+    'startRide': ['Démarrer la course', 'بدء الرحلة', 'بدا الكورصة', 'Start ride'],
+    'boardThenStart': [
+      'Passager à bord ? Démarrez la course',
+      'الراكب في السيارة؟ ابدأ الرحلة',
+      'الكليان طلع؟ بدا الكورصة',
+      'Rider aboard? Start the ride'
+    ],
     'onTrip': ['En route vers', 'في الطريق إلى', 'فالطريق ل', 'On the way to'],
     'remaining': ['restantes', 'متبقية', 'باقيين', 'left'],
     'speaks': ['Parle', 'يتحدث', 'كيهضر', 'Speaks'],

@@ -19,11 +19,10 @@ Future<void> rideToTheEnd(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.ensureVisible(find.textContaining('Commander ·'));
   await tester.tap(find.textContaining('Commander ·'));
-  for (var i = 0; i < 100 && find.text('Je suis dans le taxi').evaluate().isEmpty; i++) {
+  // Taxi arrivé : c'est le chauffeur qui démarre la course (simulé dans la démo).
+  for (var i = 0; i < 110 && find.textContaining('En route vers').evaluate().isEmpty; i++) {
     await tester.pump(const Duration(seconds: 1));
   }
-  await tester.ensureVisible(find.text('Je suis dans le taxi'));
-  await tester.tap(find.text('Je suis dans le taxi'));
   await tester.pump();
   // Démo : ×1 → ×2 → ×3 → ×4, la vitesse est affichée sur le bouton.
   for (final x in [2, 3, 4]) {

@@ -106,7 +106,7 @@ class DriverShift {
     return true;
   }
 
-  /// Test réel : le passager est monté (le taxi est à son point de prise en charge).
+  /// Le chauffeur a touché « Démarrer la course » : le passager est à bord.
   void pickUp(ShiftRider r) {
     if (r.onBoard) return;
     r.onBoard = true;
@@ -122,18 +122,17 @@ class DriverShift {
     _rated(r);
   }
 
-  /// Met à jour les montées et descentes quand le taxi atteint la position [pos].
-  /// Renvoie les passagers montés et descendus à cette étape.
-  ({List<ShiftRider> pickedUp, List<ShiftRider> dropped}) advance(int pos) {
-    final pickedUp = <ShiftRider>[];
+  /// Passagers dont le taxi a atteint le point de prise en charge, pas encore à bord :
+  /// le taxi les attend jusqu'à ce que le chauffeur démarre la course ([pickUp]).
+  List<ShiftRider> waitingAt(int pos) => [
+        for (final r in riders)
+          if (!r.onBoard && pos >= r.pickupIdx) r
+      ];
+
+  /// Met à jour les descentes quand le taxi atteint la position [pos] et renvoie les passagers déposés.
+  /// Les montées ne sont jamais automatiques : c'est le chauffeur qui démarre chaque course.
+  List<ShiftRider> advance(int pos) {
     final dropped = <ShiftRider>[];
-    for (final r in riders) {
-      if (!r.onBoard && pos >= r.pickupIdx) {
-        r.onBoard = true;
-        passengersToday += r.seats;
-        pickedUp.add(r);
-      }
-    }
     for (final r in riders.where((r) => r.onBoard && pos >= r.dropIdx).toList()) {
       riders.remove(r);
       ridesToday++;
@@ -142,7 +141,7 @@ class DriverShift {
       _rated(r);
       dropped.add(r);
     }
-    return (pickedUp: pickedUp, dropped: dropped);
+    return dropped;
   }
 
   /// Prochains arrêts, dans l'ordre de la route : (est une montée, passager, indice).

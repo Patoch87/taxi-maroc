@@ -292,14 +292,13 @@ const [url, out] = process.argv.slice(2);
     // Attente du taxi en ×4 : coupée au montage.
     await fast();
     skip(true);
-    await expectScreen('arrivée du taxi', 'Je suis dans le taxi', 300);
+    await expectScreen('arrivée du taxi', 'Montez à bord', 300);
     skip(false);
-    caption('Le taxi est arrivé');
+    caption('Le taxi est arrivé : le passager monte, le chauffeur démarre la course');
     await wait(2500);
     // Montée à bord : l'offre du commerçant (Caribou Coffee) est montrée, puis fermée.
     skip(true);
-    await tap('Je suis dans le taxi');
-    await expectScreen('publicité', 'Masquer la publicité', 10);
+    await expectScreen('publicité', 'Masquer la publicité', 20);
     await scrollPanel(120, 3);
     await wait(800);
     skip(false);
@@ -439,11 +438,25 @@ const [url, out] = process.argv.slice(2);
     if (!hazardShown) throw new Error('étape « feux de détresse » : rappel non montré');
     skip(true);
     if (await present('Allumez vos feux')) await tap('OK').catch(() => {});
+    // Arrivé chez le passager : le taxi attend, le chauffeur démarre la course quand il est à bord.
+    caption(null);
+    for (let i = 0; i < 600 && !(await present('Démarrer la course')); i++) {
+      if (await present('Accepter')) await tap('Accepter').catch(() => {});
+      await wait(300);
+    }
+    skip(false);
+    await expectScreen('démarrer la course', 'Démarrer la course', 2);
+    caption('Passager à bord : le chauffeur démarre la course');
+    await wait(2500);
+    await tap('Démarrer la course');
+    await wait(1500);
+    skip(true);
     // Trajet jusqu'à la dépose : coupé.
     caption(null);
     let dropped = false;
     for (let i = 0; i < 600 && !dropped; i++) {
       dropped = await present('Passager déposé');
+      if (!dropped && (await present('Démarrer la course'))) await tap('Démarrer la course').catch(() => {});
       if (!dropped && (await present('Accepter'))) await tap('Accepter').catch(() => {});
       if (!dropped) await wait(250);
     }

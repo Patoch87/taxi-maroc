@@ -56,6 +56,8 @@ Sans `API_URL`, l'application tourne en **mode démo** : prix calculés sur le t
 
 À chaque envoi sur `main`, GitHub Actions fabrique le fichier **taxi-maroc.apk** et le publie ici : https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc.apk. Ouvrir ce lien sur le téléphone, ouvrir le fichier téléchargé et autoriser l'installation d'applications inconnues.
 
+**iPhone** : le workflow « iPhone » compile l'application sur un Mac de GitHub et publie une version non signée : https://github.com/Patoch87/taxi-maroc/releases/download/ios/bab-taxi-ios-non-signe.ipa. Pour l'installer sur un iPhone, il faut la signer : avec un compte Apple Developer, ajouter les secrets `IOS_CERTIFICATE_P12` (certificat de distribution en base64), `IOS_CERTIFICATE_PASSWORD`, `IOS_PROVISIONING_PROFILE` (profil App Store en base64), `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY` (clé API App Store Connect) et la variable `IOS_TEAM_ID` : l'application signée est alors envoyée sur TestFlight à chaque version. La carte Google sur iPhone demande d'activer « Maps SDK for iOS » pour la clé `MAPS_API_KEY`.
+
 ## Prochaines étapes
 
 1. Base de données PostgreSQL + PostGIS et positions en direct (WebSockets) à la place du stockage en mémoire.
