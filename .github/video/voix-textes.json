@@ -3,164 +3,24 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "P01",
-   "texte": "Casablanca. Chaque matin, des milliers de taxis rouges prennent la route."
+   "id": "C_PROPRE",
+   "texte": "Son taxi est récent, propre et soigné : c'est la première chose que remarque le passager."
   },
   {
-   "id": "P02",
-   "texte": "Hamid est chauffeur depuis vingt ans. Des heures à chercher des clients, et trop souvent, des places vides."
+   "id": "C_PUB",
+   "texte": "À l'arrière, un écran diffuse des publicités liées au trajet. Une part des recettes revient à Hamid, sans rien changer à sa conduite."
   },
   {
-   "id": "P03",
-   "texte": "Et si tout cela changeait ?"
+   "id": "P_PROPRE",
+   "texte": "Elle monte dans un taxi récent, propre et climatisé."
   },
   {
-   "id": "P04",
-   "texte": "Voici Bab Taxi. La porte vers un taxi plus juste."
+   "id": "P_PUB",
+   "texte": "Sur l'écran à l'arrière, des offres utiles le long de son trajet : un café, une boutique, un bon de réduction."
   },
   {
-   "id": "P05",
-   "texte": ""
-  },
-  {
-   "id": "P06",
-   "texte": "Hamid se met en service d'un seul geste, quand il le décide."
-  },
-  {
-   "id": "P07",
-   "texte": "Les demandes arrivent sur sa route. Il accepte ou il refuse. Le premier qui accepte prend la course : personne ne la lui vole."
-  },
-  {
-   "id": "P08",
-   "texte": "Il garde son application de guidage préférée, Waze ou Google Maps. Bab Taxi le prévient par une notification, et il répond sans quitter la route des yeux."
-  },
-  {
-   "id": "P09",
-   "texte": "À l'arrivée, un rappel : feux de détresse, arrêt en sécurité."
-  },
-  {
-   "id": "P10",
-   "texte": "Le passager est à bord : c'est Hamid qui démarre la course. Et le prix du compteur lui revient entièrement."
-  },
-  {
-   "id": "P11",
-   "texte": "En trajet partagé, ses places vides se remplissent, avec un compteur de passagers à chaque arrêt."
-  },
-  {
-   "id": "P12",
-   "texte": "Il rentre chez lui ? Avec « Ma destination », il ne reçoit que des passagers qui vont dans sa direction."
-  },
-  {
-   "id": "P13",
-   "texte": "Chaque soir, « Mes gains » lui montre ce que Bab Taxi lui apporte en plus : pourboires par carte, part de la publicité, carburant économisé."
-  },
-  {
-   "id": "P14",
-   "texte": "Et à la fin du mois, une prime qualité récompense la note de toutes ses courses."
-  },
-  {
-   "id": "P15",
-   "texte": "Plus de revenus, moins de kilomètres à vide… et plus de temps pour les siens."
-  },
-  {
-   "id": "P16",
-   "texte": ""
-  },
-  {
-   "id": "P17",
-   "texte": "Salma arrive à Casa Voyageurs."
-  },
-  {
-   "id": "P18",
-   "texte": "Elle dit sa destination à voix haute, même en darija. L'application la répète avant de chercher un taxi."
-  },
-  {
-   "id": "P19",
-   "texte": "Partagé pour payer moins, Seul pour être tranquille, ou Premium pour le confort. Le prix total s'affiche avant de monter. Pas de négociation."
-  },
-  {
-   "id": "P20",
-   "texte": "Sa demande part aux taxis qui vont déjà dans sa direction."
-  },
-  {
-   "id": "P21",
-   "texte": "Compte à rebours en direct, photo du chauffeur, numéro du taxi, et les drapeaux des langues qu'il parle."
-  },
-  {
-   "id": "P22",
-   "texte": "Trajet partagé avec ses proches, contacts de confiance, bouton SOS et réclamation : la sécurité, à chaque instant."
-  },
-  {
-   "id": "P23",
-   "texte": "Réserver pour plus tard, commander pour sa mère, prévoir des valises ou un siège bébé : tout est prévu."
-  },
-  {
-   "id": "P24",
-   "texte": "Un mode senior aux gros boutons, et un parcours entièrement vocal pour les personnes malvoyantes."
-  },
-  {
-   "id": "P25",
-   "texte": "Pendant le trajet : des jeux et des cadeaux de nos partenaires, et une table au restaurant en un geste."
-  },
-  {
-   "id": "P26",
-   "texte": "À l'arrivée : espèces ou carte, une note pour le chauffeur, et un pourboire si elle le souhaite."
-  },
-  {
-   "id": "P27",
-   "texte": ""
-  },
-  {
-   "id": "P28",
-   "texte": "Pour les visiteurs du monde entier, le premier contact avec le Maroc commence souvent… par un taxi."
-  },
-  {
-   "id": "P29",
-   "texte": "Bab Taxi parle leur langue. Pas besoin de parler celle du chauffeur : tout se fait dans l'application."
-  },
-  {
-   "id": "P30",
-   "texte": "Le prix est connu avant de partir, le trajet est suivi sur la carte : fini les mauvaises surprises."
-  },
-  {
-   "id": "P31",
-   "texte": "Et en chemin, les bonnes adresses et les restaurants les mieux notés."
-  },
-  {
-   "id": "P32",
-   "texte": "Pour la Coupe du monde 2030, Bab Taxi se prépare à accueillir les supporters dans les six villes hôtes. Et demain, pourquoi pas, une simple carte Hayya pour commander."
-  },
-  {
-   "id": "P33",
-   "texte": ""
-  },
-  {
-   "id": "P34",
-   "texte": "Sur Bab Taxi, chaque taxi est enregistré : chauffeur vérifié, numéro d'agrément, véhicule identifié."
-  },
-  {
-   "id": "P35",
-   "texte": "Les ministères de l'Intérieur et du Transport peuvent suivre l'activité en temps réel, avec des données anonymisées, dans le respect de la loi 09-08."
-  },
-  {
-   "id": "P36",
-   "texte": "Réclamations suivies, incidents tracés, alertes SOS : un transport plus sûr pour toutes et tous."
-  },
-  {
-   "id": "P37",
-   "texte": "Moins de kilomètres à vide, plus de passagers par voiture : moins d'embouteillages, moins de pollution."
-  },
-  {
-   "id": "P38",
-   "texte": "Paiements numériques, service de qualité, accès pour tous : l'image d'un Maroc moderne, ouvert sur le monde."
-  },
-  {
-   "id": "P39",
-   "texte": "Un taxi plus juste. Pour le chauffeur, pour le passager, pour le visiteur… et pour le Maroc."
-  },
-  {
-   "id": "P40",
-   "texte": "Bab Taxi. Bientôt à Casablanca, puis dans tout le Maroc."
+   "id": "V_PROPRE",
+   "texte": "Des taxis récents, propres et climatisés, avec des chauffeurs notés par leurs passagers."
   }
  ]
 }

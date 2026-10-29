@@ -6,7 +6,7 @@ name: Voix off ElevenLabs
 on:
   push:
     branches: [video-voix]
-    paths: ['.github/video/**', '.github/workflows/voix.yml']
+    paths: ['.github/video/voix-textes.json', '.github/video/voix.py', '.github/workflows/voix.yml']
   workflow_dispatch:
 
 permissions:
