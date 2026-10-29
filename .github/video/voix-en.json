@@ -1,0 +1,94 @@
+{
+ "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+ "modele": "eleven_multilingual_v2",
+ "lignes": [
+  {
+   "id": "P_HOOK",
+   "texte": "A real taxi. At the meter price. No haggling."
+  },
+  {
+   "id": "P17",
+   "texte": "Salma arrives at Casa Voyageurs station."
+  },
+  {
+   "id": "P04",
+   "texte": "This is Bab Taxi. The door to a fairer taxi."
+  },
+  {
+   "id": "P_VERSUS",
+   "texte": "No unknown cars: with Bab Taxi, only official taxis, verified drivers, and the meter price shown before you get in."
+  },
+  {
+   "id": "P18",
+   "texte": "She says her destination out loud, even in Darija. The app repeats it before looking for a taxi."
+  },
+  {
+   "id": "P19",
+   "texte": "Shared to pay less, Solo for peace of mind, or Premium for comfort. The total price is shown before you get in. No haggling."
+  },
+  {
+   "id": "P20",
+   "texte": "Her request goes to taxis already heading her way."
+  },
+  {
+   "id": "P21",
+   "texte": "Live countdown, driver photo, taxi number, and flags for the languages he speaks."
+  },
+  {
+   "id": "P_PROPRE",
+   "texte": "She steps into a recent, clean, air-conditioned taxi."
+  },
+  {
+   "id": "P22",
+   "texte": "Trip shared with loved ones, trusted contacts, an SOS button and complaints: safety at every moment."
+  },
+  {
+   "id": "P23",
+   "texte": "Book for later, order a taxi for her mother, add suitcases or a baby seat: it's all covered."
+  },
+  {
+   "id": "P24",
+   "texte": "A senior mode with big buttons, and a fully voice-guided journey for visually impaired people."
+  },
+  {
+   "id": "P_PUB",
+   "texte": "On the screen in the back, useful offers along her route: a café, a shop, a discount voucher."
+  },
+  {
+   "id": "P25",
+   "texte": "During the ride: games and gifts from our partners, and a restaurant table in one tap."
+  },
+  {
+   "id": "P26",
+   "texte": "On arrival: cash or card, a rating for the driver, and a tip if she wishes."
+  },
+  {
+   "id": "P28",
+   "texte": "For visitors from all over the world, the first contact with Morocco often starts… with a taxi."
+  },
+  {
+   "id": "P29",
+   "texte": "Bab Taxi speaks their language. No need to speak the driver's: everything happens in the app."
+  },
+  {
+   "id": "P30",
+   "texte": "The price is known before you leave, and the route is tracked on the map: no more bad surprises."
+  },
+  {
+   "id": "P31",
+   "texte": "And along the way, the best places and the top-rated restaurants."
+  },
+  {
+   "id": "P32",
+   "texte": "For the 2030 World Cup, Bab Taxi is getting ready to welcome fans in all six host cities."
+  },
+  {
+   "id": "P39",
+   "texte": "A fairer taxi. For the driver, for the passenger, for the visitor… and for Morocco."
+  },
+  {
+   "id": "P40",
+   "texte": "Bab Taxi. Coming soon to Casablanca, then all across Morocco."
+  }
+ ]
+}
