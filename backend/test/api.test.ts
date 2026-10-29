@@ -41,7 +41,7 @@ describe('API', () => {
       .post('/fares/petit-taxi')
       .send({ depart: { lat: 33.57, lng: -7.63 }, destination: { lat: 33.59, lng: -7.61 }, date: '2026-10-02T12:00:00' })
       .expect(201);
-    expect(prix.body.montantMad).toBeGreaterThan(7.5);
+    expect(prix.body.montantMad).toBeGreaterThanOrEqual(12);
 
     const plainte = await request(app.getHttpServer())
       .post('/complaints')

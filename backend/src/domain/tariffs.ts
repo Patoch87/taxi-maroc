@@ -10,7 +10,7 @@ export type TaxiCategory = 'standard' | 'premium';
 export const CASABLANCA_PETIT_TAXI = {
   priseEnChargeMad: 2.0,
   parKmMad: 3.5,
-  minimumMad: 7.5,
+  minimumMad: 12,
   /** Majoration de nuit (20h à 6h) : +50 %. */
   majorationNuit: 0.5,
   /**

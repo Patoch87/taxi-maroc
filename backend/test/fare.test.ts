@@ -5,7 +5,7 @@ const nuit = new Date('2026-10-02T23:00:00');
 
 describe('estimatePetitTaxi', () => {
   it('applique le minimum de course', () => {
-    expect(estimatePetitTaxi({ distanceM: 200, mode: 'partage', categorie: 'standard', date: jour }).montantMad).toBe(7.5);
+    expect(estimatePetitTaxi({ distanceM: 200, mode: 'partage', categorie: 'standard', date: jour }).montantMad).toBe(12);
   });
 
   it('calcule le compteur selon la distance', () => {
