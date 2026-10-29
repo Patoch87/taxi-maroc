@@ -21,10 +21,13 @@ jobs:
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: |
-          if [ -z "$ELEVENLABS_API_KEY" ]; then echo "Secret ELEVENLABS_API_KEY absent"; exit 1; fi
+          mkdir -p out
+          if [ -z "$ELEVENLABS_API_KEY" ]; then echo "Secret ELEVENLABS_API_KEY absent" | tee out/journal.txt; exit 1; fi
           export VOICE_ID=$(python3 -c "import json;print(json.load(open('.github/video/voix-textes.json')).get('voice_id',''))")
-          python3 .github/video/voix.py .github/video/voix-textes.json out
+          set -o pipefail
+          python3 .github/video/voix.py .github/video/voix-textes.json out 2>&1 | tee out/journal.txt
       - name: Publier sur la branche voix-off
+        if: always()
         run: |
           cd out
           git init -q -b voix-off

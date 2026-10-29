@@ -3,7 +3,7 @@ python3 voix.py textes.json sortie/
 - Sans voix choisie (VOICE_ID vide) : essais de quelques voix françaises de la bibliothèque ElevenLabs
   sur deux phrases du film (essais/<nom>.mp3), pour choisir.
 - Avec VOICE_ID : une piste par scène (<id>.mp3), en donnant le texte voisin pour garder le ton."""
-import json, os, sys, urllib.request, urllib.parse
+import json, os, sys, urllib.request, urllib.parse, urllib.error
 
 KEY = os.environ['ELEVENLABS_API_KEY']
 API = 'https://api.elevenlabs.io/v1'
@@ -17,8 +17,12 @@ def call(path, body=None, method=None):
     req = urllib.request.Request(API + path, method=method or ('POST' if body is not None else 'GET'),
                                  data=json.dumps(body).encode() if body is not None else None,
                                  headers={'xi-api-key': KEY, 'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        return r.read()
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        print('ERREUR', e.code, path.split('?')[0], e.read()[:500].decode(errors='replace'), flush=True)
+        raise
 
 
 def tts(voice, text, prev='', nxt=''):
