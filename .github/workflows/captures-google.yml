@@ -55,6 +55,13 @@ jobs:
         run: |
           mkdir -p out/captures-en
           node .github/captures/capture.js http://localhost:8765/ out/captures-en
+      - name: Captures en darija
+        continue-on-error: true
+        env:
+          CAPTURE_LANG: dr
+        run: |
+          mkdir -p out/captures-dr
+          node .github/captures/capture.js http://localhost:8765/ out/captures-dr
       - name: Vidéo passager et chauffeur
         continue-on-error: true
         run: |
