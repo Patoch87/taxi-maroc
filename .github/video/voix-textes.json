@@ -3,24 +3,44 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "C_PROPRE",
-   "texte": "Son taxi est récent, propre et soigné : c'est la première chose que remarque le passager."
+   "id": "C_HOOK",
+   "texte": "Enfin une application faite pour les taxis. Pas contre eux."
   },
   {
-   "id": "C_PUB",
-   "texte": "À l'arrière, un écran diffuse des publicités liées au trajet. Une part des recettes revient à Hamid, sans rien changer à sa conduite."
+   "id": "C_VERSUS",
+   "texte": "Les applications de VTC font rouler des voitures particulières et prennent une commission sur chaque course. Bab Taxi, c'est l'inverse : uniquement des taxis officiels, et zéro commission sur le compteur."
   },
   {
-   "id": "P_PROPRE",
-   "texte": "Elle monte dans un taxi récent, propre et climatisé."
+   "id": "C_SEUL",
+   "texte": "Un client veut le taxi pour lui seul ? Les places qu'il bloque sont compensées au chauffeur. Et les meilleurs chauffeurs accèdent au Premium, avec un supplément à chaque course."
   },
   {
-   "id": "P_PUB",
-   "texte": "Sur l'écran à l'arrière, des offres utiles le long de son trajet : un café, une boutique, un bon de réduction."
+   "id": "C_CARTE",
+   "texte": "Espèces ou carte : ce qui est payé par carte arrive tout de suite dans son portefeuille, pourboires compris."
   },
   {
-   "id": "V_PROPRE",
-   "texte": "Des taxis récents, propres et climatisés, avec des chauffeurs notés par leurs passagers."
+   "id": "C_FIN",
+   "texte": "Bab Taxi, l'application des taxis. Chauffeurs, rejoignez-nous dès le lancement à Casablanca."
+  },
+  {
+   "id": "P_HOOK",
+   "texte": "Un vrai taxi. Au prix du compteur. Sans négocier."
+  },
+  {
+   "id": "P_VERSUS",
+   "texte": "Pas de voiture inconnue : avec Bab Taxi, seulement des taxis officiels, des chauffeurs vérifiés, et le prix du compteur affiché avant de monter."
+  },
+  {
+   "id": "V_HOOK",
+   "texte": "Bienvenue au Maroc. Ici, votre taxi parle votre langue."
+  },
+  {
+   "id": "I_HOOK",
+   "texte": "Moderniser le taxi marocain, plutôt que de le laisser remplacer."
+  },
+  {
+   "id": "I_VERSUS",
+   "texte": "Bab Taxi ne fait rouler que des taxis agréés. Le secteur se modernise dans son cadre légal, avec une activité traçable, au lieu de céder la place à des voitures particulières."
   }
  ]
 }
