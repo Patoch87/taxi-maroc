@@ -59,13 +59,16 @@ void _setUpGoogleMapsAndroid() {
 
 /// Options de la version web pour la vidéo de démonstration :
 /// « ?demo=1 » ouvre directement l'accueil en démo (sans inscription),
-/// « ?video=1 » masque les suggestions de restaurants.
+/// « ?video=1 » masque les suggestions de restaurants, « ?lang=en » choisit la langue.
 void applyWebDemoOptions(Uri uri) {
   if (uri.queryParameters['demo'] == '1') {
     accountStore.skip();
     live.enabled = false;
   }
   if (uri.queryParameters['video'] == '1') settings.restaurantSuggestions = false;
+  // « ?lang=en » : langue de l'application (captures du film en anglais).
+  final lang = uri.queryParameters['lang'];
+  if (lang != null && S.supported.contains(lang)) langNotifier.value = lang;
 }
 
 class TaxiMarocApp extends StatelessWidget {

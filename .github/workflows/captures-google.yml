@@ -48,6 +48,13 @@ jobs:
           sleep 2
           mkdir -p out/captures
           node .github/captures/capture.js http://localhost:8765/ out/captures
+      - name: Captures en anglais
+        continue-on-error: true
+        env:
+          CAPTURE_LANG: en
+        run: |
+          mkdir -p out/captures-en
+          node .github/captures/capture.js http://localhost:8765/ out/captures-en
       - name: Vidéo passager et chauffeur
         continue-on-error: true
         run: |

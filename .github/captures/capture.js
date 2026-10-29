@@ -3,9 +3,31 @@
 const { chromium } = require('playwright');
 
 (async () => {
-  const [url, out] = process.argv.slice(2);
+  const [baseUrl, out] = process.argv.slice(2);
+  // CAPTURE_LANG=en : application en anglais (?lang=en) ; les libellés français du script sont traduits
+  // avec le tableau des textes de l'application (mobile/lib/l10n/strings.dart : fr, ar, darija, en).
+  const LANG = process.env.CAPTURE_LANG || 'fr';
+  const url = LANG === 'fr' ? baseUrl : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}lang=${LANG}`;
+  const FR_EN = [];
+  if (LANG === 'en') {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../../mobile/lib/l10n/strings.dart'), 'utf8');
+    const q = String.raw`(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")`;
+    const re = new RegExp(String.raw`'\w+':\s*\[\s*` + q + String.raw`\s*,\s*` + q + String.raw`\s*,\s*` + q + String.raw`\s*,\s*` + q + String.raw`\s*,?\s*\]`, 'g');
+    for (const m of src.matchAll(re)) {
+      const fr = (m[1] ?? m[2] ?? '').replace(/\\'/g, "'"), en = (m[7] ?? m[8] ?? '').replace(/\\'/g, "'");
+      if (fr && en && !fr.includes('$')) FR_EN.push([fr, en]);
+    }
+    console.log('libellés traduits :', FR_EN.length);
+  }
+  const tr = (label) => {
+    if (LANG !== 'en') return label;
+    const exact = FR_EN.find(([fr]) => fr === label);
+    if (exact) return exact[1];
+    const part = FR_EN.find(([fr]) => fr.includes(label));
+    return part ? part[1] : label;
+  };
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR' });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: process.env.CAPTURE_LANG === 'en' ? 'en-US' : 'fr-FR' });
   if (process.env.FAKE_TILES) {
     const fs = require('fs');
     await page.route(/cartocdn|openstreetmap/, (r) => r.fulfill({ body: fs.readFileSync(process.env.FAKE_TILES), contentType: 'image/png' }));
@@ -17,8 +39,10 @@ const { chromium } = require('playwright');
     console.log('capture', name);
   };
   // Élément cliquable de Flutter (bouton, puce...) dont le libellé contient [label].
-  const target = (label) =>
-    page.locator(`[role][aria-label*="${label}"], flt-semantics[role]:has-text("${label}")`).last();
+  const target = (fr) => {
+    const label = tr(fr);
+    return page.locator(`[role][aria-label*="${label}"], flt-semantics[role]:has-text("${label}")`).last();
+  };
   const tap = async (label) => {
     await target(label).click({ timeout: 15000 });
   };
