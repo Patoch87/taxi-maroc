@@ -3,92 +3,120 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "P_HOOK",
-   "texte": "A real taxi. At the meter price. No haggling."
+   "id": "C_HOOK",
+   "texte": "Finally, an app made for taxis. Not against them."
   },
   {
-   "id": "P17",
-   "texte": "Salma arrives at Casa Voyageurs station."
+   "id": "P02",
+   "texte": "Hamid has been a taxi driver for twenty years. Hours spent looking for customers, and too often, empty seats."
   },
   {
-   "id": "P04",
-   "texte": "This is Bab Taxi. The door to a fairer taxi."
+   "id": "P03",
+   "texte": "What if all that changed?"
+  },
+  {
+   "id": "C_VERSUS",
+   "texte": "Ride-hailing apps use private cars and take a commission on every ride. Bab Taxi is the opposite: only official taxis, and zero commission on the meter."
+  },
+  {
+   "id": "C_PROPRE",
+   "texte": "His taxi is recent, clean and well kept: it's the first thing passengers notice."
+  },
+  {
+   "id": "P06",
+   "texte": "Hamid goes on duty with a single tap, whenever he decides."
+  },
+  {
+   "id": "P07",
+   "texte": "Requests come along his route. He accepts or declines. The first to accept gets the ride: nobody can steal it from him."
+  },
+  {
+   "id": "P08",
+   "texte": "He keeps his favourite navigation app, Waze or Google Maps. Bab Taxi alerts him with a notification, and he answers without taking his eyes off the road."
+  },
+  {
+   "id": "P09",
+   "texte": "On arrival, a reminder: hazard lights on, stop safely."
+  },
+  {
+   "id": "P10",
+   "texte": "The passenger is on board: Hamid starts the ride himself. And the meter fare is all his."
+  },
+  {
+   "id": "P11",
+   "texte": "On shared rides, his empty seats fill up, with a passenger counter at every stop."
+  },
+  {
+   "id": "P12",
+   "texte": "Heading home? With “My destination”, he only gets passengers going his way."
+  },
+  {
+   "id": "C_SEUL",
+   "texte": "A customer wants the taxi to himself? The seats he blocks are paid to the driver. And the best drivers move up to Premium, with an extra on every ride."
+  },
+  {
+   "id": "C_CARTE",
+   "texte": "Cash or card: what's paid by card lands in his wallet right away, tips included."
+  },
+  {
+   "id": "C_PUB",
+   "texte": "In the back, a screen shows ads linked to the route. A share of the revenue goes to Hamid, without changing anything about his driving."
+  },
+  {
+   "id": "P13",
+   "texte": "Every evening, “My earnings” shows him what Bab Taxi adds: card tips, his share of advertising, fuel saved."
+  },
+  {
+   "id": "P14",
+   "texte": "And at the end of the month, a quality bonus rewards the rating of all his rides."
+  },
+  {
+   "id": "P15",
+   "texte": "More income, fewer empty kilometres… and more time with his family."
+  },
+  {
+   "id": "C_FIN",
+   "texte": "Bab Taxi, the taxi app. Drivers, join us from day one in Casablanca."
   },
   {
    "id": "P_VERSUS",
-   "texte": "No unknown cars: with Bab Taxi, only official taxis, verified drivers, and the meter price shown before you get in."
+   "texte": "No unknown cars: with Bab Taxi, only official taxis, verified drivers with a checked criminal record, and the meter price shown before you get in."
   },
   {
-   "id": "P18",
-   "texte": "She says her destination out loud, even in Darija. The app repeats it before looking for a taxi."
+   "id": "I_HOOK",
+   "texte": "Modernise the Moroccan taxi, rather than let it be replaced."
   },
   {
-   "id": "P19",
-   "texte": "Shared to pay less, Solo for peace of mind, or Premium for comfort. The total price is shown before you get in. No haggling."
+   "id": "P01",
+   "texte": "Casablanca. Every morning, thousands of red taxis hit the road."
   },
   {
-   "id": "P20",
-   "texte": "Her request goes to taxis already heading her way."
+   "id": "I_VERSUS",
+   "texte": "Bab Taxi only works with licensed taxis. The sector modernises within its legal framework, with traceable activity, instead of giving way to private cars."
   },
   {
-   "id": "P21",
-   "texte": "Live countdown, driver photo, taxi number, and flags for the languages he speaks."
+   "id": "P34",
+   "texte": "On Bab Taxi, every taxi is registered: verified driver, criminal record checked, licence number, identified vehicle."
   },
   {
-   "id": "P_PROPRE",
-   "texte": "She steps into a recent, clean, air-conditioned taxi."
+   "id": "I_IMAGE",
+   "texte": "Recent, clean taxis, drivers verified down to their criminal record and rated by passengers: the image of the taxi changes, and visitors feel reassured."
   },
   {
-   "id": "P22",
-   "texte": "Trip shared with loved ones, trusted contacts, an SOS button and complaints: safety at every moment."
+   "id": "P35",
+   "texte": "The Ministries of the Interior and of Transport can follow activity in real time, with anonymised data, in compliance with Law 09-08."
   },
   {
-   "id": "P23",
-   "texte": "Book for later, order a taxi for her mother, add suitcases or a baby seat: it's all covered."
+   "id": "P36",
+   "texte": "Complaints followed up, incidents traced, SOS alerts: safer transport for everyone."
   },
   {
-   "id": "P24",
-   "texte": "A senior mode with big buttons, and a fully voice-guided journey for visually impaired people."
+   "id": "P37",
+   "texte": "Fewer empty kilometres, more passengers per car: less congestion, less pollution."
   },
   {
-   "id": "P_PUB",
-   "texte": "On the screen in the back, useful offers along her route: a café, a shop, a discount voucher."
-  },
-  {
-   "id": "P25",
-   "texte": "During the ride: games and gifts from our partners, and a restaurant table in one tap."
-  },
-  {
-   "id": "P26",
-   "texte": "On arrival: cash or card, a rating for the driver, and a tip if she wishes."
-  },
-  {
-   "id": "P28",
-   "texte": "For visitors from all over the world, the first contact with Morocco often starts… with a taxi."
-  },
-  {
-   "id": "P29",
-   "texte": "Bab Taxi speaks their language. No need to speak the driver's: everything happens in the app."
-  },
-  {
-   "id": "P30",
-   "texte": "The price is known before you leave, and the route is tracked on the map: no more bad surprises."
-  },
-  {
-   "id": "P31",
-   "texte": "And along the way, the best places and the top-rated restaurants."
-  },
-  {
-   "id": "P32",
-   "texte": "For the 2030 World Cup, Bab Taxi is getting ready to welcome fans in all six host cities."
-  },
-  {
-   "id": "P39",
-   "texte": "A fairer taxi. For the driver, for the passenger, for the visitor… and for Morocco."
-  },
-  {
-   "id": "P40",
-   "texte": "Bab Taxi. Coming soon to Casablanca, then all across Morocco."
+   "id": "P38",
+   "texte": "Digital payments, quality service, access for all: the image of a modern Morocco, open to the world."
   }
  ]
 }

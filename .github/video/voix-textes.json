@@ -3,44 +3,16 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "C_HOOK",
-   "texte": "Enfin une application faite pour les taxis. Pas contre eux."
-  },
-  {
-   "id": "C_VERSUS",
-   "texte": "Les applications de VTC font rouler des voitures particulières et prennent une commission sur chaque course. Bab Taxi, c'est l'inverse : uniquement des taxis officiels, et zéro commission sur le compteur."
-  },
-  {
-   "id": "C_SEUL",
-   "texte": "Un client veut le taxi pour lui seul ? Les places qu'il bloque sont compensées au chauffeur. Et les meilleurs chauffeurs accèdent au Premium, avec un supplément à chaque course."
-  },
-  {
-   "id": "C_CARTE",
-   "texte": "Espèces ou carte : ce qui est payé par carte arrive tout de suite dans son portefeuille, pourboires compris."
-  },
-  {
-   "id": "C_FIN",
-   "texte": "Bab Taxi, l'application des taxis. Chauffeurs, rejoignez-nous dès le lancement à Casablanca."
-  },
-  {
-   "id": "P_HOOK",
-   "texte": "Un vrai taxi. Au prix du compteur. Sans négocier."
-  },
-  {
    "id": "P_VERSUS",
-   "texte": "Pas de voiture inconnue : avec Bab Taxi, seulement des taxis officiels, des chauffeurs vérifiés, et le prix du compteur affiché avant de monter."
+   "texte": "Pas de voiture inconnue : avec Bab Taxi, seulement des taxis officiels, des chauffeurs vérifiés, casier judiciaire compris, et le prix du compteur affiché avant de monter."
   },
   {
-   "id": "V_HOOK",
-   "texte": "Bienvenue au Maroc. Ici, votre taxi parle votre langue."
+   "id": "P34",
+   "texte": "Sur Bab Taxi, chaque taxi est enregistré : chauffeur vérifié, casier judiciaire contrôlé, numéro d'agrément, véhicule identifié."
   },
   {
-   "id": "I_HOOK",
-   "texte": "Moderniser le taxi marocain, plutôt que de le laisser remplacer."
-  },
-  {
-   "id": "I_VERSUS",
-   "texte": "Bab Taxi ne fait rouler que des taxis agréés. Le secteur se modernise dans son cadre légal, avec une activité traçable, au lieu de céder la place à des voitures particulières."
+   "id": "I_IMAGE",
+   "texte": "Des taxis récents et propres, des chauffeurs vérifiés, casier judiciaire compris, et notés par leurs passagers : l'image du taxi change, et les visiteurs sont rassurés."
   }
  ]
 }
