@@ -35,16 +35,24 @@ voice = os.environ.get('VOICE_ID', '').strip()
 if not voice:
     os.makedirs(out + '/essais', exist_ok=True)
     picks = []
+    PREMADE = [('George', 'JBFqnCBsd6RMkjVDRZzb', 'male'), ('Daniel', 'onwK4e9ZLuTAKqWW03F9', 'male'),
+               ('Brian', 'nPczCjzI2devNBz1zQrb', 'male'), ('Charlotte', 'XB0fDUnXU5powFXDhCwa', 'female')]
     for gender in ('male', 'female'):
-        q = urllib.parse.urlencode(dict(language='fr', gender=gender, use_cases='narrative_story', page_size=30, sort='cloned_by_count'))
-        voices = json.loads(call('/shared-voices?' + q))['voices']
-        fr = [v for v in voices if (v.get('accent') or '').lower() in ('parisian', 'standard', 'french', '')][:3 if gender == 'male' else 2]
-        picks += fr or voices[:2]
+      try:
+          q = urllib.parse.urlencode(dict(language='fr', gender=gender, use_cases='narrative_story', page_size=30, sort='cloned_by_count'))
+          voices = json.loads(call('/shared-voices?' + q))['voices']
+          fr = [v for v in voices if (v.get('accent') or '').lower() in ('parisian', 'standard', 'french', '')][:3 if gender == 'male' else 2]
+          picks += fr or voices[:2]
+      except Exception as e:
+        print('bibliothèque de voix inaccessible :', e)
+    if not picks:
+        picks = [dict(name=n, voice_id=v, gender=g, public_owner_id=None) for n, v, g in PREMADE]
     sample = ' '.join(l['texte'] for l in lines if l['id'] in ('P02', 'P04'))
     infos = []
     for v in picks:
         name = ''.join(c for c in v['name'] if c.isalnum() or c in ' -').strip().replace(' ', '-')
         try:
+            if not v.get('public_owner_id'): raise ValueError('voix de base')
             vid = json.loads(call(f"/voices/add/{v['public_owner_id']}/{v['voice_id']}", {'new_name': 'Bab ' + v['name'][:40]}))['voice_id']
         except Exception as e:  # déjà ajoutée au compte
             vid = v['voice_id']
