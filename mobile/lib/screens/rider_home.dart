@@ -737,7 +737,7 @@ class _RiderHomeState extends State<RiderHome> {
   /// Offre selon la destination, l'heure et les trajets passés : seulement une fois la course commencée
   /// (passager à bord), jamais sur l'accueil, le choix du taxi, la recherche ou l'attente du taxi.
   /// Toujours affichée pendant la course, sauf si le passager l'a fermée.
-  Promo? get _promo => _step == RiderStep.onTrip && !_adClosed && _dest != null && _selected != null
+  Promo? get _promo => !noAds && _step == RiderStep.onTrip && !_adClosed && _dest != null && _selected != null
       ? pickPromo(destination: _dest!, option: _selected!, history: _offerHistory)
       : null;
 
@@ -2530,7 +2530,7 @@ class _RiderHomeState extends State<RiderHome> {
               padding: const EdgeInsets.all(12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 // Panneau replié pendant la course : bandeau publicitaire en haut (fermable).
-                if (_collapsed && _step == RiderStep.onTrip && !_adClosed) ...[
+                if (!noAds && _collapsed && _step == RiderStep.onTrip && !_adClosed) ...[
                   AdBanner(
                     promo: _bannerPromo,
                     onOpen: () => _openPromo(_bannerPromo),
