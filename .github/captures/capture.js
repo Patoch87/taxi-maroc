@@ -10,6 +10,8 @@ const { chromium } = require('playwright');
   const url = LANG === 'fr' ? baseUrl : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}lang=${LANG}`;
   const FR_EN = [];
   const COL = { ar: 3, dr: 5, en: 7 }[LANG];
+  // En arabe et en darija, l'écran est en miroir (droite à gauche) : le menu est à droite.
+  const X = (x) => (LANG === 'ar' || LANG === 'dr' ? 390 - x : x);
   if (COL) {
     const src = require('fs').readFileSync(require('path').join(__dirname, '../../mobile/lib/l10n/strings.dart'), 'utf8');
     const q = String.raw`(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")`;
@@ -93,7 +95,7 @@ const { chromium } = require('playwright');
 
   // Chauffeur
   await open();
-  await page.mouse.click(32, 34); // menu
+  await page.mouse.click(X(32), 34); // menu
   await page.waitForTimeout(1000);
   await tap('Mode chauffeur');
   await shot('6-chauffeur-hors-ligne', 3000);
@@ -169,7 +171,7 @@ const { chromium } = require('playwright');
   // Contacts de confiance
   await step('contacts', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Contacts de confiance');
     await page.waitForTimeout(1500);
@@ -308,7 +310,7 @@ const { chromium } = require('playwright');
   // Chauffeur : rappel des feux de détresse à 50 m du passager.
   await step('feux', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -326,7 +328,7 @@ const { chromium } = require('playwright');
   // Chauffeur : « Naviguer vers » le prochain passager, rester dans l'application ou ouvrir Waze.
   await step('naviguer', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -343,7 +345,7 @@ const { chromium } = require('playwright');
   // ou le touche dans la liste si le micro n'est pas disponible ; seulement les passagers sur la route.
   await step('quartier-vocal', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -378,7 +380,7 @@ const { chromium } = require('playwright');
   // Chauffeur : « Devenir chauffeur Premium » (réglages chauffeur) et ses critères.
   await step('criteres-premium', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -391,7 +393,7 @@ const { chromium } = require('playwright');
   // Chauffeur : « Mes gains », ce que Bab Taxi rapporte en plus par rapport à avant.
   await step('mes-gains', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await shot('48-chauffeur-gains-de-la-semaine', 2500);
@@ -402,7 +404,7 @@ const { chromium } = require('playwright');
     await shot('50-mes-gains-historique', 1200);
     await page.mouse.wheel(0, -1400);
     await page.waitForTimeout(600);
-    await page.mouse.click(285, 76); // « Mois »
+    await page.mouse.click(X(285), 76); // « Mois »
     await shot('51-mes-gains-mois', 1500);
   });
 
@@ -514,7 +516,7 @@ const { chromium } = require('playwright');
   // Chauffeur qui rentre chez lui : seulement les passagers sur son trajet
   await step('ma-destination', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
