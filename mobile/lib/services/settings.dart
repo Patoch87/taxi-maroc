@@ -18,6 +18,7 @@ class AppSettings extends ChangeNotifier {
   bool _senior = false;
   bool _lowVision = false;
   bool _voiceAnnounce = false;
+  bool _voiceJourney = false;
   bool _requestSound = true;
   bool _requestVoice = false;
   bool _restaurantSuggestions = true;
@@ -41,6 +42,10 @@ class AppSettings extends ChangeNotifier {
   /// Elles s'activent aussi d'elles-mêmes quand le lecteur d'écran du téléphone (TalkBack) est actif.
   bool get voiceAnnounce => _voiceAnnounce;
   set voiceAnnounce(bool v) => _set(() => _voiceAnnounce = v);
+
+  /// Parcours 100 % vocal dès l'ouverture de l'application, et à nouveau après chaque course.
+  bool get voiceJourney => _voiceJourney;
+  set voiceJourney(bool v) => _set(() => _voiceJourney = v);
 
   /// Chauffeur : petit son doux à chaque nouvelle demande sur la route (activé par défaut).
   bool get requestSound => _requestSound;
@@ -93,6 +98,7 @@ class AppSettings extends ChangeNotifier {
         _senior = false;
         _lowVision = false;
         _voiceAnnounce = false;
+        _voiceJourney = false;
         _requestSound = true;
         _requestVoice = false;
         _restaurantSuggestions = true;

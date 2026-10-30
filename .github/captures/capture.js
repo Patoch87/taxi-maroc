@@ -521,6 +521,28 @@ const { chromium } = require('playwright');
     await shot('22-restaurants-tripadvisor', 1500);
   });
 
+  // Parcours 100 % vocal : chaque question est lue à voix haute ; ici, les réponses sont touchées.
+  // Le panneau entier se touche pour parler : « force » clique la réponse elle-même.
+  await step('vocal', async () => {
+    await open();
+    await shot('52-vocal-bouton-accueil', 800);
+    await tap('Commander à la voix');
+    await shot('53-vocal-ou-allez-vous', 4000);
+    const answer = (label) => target(label).click({ timeout: 15000, force: true });
+    await answer('Maison');
+    await shot('54-vocal-confirmation-destination', 3000);
+    await answer('Oui');
+    await shot('55-vocal-choix-du-taxi', 5000);
+    await answer('Petit taxi seul');
+    await page.waitForTimeout(2500);
+    await answer('Espèces');
+    await shot('56-vocal-resume-commande', 3000);
+    await answer('Oui');
+    await shot('57-vocal-recherche', 3000);
+    await waitFor('Où est mon taxi', 40);
+    await shot('58-vocal-taxi-en-approche', 2000);
+  });
+
   // Mode senior
   await step('senior', async () => {
     await open();

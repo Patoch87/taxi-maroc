@@ -23,7 +23,10 @@ import '../services/schedule.dart';
 import '../services/settings.dart';
 import '../services/tourism.dart';
 import '../services/trip_share.dart';
+import '../services/geocode.dart';
+import '../services/quartiers.dart';
 import '../services/voice.dart';
+import '../services/voice_intents.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/driver_card.dart';
@@ -41,6 +44,7 @@ import 'complaint_screen.dart';
 import '../widgets/card_payment_sheet.dart';
 import '../widgets/sheets.dart';
 import '../widgets/table_booking.dart';
+import '../widgets/voice_journey.dart';
 import 'driver_home.dart';
 import 'games_screen.dart';
 import 'history_screen.dart';
@@ -164,6 +168,12 @@ class _RiderHomeState extends State<RiderHome> {
     settings.addListener(_onSettings);
     adCatalog.addListener(_onSettings);
     if (widget.locate) _locate();
+    // Parcours 100 % vocal réglé au démarrage : la première question est posée dès l'ouverture.
+    if (settings.voiceJourney && !settings.senior) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startVoiceJourney(once: false);
+      });
+    }
     _ambientTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (!mounted || _step.index >= RiderStep.arriving.index) return;
       if (live.enabled) {
@@ -196,6 +206,9 @@ class _RiderHomeState extends State<RiderHome> {
     for (final t in _dispatchTimers) {
       t.cancel();
     }
+    _vjTurn++;
+    _vjWake?.complete();
+    if (_vj) _voice.stop();
     super.dispose();
   }
 
@@ -320,7 +333,7 @@ class _RiderHomeState extends State<RiderHome> {
 
   /// Annonces vocales : désactivées par défaut. Activées par le passager (menu, ou « Malvoyant »),
   /// ou d'elles-mêmes quand le lecteur d'écran du téléphone (TalkBack) est actif.
-  bool get _voiceOn => settings.voiceAnnounce || MediaQuery.maybeOf(context)?.accessibleNavigation == true;
+  bool get _voiceOn => _vj || settings.voiceAnnounce || MediaQuery.maybeOf(context)?.accessibleNavigation == true;
 
   void _say(String text) {
     if (_voiceOn) _voice.say(text);
@@ -333,7 +346,8 @@ class _RiderHomeState extends State<RiderHome> {
     _lastAnnouncedMin = mins;
     final plate = d.plate.replaceAll('|', ' ');
     _say('${s.t('taxiFound')}. ${d.car} ${s.t(carColorKey(_selected!.kind))}, ${s.t('plate')} $plate. '
-        '${s.t('driverInfo')} : ${d.name}. ${s.t('arrivingIn')} ${_minutesText(mins)}.');
+        '${s.t('driverInfo')} : ${d.name}. ${s.t('arrivingIn')} ${_minutesText(mins)}.'
+        '${_vj ? ' ${s.t('vjTapHint')}' : ''}');
   }
 
   void _announceMinute() {
@@ -351,6 +365,411 @@ class _RiderHomeState extends State<RiderHome> {
     for (var i = 0; i < 3; i++) {
       await HapticFeedback.heavyImpact();
       await Future.delayed(const Duration(milliseconds: 350));
+    }
+  }
+
+  // ---------------------------------------------------------------- Parcours 100 % vocal
+
+  /// Parcours 100 % vocal : l'application pose les questions à voix haute et le passager répond à la voix,
+  /// de la destination jusqu'à la note et au pourboire. Chaque question a aussi ses réponses à toucher.
+  bool _vj = false;
+
+  /// Numéro de la question en cours : une nouvelle question (ou la fin du mode) rend caduque l'ancienne.
+  int _vjTurn = 0;
+  RiderStep? _vjStep;
+  String _vjPrompt = '';
+  String _vjHeard = '';
+  String? _vjStatus;
+  bool _vjListening = false;
+  bool _vjWaitingTap = false;
+  bool _vjNoMic = false;
+  List<VoiceChoice> _vjChoices = const [];
+  String? _vjAnswer;
+  Completer<void>? _vjWake;
+
+  /// Le parcours vocal s'arrête après la course, sauf s'il est réglé pour démarrer à chaque ouverture.
+  bool _vjOnce = false;
+
+  void _startVoiceJourney({bool once = true}) {
+    if (_vj) return;
+    _vjOnce = once;
+    setState(() {
+      _vj = true;
+      _vjStep = null;
+      _vjPrompt = '';
+      _vjHeard = '';
+      _collapsed = false;
+    });
+    _vjCheckStep();
+  }
+
+  void _stopVoiceJourney({bool bye = true}) {
+    if (!_vj) return;
+    _vjTurn++;
+    _voice.stop();
+    _vjWake?.complete();
+    _vjWake = null;
+    setState(() {
+      _vj = false;
+      _vjListening = false;
+      _vjWaitingTap = false;
+    });
+    if (bye) _voice.say(s.t('vjBye')).timeout(const Duration(seconds: 4), onTimeout: () {});
+  }
+
+  /// Appelé à chaque affichage : quand l'étape de la commande change, la question suivante est posée.
+  void _vjCheckStep() {
+    if (!_vj || _vjStep == _step) return;
+    _vjStep = _step;
+    _vjTurn++;
+    _vjWake?.complete();
+    _vjWake = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_vj) return;
+      switch (_step) {
+        case RiderStep.idle:
+          _vjDestination();
+        case RiderStep.choosing:
+          _vjChoose();
+        case RiderStep.dispatching:
+          _vjDispatch();
+        case RiderStep.arriving || RiderStep.arrived || RiderStep.onTrip:
+          _vjTrip();
+        case RiderStep.done:
+          _vjDone();
+      }
+    });
+  }
+
+  /// Voix de l'application, sans bloquer le parcours si la synthèse vocale ne répond pas.
+  Future<void> _vjSay(String text) => _voice.say(text).timeout(const Duration(seconds: 12), onTimeout: () {});
+
+  /// Voix d'une question : un toucher (micro ou réponse) la coupe et passe tout de suite à la suite.
+  Future<void> _vjSayOrTap(String text) async {
+    final wake = _vjWake = Completer<void>();
+    await Future.any([_vjSay(text), wake.future]);
+    if (identical(_vjWake, wake)) _vjWake = null;
+  }
+
+  /// Pose une question et rend la réponse (dite ou touchée), ou null si la question n'est plus d'actualité.
+  /// Deux écoutes automatiques au plus ; ensuite le passager touche l'écran pour parler.
+  /// [speak] : false pendant la course (les annonces vocales parlent déjà) ; [autoListen] : false
+  /// pendant l'attente et la course, pour ne pas laisser le micro ouvert.
+  Future<String?> _vjAsk(String prompt, List<VoiceChoice> choices, {bool speak = true, bool autoListen = true}) async {
+    final turn = ++_vjTurn;
+    _vjWake?.complete();
+    _vjWake = null;
+    _vjAnswer = null;
+    setState(() {
+      _vjPrompt = prompt;
+      _vjChoices = choices;
+      _vjHeard = '';
+      _vjWaitingTap = false;
+    });
+    bool current() => mounted && _vj && turn == _vjTurn;
+    if (speak) await _vjSayOrTap(prompt);
+    var misses = autoListen ? 0 : 2;
+    while (current()) {
+      final tapped = _vjAnswer;
+      if (tapped != null) {
+        _vjAnswer = null;
+        return tapped;
+      }
+      if (misses < 2) {
+        final ok = await _voice.init();
+        if (!current()) return null;
+        if (!ok) {
+          setState(() => _vjNoMic = true);
+          misses = 2;
+          continue;
+        }
+        setState(() {
+          _vjListening = true;
+          _vjHeard = '';
+        });
+        final heard = await _voice.hear(onWords: (w) {
+          if (mounted && current()) setState(() => _vjHeard = w);
+        });
+        if (mounted) setState(() => _vjListening = false);
+        if (!current()) return null;
+        if (_vjAnswer != null) continue;
+        if (heard.trim().isNotEmpty) return heard;
+        misses++;
+        if (misses < 2) await _vjSayOrTap(s.t('vjNotHeard'));
+        continue;
+      }
+      // Plus d'écoute automatique : on attend un toucher (micro = écouter à nouveau, ou une réponse).
+      final wake = _vjWake = Completer<void>();
+      setState(() => _vjWaitingTap = true);
+      await wake.future;
+      if (!current()) return null;
+      setState(() => _vjWaitingTap = false);
+      if (_vjAnswer == null) {
+        // Micro touché : une écoute (et un nouvel essai du micro s'il n'était pas disponible).
+        misses = 1;
+        if (_vjNoMic) setState(() => _vjNoMic = false);
+      }
+    }
+    return null;
+  }
+
+  /// Micro touché : arrête l'écoute en cours, ou écoute à nouveau.
+  void _vjMic() {
+    if (_vjListening) {
+      _voice.stop();
+      return;
+    }
+    _voice.silence();
+    final wake = _vjWake;
+    _vjWake = null;
+    if (wake != null && !wake.isCompleted) wake.complete();
+  }
+
+  /// Réponse touchée : même effet que si elle avait été dite.
+  void _vjChoice(String value) {
+    _vjAnswer = value;
+    _voice.silence();
+    if (_vjListening) _voice.stop();
+    _vjMic();
+  }
+
+  /// Oui ou non (null si la question n'est plus d'actualité). Redemande tant que la réponse n'est pas claire.
+  Future<bool?> _vjConfirm(String prompt, {bool speak = true}) async {
+    final yes = VoiceChoice(s.t('vjYes'), 'oui', icon: Icons.check);
+    final no = VoiceChoice(s.t('vjNo'), 'non', icon: Icons.close);
+    var question = prompt;
+    for (var i = 0; i < 3; i++) {
+      final heard = await _vjAsk(question, [yes, no], speak: speak || i > 0);
+      if (heard == null) return null;
+      final it = voiceIntents(heard);
+      if (it.contains(VoiceIntent.yes) && !it.contains(VoiceIntent.no)) return true;
+      if (it.contains(VoiceIntent.no) || it.contains(VoiceIntent.cancel)) return false;
+      question = '${s.t('vjSayYesNo')} $prompt';
+    }
+    return false;
+  }
+
+  String _vjPlaceName(Place p) => s.lang == 'ar' || s.lang == 'dr' ? p.arabicName : p.name;
+
+  /// Prix lu à voix haute : « 35 dirhams » plutôt que « 35 D H ».
+  String _vjPrice(double v) => dh(v).replaceAll('DH', s.t('vjDirhams'));
+
+  /// Lieu dit à voix haute : adresses enregistrées, lieux connus, quartiers, puis adresses (test réel).
+  Future<Place?> _vjFindPlace(String said) async {
+    final n = ' ${normalizeQuartier(said)} ';
+    for (final p in [homePlace, workPlace]) {
+      if ([p.name, ...p.aliases].any((a) => n.contains(' ${normalizeQuartier(a)} '))) return p;
+    }
+    final place = findPlace(said) ?? findQuartier(said);
+    if (place != null || !live.enabled) return place;
+    try {
+      final found = await searchAddresses(said, near: _me, lang: s.lang == 'dr' ? 'ar' : s.lang);
+      return found.firstOrNull;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _vjDestination() async {
+    final recent = {for (final t in tripHistory.where((t) => !t.scheduled)) t.destination}.take(2);
+    final heard = await _vjAsk(_vjPrompt.isEmpty ? '${s.t('vjWelcome')} ${s.t('vjWhereTo')}' : s.t('vjWhereTo'), [
+      VoiceChoice(s.t('home'), homePlace.name, icon: Icons.home_rounded),
+      VoiceChoice(s.t('work'), workPlace.name, icon: Icons.work_rounded),
+      for (final name in recent) VoiceChoice(name, name, icon: Icons.history),
+      VoiceChoice(s.t('vjQuit'), 'annuler', icon: Icons.close),
+    ]);
+    if (heard == null) return;
+    final it = voiceIntents(heard);
+    if (it.contains(VoiceIntent.cancel)) return _stopVoiceJourney();
+    if (it.contains(VoiceIntent.help) || it.contains(VoiceIntent.repeat)) {
+      await _vjSay(s.t('vjHelpWhere'));
+      return _vjDestination();
+    }
+    setState(() => _vjStatus = '« $heard »');
+    final place = await _vjFindPlace(heard);
+    if (!mounted || !_vj) return;
+    setState(() => _vjStatus = null);
+    if (place == null) {
+      await _vjSay('${s.t('vjNoPlace')} : $heard.');
+      return _vjDestination();
+    }
+    final ok = await _vjConfirm('${s.t('vjGoingTo')} ${_vjPlaceName(place)}. ${s.t('vjIsThatRight')}');
+    if (ok == null) return;
+    if (!ok) return _vjDestination();
+    await _chooseDestination(place);
+  }
+
+  /// Option dite : « partagé », « seul », « premium », « une place », « taxi entier », ou son nom.
+  RideOption? _vjOption(String said) {
+    final byId = _options.where((o) => 'opt:${o.id}' == said).firstOrNull;
+    if (byId != null) return byId;
+    final it = voiceIntents(said);
+    final id = it.contains(VoiceIntent.premium)
+        ? 'premium'
+        : it.contains(VoiceIntent.alone)
+            ? 'seul'
+            : it.contains(VoiceIntent.grandWhole)
+                ? 'grand-entier'
+                : it.contains(VoiceIntent.shared)
+                    ? 'partage'
+                    : it.contains(VoiceIntent.grandSeat)
+                        ? 'grand'
+                        : null;
+    final o = _options.where((o) => o.id == id).firstOrNull;
+    if (o != null) return o;
+    final n = normalizeQuartier(said);
+    return _options.where((o) => n.contains(normalizeQuartier(o.title))).firstOrNull;
+  }
+
+  Future<void> _vjChoose() async {
+    final dest = _vjPlaceName(_dest!);
+    final minutes = (_routeM / _cityMps / 60).ceil();
+    final list = [for (final o in _options) '${o.title} : ${_vjPrice(o.priceMad)}'].join('. ');
+    final heard = await _vjAsk(
+      '${s.t('vjToDest')} $dest, ${distanceText(_routeM)}, ${_minutesText(minutes)}. $list. ${s.t('vjWhichTaxi')}',
+      [
+        for (final o in _options) VoiceChoice('${o.title} · ${dh(o.priceMad)}', 'opt:${o.id}', icon: Icons.local_taxi),
+        VoiceChoice(s.t('vjOtherDest'), 'annuler', icon: Icons.edit_location_alt_outlined),
+      ],
+    );
+    if (heard == null) return;
+    if (voiceIntents(heard).contains(VoiceIntent.cancel)) return _reset();
+    final o = _vjOption(heard);
+    if (o == null) {
+      await _vjSay(s.t('vjNotUnderstood'));
+      return _vjChoose();
+    }
+    setState(() => _selected = o);
+
+    // Paiement : espèces ou carte.
+    bool? cash;
+    for (var i = 0; i < 2 && cash == null; i++) {
+      final pay = await _vjAsk(s.t('vjPayHow'), [
+        VoiceChoice(s.t('cash'), 'cash', icon: Icons.payments_outlined),
+        VoiceChoice(s.t('card'), 'carte', icon: Icons.credit_card),
+      ]);
+      if (pay == null) return;
+      final it = voiceIntents(pay);
+      if (it.contains(VoiceIntent.card)) cash = false;
+      if (it.contains(VoiceIntent.cash)) cash = true;
+    }
+    setState(() => _cash = cash ?? true);
+
+    final ok = await _vjConfirm('${s.t('vjSummary')} : ${o.title} ${s.t('vjTo')} $dest, ${_vjPrice(o.priceMad)}, '
+        '${(_cash ? s.t('cash') : s.t('card')).toLowerCase()}. ${s.t('vjConfirmOrder')}');
+    if (ok == null) return;
+    if (!ok) return _vjChoose();
+    _request();
+  }
+
+  Future<void> _vjDispatch() async {
+    final heard =
+        await _vjAsk(s.t('vjSearching'), [VoiceChoice(s.t('cancel'), 'annuler', icon: Icons.close)], autoListen: false);
+    if (heard == null) return;
+    if (voiceIntents(heard).contains(VoiceIntent.cancel)) {
+      await _vjSay(s.t('vjCancelled'));
+      return _reset();
+    }
+    if (_step == RiderStep.dispatching) _vjDispatch();
+  }
+
+  /// Où en est le taxi : lu à voix haute à la demande (« où est mon taxi ? »).
+  String _vjTripStatus() {
+    final d = _driver;
+    if (d == null) return s.t('searching');
+    final mins = (_remaining.inSeconds / 60).ceil().clamp(1, 999);
+    final plate = d.plate.replaceAll('|', ' ');
+    return switch (_step) {
+      RiderStep.arriving =>
+        '${s.t('arrivingIn')} ${_minutesText(mins)}. ${d.car} ${s.t(carColorKey(_selected!.kind))}, '
+            '${s.t('plate')} $plate. ${s.t('driverInfo')} : ${d.name}.',
+      RiderStep.arrived => '${s.t('arrived')}. ${s.t('plate')} $plate. ${s.t('waitDriverStart')}',
+      _ => '${s.t('onTrip')} ${_vjPlaceName(_dest!)}. ${s.t('arrivalAt')} ${_clock(_arrivalTime)}, '
+          '${_minutesText(mins)}.',
+    };
+  }
+
+  Future<void> _vjTrip() async {
+    final step = _step;
+    final heard = await _vjAsk(
+        s.t('vjTripHelp'),
+        [
+          VoiceChoice(s.t('vjWhere'), 'où est', icon: Icons.schedule),
+          VoiceChoice(s.t('call'), 'appeler', icon: Icons.call),
+          VoiceChoice(s.t('vjShare'), 'partager', icon: Icons.share_location),
+          VoiceChoice(s.t('sos'), 'sos', icon: Icons.sos),
+          if (step == RiderStep.arriving) VoiceChoice(s.t('cancel'), 'annuler', icon: Icons.close),
+        ],
+        speak: false,
+        autoListen: false);
+    if (heard == null) return;
+    final it = voiceIntents(heard);
+    if (it.contains(VoiceIntent.sos)) {
+      final ok = await _vjConfirm(s.t('vjSosAsk'));
+      if (ok == null) return;
+      if (ok) {
+        _share();
+        try {
+          await launchUrl(Uri(scheme: 'tel', path: '19'));
+        } catch (_) {}
+      }
+    } else if (it.contains(VoiceIntent.call)) {
+      await _vjSay(s.t('vjCalling'));
+      launchUrl(Uri(scheme: 'tel', path: '0600000000')).catchError((_) => false);
+    } else if (it.contains(VoiceIntent.share)) {
+      await _vjSay(s.t('vjSharing'));
+      _share();
+    } else if (it.contains(VoiceIntent.cancel) && step == RiderStep.arriving) {
+      final ok = await _vjConfirm(s.t('vjCancelAsk'));
+      if (ok == null) return;
+      if (ok) {
+        await _vjSay(s.t('vjCancelled'));
+        return _reset();
+      }
+    } else if (it.contains(VoiceIntent.where) || it.contains(VoiceIntent.repeat)) {
+      await _vjSay(_vjTripStatus());
+    } else {
+      await _vjSay('${s.t('vjNotUnderstood')} ${s.t('vjTripHelp')}');
+    }
+    if (mounted && _vj && _step == step) _vjTrip();
+  }
+
+  Future<void> _vjDone() async {
+    final price = _vjPrice(_selected!.priceMad);
+    var question = '${s.t('tripDone')}. ${s.t('vjToPay')} : $price, ${_cash ? s.t('cash') : s.t('card')}. '
+        '${s.t('vjRateAsk')}';
+    for (var i = 0; i < 2; i++) {
+      final heard = await _vjAsk(question, [
+        for (var n = 5; n >= 1; n--) VoiceChoice('$n ★', '$n'),
+        VoiceChoice(s.t('vjSkip'), 'passer', icon: Icons.skip_next),
+      ]);
+      if (heard == null) return;
+      final n = spokenNumber(heard);
+      if (n != null && n >= 1 && n <= 5) {
+        setState(() => _rating = n);
+        break;
+      }
+      if (voiceIntents(heard).contains(VoiceIntent.skip)) break;
+      question = s.t('vjRateAsk');
+    }
+
+    final tip = await _vjAsk(s.t('vjTipAsk'), [
+      for (final v in const [5, 10, 20]) VoiceChoice(dh(v.toDouble()), '$v'),
+      VoiceChoice(s.t('vjNoTip'), 'non merci', icon: Icons.close),
+    ]);
+    if (tip == null) return;
+    final amount = voiceIntents(tip).contains(VoiceIntent.skip) ? null : spokenNumber(tip);
+    final tipped = amount != null && amount > 0 && amount <= 500;
+    if (tipped) setState(() => _tip = amount.toDouble());
+    final thanks = tipped ? '${s.t('vjTipPaid')} ${_vjPrice(_tip)}. ${s.t('vjThanks')}' : s.t('vjThanks');
+    // Mode lancé pour une course : il s'arrête ; mode réglé au démarrage : « Où voulez-vous aller ? » à nouveau.
+    if (_vjOnce) {
+      _stopVoiceJourney(bye: false);
+      _finish();
+      await _vjSay(thanks);
+    } else {
+      await _vjSay(thanks);
+      _finish();
     }
   }
 
@@ -1388,6 +1807,26 @@ class _RiderHomeState extends State<RiderHome> {
         Text(s.t('whereTo'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
         const SizedBox(height: 12),
         _searchBar(),
+        const SizedBox(height: 10),
+        // Parcours 100 % vocal : commander, suivre, noter et donner un pourboire sans toucher l'écran.
+        Semantics(
+          button: true,
+          label: '${s.t('vjStart')}. ${s.t('vjStartDesc')}',
+          excludeSemantics: true,
+          child: OutlinedButton.icon(
+            key: const ValueKey('voiceJourneyStart'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.moroccoGreen,
+              backgroundColor: AppColors.greenSoft,
+              side: const BorderSide(color: AppColors.moroccoGreen, width: 1.5),
+              minimumSize: const Size.fromHeight(52),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            onPressed: _startVoiceJourney,
+            icon: const Icon(Icons.record_voice_over, size: 26),
+            label: Text(s.t('vjStart'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ),
+        ),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: _savedPlace(Icons.home_rounded, s.t('home'), homePlace)),
@@ -1852,7 +2291,9 @@ class _RiderHomeState extends State<RiderHome> {
           ),
           child: Row(children: [
             const SizedBox(
-                width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.moroccoGreen)),
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.moroccoGreen)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(s.t('waitDriverStart'),
@@ -2305,6 +2746,22 @@ class _RiderHomeState extends State<RiderHome> {
               onChanged: (v) => settings.lowVision = v,
             ),
             SwitchListTile(
+              key: const ValueKey('voiceJourneySetting'),
+              secondary: const Icon(Icons.record_voice_over),
+              title: Text(s.t('vjSetting')),
+              subtitle: Text(s.t('vjSettingDesc'), style: const TextStyle(color: AppColors.muted)),
+              value: settings.voiceJourney,
+              onChanged: (v) {
+                Navigator.pop(context);
+                settings.voiceJourney = v;
+                if (v) {
+                  _startVoiceJourney(once: false);
+                } else {
+                  _stopVoiceJourney();
+                }
+              },
+            ),
+            SwitchListTile(
               secondary: const Icon(Icons.record_voice_over_outlined),
               title: Text(s.t('voiceAnnounce')),
               value: settings.voiceAnnounce,
@@ -2587,9 +3044,33 @@ class _RiderHomeState extends State<RiderHome> {
               ]),
             ),
           ),
-          Align(alignment: Alignment.bottomCenter, child: _sheet()),
+          Align(alignment: Alignment.bottomCenter, child: _vj ? _voicePanel() : _sheet()),
         ],
       ),
+    );
+  }
+
+  /// Panneau du parcours vocal, à la place du panneau du bas : la carte et le taxi restent visibles.
+  Widget _voicePanel() {
+    _vjCheckStep();
+    final d = _driver;
+    final status = _inTrip && d != null
+        ? '${d.name} · ${d.car}'
+            '${_step == RiderStep.arrived ? ' · ${s.t('arrived')}' : ' · $_countdown'}'
+        : _step == RiderStep.choosing && _selected != null
+            ? '${_dest!.name} · ${_selected!.title} · ${dh(_selected!.priceMad)}'
+            : _vjStatus;
+    return VoiceJourneyPanel(
+      prompt: _vjPrompt,
+      heard: _vjHeard,
+      listening: _vjListening,
+      waitingTap: _vjWaitingTap,
+      micUnavailable: _vjNoMic,
+      choices: _vjChoices,
+      status: status,
+      onMic: _vjMic,
+      onChoice: _vjChoice,
+      onClose: _stopVoiceJourney,
     );
   }
 }
