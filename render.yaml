@@ -16,6 +16,23 @@ services:
       # Page : https://bab-taxi.onrender.com/sos/centre?cle=<SOS_CENTRE_TOKEN>
       - key: SOS_CENTRE_TOKEN
         generateValue: true
+      # Agent WhatsApp de commande vocale (backend/src/whatsapp).
+      # Jeton à recopier dans Meta (webhook) et clé du simulateur https://bab-taxi.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>
+      - key: WHATSAPP_VERIFY_TOKEN
+        generateValue: true
+      - key: WHATSAPP_DEMO_CLE
+        generateValue: true
+      # Clés secrètes à saisir dans le tableau de bord Render (Environment) : jamais dans le dépôt.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
   # Site web (iPhone, Safari), construit par GitHub Actions sur la branche « web ».
   - type: web
     name: bab-taxi-web

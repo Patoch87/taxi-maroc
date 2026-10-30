@@ -5,6 +5,8 @@ import { FaresController } from './fares/fares.controller';
 import { RidesController } from './rides/rides.controller';
 import { RidesService } from './rides/rides.service';
 import { SosController } from './sos/sos.controller';
+import { WhatsappController } from './whatsapp/whatsapp.controller';
+import { WhatsappService } from './whatsapp/whatsapp.service';
 
 @Controller()
 class HealthController {
@@ -31,6 +33,9 @@ class HealthController {
         'POST /sos',
         'POST /sos/:id/(position|segments|end)',
         'GET /sos/centre?cle=…',
+        'GET|POST /whatsapp/webhook',
+        'GET /whatsapp/etat',
+        'GET /whatsapp/demo',
       ],
     };
   }
@@ -43,7 +48,7 @@ class HealthController {
 }
 
 @Module({
-  controllers: [HealthController, FaresController, RidesController, ComplaintsController, AdsController, SosController],
-  providers: [RidesService],
+  controllers: [HealthController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController],
+  providers: [RidesService, WhatsappService],
 })
 export class AppModule {}
