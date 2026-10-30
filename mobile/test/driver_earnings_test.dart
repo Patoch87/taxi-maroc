@@ -36,16 +36,39 @@ void main() {
     expect(RatingBonus.perRide(4.85), 1.5);
     expect(RatingBonus.perRide(4.6), 1.0);
     expect(RatingBonus.perRide(4.5), 0);
-    expect(RatingBonus.forMonth(average: 4.9, rides: 120), 240); // 2 DH × 120 courses
+    expect(RatingBonus.forMonth(average: 4.9, rides: 90), 180); // 2 DH × 90 courses
     expect(RatingBonus.forMonth(average: 4.9, rides: 10), 0); // trop peu de courses notées
+    expect(RatingBonus.forMonth(average: 4.9, rides: 30, rated: 15), 0);
     final months = DriverEarnings().months(now);
-    expect(months.first.extra[ExtraSource.rating], 95); // 4,62 : 1 DH × 95 courses
-    expect(months[4].extra[ExtraSource.rating], greaterThan(95));
+    expect(months.first.extra[ExtraSource.rating], closeTo(113.3, 1e-9)); // 4,62 : 1 DH × 1,1 × 103 courses
+    expect(months[4].extra[ExtraSource.rating], greaterThan(113.3));
     expect(DriverEarnings().weeks(now).last.extra.containsKey(ExtraSource.rating), isFalse);
     // Les notes du jour comptent dans la moyenne du mois en cours.
     final low = DriverEarnings().months(now, todayRatingSum: 3 * 20, todayRated: 20).last;
     final high = DriverEarnings().months(now, todayRatingSum: 5 * 20, todayRated: 20).last;
     expect(high.rating, greaterThan(low.rating));
+  });
+
+  test('prime qualité : plus de courses dans le mois, plus la prime grandit', () {
+    expect(RatingBonus.volumeFactor(99), 1);
+    expect(RatingBonus.volumeFactor(100), 1.1);
+    expect(RatingBonus.volumeFactor(149), 1.1);
+    expect(RatingBonus.volumeFactor(150), 1.2);
+    expect(RatingBonus.volumeFactor(250), 1.3);
+    expect(RatingBonus.forMonth(average: 4.8, rides: 120), closeTo(198, 1e-9)); // 1,50 DH × 1,1 × 120
+    expect(RatingBonus.forMonth(average: 4.9, rides: 160), closeTo(384, 1e-9)); // 2 DH × 1,2 × 160
+  });
+
+  test('prime qualité : les courses de tous les taxis du chauffeur s\'additionnent', () {
+    for (final m in DriverEarnings().months(now)) {
+      expect(m.ridesByTaxi.values.fold(0, (a, b) => a + b), m.rides);
+      expect(m.ridesByTaxi.length, 2);
+    }
+    final base = DriverEarnings().months(now).last;
+    final grand = DriverEarnings().months(now, todayRideCount: 7, todayTaxi: DemoTaxi.grand).last;
+    expect(grand.rides, base.rides + 7);
+    expect(grand.ridesByTaxi[DemoTaxi.grand], base.ridesByTaxi[DemoTaxi.grand]! + 7);
+    expect(grand.ridesByTaxi[DemoTaxi.petit], base.ridesByTaxi[DemoTaxi.petit]);
   });
 
   test('chaque note du jour est comptée pour la prime du mois', () {
@@ -67,8 +90,9 @@ void main() {
   });
 
   test('série de hausses et hausse en pourcentage', () {
-    List<EarningsPeriod> p(List<double> v) =>
-        [for (final x in v) EarningsPeriod(start: now, before: 1000, extra: {ExtraSource.rides: x})];
+    List<EarningsPeriod> p(List<double> v) => [
+          for (final x in v) EarningsPeriod(start: now, before: 1000, extra: {ExtraSource.rides: x})
+        ];
     expect(DriverEarnings.risingStreak(p([100, 200, 300, 50])), 2); // la période en cours ne compte pas
     expect(DriverEarnings.risingStreak(p([300, 200, 100, 50])), 0);
     expect(p([270]).first.increase, closeTo(.27, 1e-9));
@@ -87,5 +111,8 @@ void main() {
     await tester.dragUntilVisible(find.text('Oct.'), find.byType(ListView), const Offset(0, -200));
     expect(find.text('Oct.'), findsOneWidget);
     expect(find.text('Prime qualité du mois'), findsOneWidget);
+    expect(find.textContaining('tous vos taxis'), findsOneWidget);
+    expect(find.textContaining('Petit taxi n° 2417'), findsOneWidget);
+    expect(find.textContaining('Grand taxi n° 318'), findsOneWidget);
   });
 }

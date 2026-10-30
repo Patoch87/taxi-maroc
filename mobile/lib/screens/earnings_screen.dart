@@ -12,7 +12,14 @@ import '../widgets/app_logo.dart';
 /// avant (moyenne qu'il indique), par semaine ou par mois, et d'où viennent ces gains en plus.
 class EarningsScreen extends StatefulWidget {
   const EarningsScreen(
-      {super.key, this.todayRides = 0, this.todayTips = 0, this.todayRatingSum = 0, this.todayRated = 0, this.now});
+      {super.key,
+      this.todayRides = 0,
+      this.todayTips = 0,
+      this.todayRatingSum = 0,
+      this.todayRated = 0,
+      this.todayRideCount = 0,
+      this.todayTaxi = DemoTaxi.petit,
+      this.now});
 
   /// Gains du service en cours (courses Bab Taxi et pourboires), ajoutés à la période en cours.
   final double todayRides;
@@ -21,6 +28,11 @@ class EarningsScreen extends StatefulWidget {
   /// Notes du service en cours (somme et nombre), pour la prime qualité du mois.
   final int todayRatingSum;
   final int todayRated;
+
+  /// Courses du service en cours et taxi conduit aujourd'hui : les courses de tous les taxis du
+  /// chauffeur s'additionnent pour la prime du mois.
+  final int todayRideCount;
+  final DemoTaxi todayTaxi;
 
   /// Date du jour (tests).
   final DateTime? now;
@@ -47,7 +59,9 @@ class _EarningsScreenState extends State<EarningsScreen> {
             todayRides: widget.todayRides,
             todayTips: widget.todayTips,
             todayRatingSum: widget.todayRatingSum,
-            todayRated: widget.todayRated)
+            todayRated: widget.todayRated,
+            todayRideCount: widget.todayRideCount,
+            todayTaxi: widget.todayTaxi)
         : driverEarnings.weeks(now, todayRides: widget.todayRides, todayTips: widget.todayTips);
   }
 
@@ -115,7 +129,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
               ? cur
               : driverEarnings
                   .months(widget.now ?? DateTime.now(),
-                      todayRatingSum: widget.todayRatingSum, todayRated: widget.todayRated)
+                      todayRatingSum: widget.todayRatingSum,
+                      todayRated: widget.todayRated,
+                      todayRideCount: widget.todayRideCount,
+                      todayTaxi: widget.todayTaxi)
                   .last),
           const SizedBox(height: 12),
           _box(title: s.t('earnHistory'), child: _chart(periods)),
@@ -261,6 +278,9 @@ class _EarningsScreenState extends State<EarningsScreen> {
     final per = RatingBonus.perRide(month.rating);
     final bonus = month.extra[ExtraSource.rating] ?? 0;
     final next = RatingBonus.tiers.reversed.where((t) => t.$1 > month.rating + 1e-9).firstOrNull;
+    final factor = RatingBonus.volumeFactor(month.rides);
+    final nextVolume = RatingBonus.volumeTiers.reversed.where((t) => t.$1 > month.rides).firstOrNull;
+    String x(double f) => '×${num(f, f == f.roundToDouble() ? 0 : (f * 10 - (f * 10).round()).abs() < 1e-9 ? 1 : 2)}';
     return Container(
       key: const ValueKey('ratingBonus'),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -287,6 +307,34 @@ class _EarningsScreenState extends State<EarningsScreen> {
               .replaceAll('{per}', dh(per)),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
+        const SizedBox(height: 4),
+        Text(
+          s.t('ratingBonusVolume').replaceAll('{rides}', '${month.rides}').replaceAll('{x}', x(factor)),
+          key: const ValueKey('ratingBonusVolume'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        if (month.ridesByTaxi.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              [
+                for (final e in month.ridesByTaxi.entries)
+                  '🚕 ${s.t(e.key == DemoTaxi.grand ? 'grandTaxi' : 'petitTaxi')} n° ${e.key.number} : ${e.value}',
+              ].join(' · '),
+              style: const TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
+          ),
+        if (nextVolume != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              s
+                  .t('ratingBonusVolumeNext')
+                  .replaceAll('{n}', '${nextVolume.$1 - month.rides}')
+                  .replaceAll('{x}', x(nextVolume.$2)),
+              style: const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w700),
+            ),
+          ),
         if (next != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -297,8 +345,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
           ),
         const SizedBox(height: 6),
         Text(
-          s.t('ratingBonusRule').replaceAll('{rides}', '${RatingBonus.minRides}') +
-              RatingBonus.tiers.map((t) => '\n★ ${num(t.$1, 1)} → ${dh(t.$2)}').join(),
+          '${s.t('ratingBonusRule').replaceAll('{rides}', '${RatingBonus.minRides}')}'
+          '${RatingBonus.tiers.map((t) => '\n★ ${num(t.$1, 1)} → ${dh(t.$2)}').join()}'
+          '\n\n${s.t('ratingBonusVolumeRule')}'
+          '${RatingBonus.volumeTiers.reversed.map((t) => '\n🚕 ${t.$1}+ → ${x(t.$2)}').join()}',
           style: const TextStyle(fontSize: 13, color: AppColors.muted),
         ),
       ]),
