@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/strings.dart';
 import '../main.dart';
 import '../services/account.dart';
+import '../services/biometric_auth.dart';
 import '../services/dial_codes.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
@@ -184,6 +185,9 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _nationalityMissing = false;
   bool _phoneUnverified = false;
 
+  /// Création du compte : connexion par empreinte ou visage proposée (activée après une vérification).
+  bool _bio = true;
+
   @override
   void dispose() {
     for (final c in [_first, _last, _phone, _email, _code]) {
@@ -250,7 +254,48 @@ class _AccountScreenState extends State<AccountScreen> {
     if (!widget.firstLaunch && Navigator.canPop(context)) Navigator.pop(context);
     messenger?.showSnackBar(SnackBar(content: Text(s.t(created ? 'accountCreated' : 'accountSaved'))));
     if (_lang != langNotifier.value) langNotifier.value = _lang;
+    if (created && _bio && biometricLock.support.any && !biometricLock.enabled) {
+      biometricLock.enable().then((ok) {
+        if (ok) messenger?.showSnackBar(SnackBar(content: Text(s.t('bioEnabled'))));
+      });
+    }
   }
+
+  /// « Mon compte » : le réglage change tout de suite (l'activer demande l'empreinte ou le visage).
+  Future<void> _toggleBio(bool v) async {
+    if (_existing == null) return setState(() => _bio = v);
+    if (!v) return biometricLock.disable();
+    final ok = await biometricLock.enable();
+    if (ok && mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(s.t('bioEnabled'))));
+    }
+  }
+
+  Widget _bioSwitch() => ListenableBuilder(
+        listenable: biometricLock,
+        builder: (context, _) {
+          final sup = biometricLock.support;
+          if (!sup.any) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Material(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppColors.line, width: 1.5)),
+              child: SwitchListTile(
+                key: const ValueKey('biometricLogin'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                secondary: Icon(sup.face && !sup.fingerprint ? Icons.face_retouching_natural : Icons.fingerprint,
+                    color: AppColors.moroccoGreen),
+                title: Text(s.t('bioLogin'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(s.t('bioLoginDesc'), style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                value: _existing == null ? _bio : biometricLock.enabled,
+                onChanged: _toggleBio,
+              ),
+            ),
+          );
+        },
+      );
 
   InputDecoration _deco(String label, {String? hint, String? error, Widget? suffix}) => InputDecoration(
         labelText: label,
@@ -451,6 +496,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 child: Text(s.t('privacyNationality'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
               ),
             ]),
+            _bioSwitch(),
             const SizedBox(height: 16),
             FilledButton(
               key: const ValueKey('saveAccount'),

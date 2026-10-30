@@ -12,6 +12,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Clé du centre de sécurité (vidéos SOS) : tirée au hasard par Render, lisible dans le tableau de bord.
+      # Page : https://bab-taxi.onrender.com/sos/centre?cle=<SOS_CENTRE_TOKEN>
+      - key: SOS_CENTRE_TOKEN
+        generateValue: true
   # Site web (iPhone, Safari), construit par GitHub Actions sur la branche « web ».
   - type: web
     name: bab-taxi-web

@@ -5,7 +5,11 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Votre position permet de trouver un taxi qui passe sur votre route.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Le micro permet de commander un taxi à la voix.</string>
+	<string>Le micro permet de commander un taxi à la voix et d'enregistrer le son pendant un SOS.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>En cas de SOS, la caméra filme la situation et l'envoie en direct au centre de sécurité Bab Taxi.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID permet de vous connecter à Bab Taxi sans code.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>La reconnaissance vocale permet de dire votre destination.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

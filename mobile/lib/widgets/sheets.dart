@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/strings.dart';
 import '../main.dart';
 import '../screens/complaint_screen.dart';
+import '../screens/sos_screen.dart';
 import '../screens/trusted_contacts_screen.dart';
 import '../services/request_chime.dart';
 import '../services/settings.dart';
@@ -28,7 +30,8 @@ Widget sheetHeader(String title, {IconData? icon, Color? color}) => Column(child
     ]);
 
 /// Sécurité et réclamations, accessibles pendant la commande et la course.
-Future<void> showSafetySheet(BuildContext context, {String? taxiId, required VoidCallback onShare}) {
+Future<void> showSafetySheet(BuildContext context,
+    {String? taxiId, required VoidCallback onShare, LatLng Function()? position}) {
   Future<void> call(String n) async {
     try {
       await launchUrl(Uri(scheme: 'tel', path: n));
@@ -54,13 +57,10 @@ Future<void> showSafetySheet(BuildContext context, {String? taxiId, required Voi
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
+              // SOS : la caméra filme (image et son) et l'envoie en direct au centre de sécurité.
               onTap: () {
                 Navigator.pop(ctx);
-                onShare();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  backgroundColor: AppColors.taxiRed,
-                  content: Text(s.t('sosSent'), style: const TextStyle(fontWeight: FontWeight.w700)),
-                ));
+                openSos(context, taxiId: taxiId, position: position, onShare: onShare);
               },
               child: Padding(
                 padding: const EdgeInsets.all(16),

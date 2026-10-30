@@ -49,6 +49,7 @@ import 'driver_home.dart';
 import 'games_screen.dart';
 import 'history_screen.dart';
 import 'search_screen.dart';
+import 'sos_screen.dart';
 import 'trusted_contacts_screen.dart';
 
 enum RiderStep { idle, choosing, dispatching, arriving, arrived, onTrip, done }
@@ -707,12 +708,8 @@ class _RiderHomeState extends State<RiderHome> {
     if (it.contains(VoiceIntent.sos)) {
       final ok = await _vjConfirm(s.t('vjSosAsk'));
       if (ok == null) return;
-      if (ok) {
-        _share();
-        try {
-          await launchUrl(Uri(scheme: 'tel', path: '19'));
-        } catch (_) {}
-      }
+      // Enregistrement vidéo et son envoyé en direct, puis appel du 19.
+      if (ok) _sos(callPolice: true);
     } else if (it.contains(VoiceIntent.call)) {
       await _vjSay(s.t('vjCalling'));
       launchUrl(Uri(scheme: 'tel', path: '0600000000')).catchError((_) => false);
@@ -1595,7 +1592,7 @@ class _RiderHomeState extends State<RiderHome> {
           tooltip: s.t('sos'),
           visualDensity: VisualDensity.compact,
           color: AppColors.taxiRed,
-          onPressed: () => showSafetySheet(context, taxiId: d.taxiNumber, onShare: _share),
+          onPressed: _sos,
           icon: const Icon(Icons.sos),
         ),
       ]),
@@ -1622,6 +1619,13 @@ class _RiderHomeState extends State<RiderHome> {
       await launchUrl(Uri(scheme: 'tel', path: contacts.first.phone));
     } catch (_) {}
   }
+
+  /// Position envoyée avec l'alerte SOS : celle du taxi pendant la course, sinon celle du passager.
+  LatLng _sosPosition() => _taxiPos ?? _me;
+
+  /// SOS : l'enregistrement vidéo et son démarre tout de suite et part en direct au centre de sécurité.
+  void _sos({bool callPolice = false}) => openSos(context,
+      taxiId: _driver?.taxiNumber, position: _sosPosition, onShare: _share, callPolice: callPolice);
 
   Future<void> _share() => shareTrip(
         position: _taxiPos ?? _me,
@@ -1892,7 +1896,7 @@ class _RiderHomeState extends State<RiderHome> {
   Widget _safetyButton() => IconButton.filledTonal(
         tooltip: s.t('safety'),
         style: IconButton.styleFrom(backgroundColor: AppColors.greenSoft, foregroundColor: AppColors.moroccoGreen),
-        onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
+        onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share, position: _sosPosition),
         icon: const Icon(Icons.shield_rounded),
       );
 
@@ -2365,7 +2369,7 @@ class _RiderHomeState extends State<RiderHome> {
           _action(Icons.chat_bubble_outline, s.t('message'), () => showChatSheet(context, driverName: d.name)),
           _action(Icons.ios_share, s.t('share'), _share),
           _action(Icons.flag_outlined, s.t('complain'),
-              () => showSafetySheet(context, taxiId: d.taxiNumber, onShare: _share),
+              () => showSafetySheet(context, taxiId: d.taxiNumber, onShare: _share, position: _sosPosition),
               color: AppColors.taxiRed),
         ]),
         const SizedBox(height: 12),
@@ -2654,7 +2658,7 @@ class _RiderHomeState extends State<RiderHome> {
         ),
         ..._restaurantBlock(),
         TextButton(
-          onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
+          onPressed: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share, position: _sosPosition),
           child: Text(s.t('complain'), style: const TextStyle(color: AppColors.muted)),
         ),
       ],
@@ -2709,7 +2713,7 @@ class _RiderHomeState extends State<RiderHome> {
               title: Text(s.t('safety')),
               onTap: () {
                 Navigator.pop(context);
-                showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share);
+                showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share, position: _sosPosition);
               },
             ),
             // Une seule option « Langue », juste sous « Sécurité » : le choix se fait dans une grille de drapeaux.
@@ -2930,7 +2934,7 @@ class _RiderHomeState extends State<RiderHome> {
           countdown: _step == RiderStep.arrived ? null : _countdown,
           countdownLabel: _step == RiderStep.onTrip ? '${s.t('arrivalAt')} ${_clock(_arrivalTime)}' : null,
           note: _step == RiderStep.arrived ? s.t('waitDriverStart') : null,
-          onSos: () => showSafetySheet(context, taxiId: _driver?.taxiNumber, onShare: _share),
+          onSos: _sos,
           onFastForward: _step == RiderStep.arrived ? null : _nextSpeed,
           speed: _speed,
           // Mode senior : pas de publicité pendant la course, sauf si le passager la demande.

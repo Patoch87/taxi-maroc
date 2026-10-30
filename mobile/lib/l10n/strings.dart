@@ -249,12 +249,6 @@ class S {
 
     // Sécurité et réclamations
     'sos': ['SOS urgence', 'نجدة', 'عتقوني', 'SOS emergency'],
-    'sosDesc': [
-      'Alerte vos proches et la plateforme avec votre position',
-      'تنبيه أقاربك والمنصة بموقعك',
-      'كيعلم العائلة ديالك والمنصة فين نتا',
-      'Alerts your contacts and the platform with your location'
-    ],
     'police': ['Police (19)', 'الشرطة (19)', 'البوليس (19)', 'Police (19)'],
     'gendarmerie': ['Gendarmerie (177)', 'الدرك (177)', 'الجدارمية (177)', 'Gendarmerie (177)'],
     'ambulance': ['Protection civile (15)', 'الوقاية المدنية (15)', 'لابروطيكسيون (15)', 'Civil protection (15)'],
@@ -1229,6 +1223,31 @@ class S {
     'vjNoTip': ['Non merci', 'لا شكرا', 'لا شكرا', 'No thanks'],
     'vjTipPaid': ['Pourboire payé avec votre carte enregistrée :', 'تم دفع البقشيش ببطاقتك المسجلة:', 'تخلص البوربوار بلاكارط ديالك:', 'Tip paid with your saved card:'],
     'vjThanks': ['Merci et bonne journée !', 'شكرا ويوما سعيدا!', 'شكرا ونهارك مبروك!', 'Thank you, have a nice day!'],
+
+    // SOS vidéo en direct et connexion par empreinte ou visage
+    'sosDesc': ['Filme et envoie en direct vidéo, son et position', 'يصوّر ويرسل مباشرة الفيديو والصوت والموقع', 'كيصور وكيصيفط ديريكت الفيديو والصوت والبلاصة', 'Films and sends video, sound and location live'],
+    'sosLive': ['EN DIRECT', 'مباشر', 'ديريكت', 'LIVE'],
+    'sosRecording': ['Vidéo et son envoyés en direct au centre de sécurité Bab Taxi, qui alerte les autorités compétentes.', 'الفيديو والصوت يُرسلان مباشرة إلى مركز أمان باب طاكسي الذي ينبّه السلطات المختصة.', 'الفيديو والصوت كيمشيو ديريكت لمركز الأمان ديال باب طاكسي، اللي كيعلم السلطات.', 'Video and sound are sent live to the Bab Taxi safety centre, which alerts the competent authorities.'],
+    'sosDemo': ['Démo : envoi simulé, rien ne quitte le téléphone', 'عرض تجريبي: إرسال محاكى، لا شيء يغادر الهاتف', 'ديمو: الإرسال غير تجربة، والو ما كيخرج من التيليفون', 'Demo: simulated sending, nothing leaves the phone'],
+    'sosSegments': ['séquences envoyées', 'مقاطع مرسلة', 'مقاطع تصيفطو', 'segments sent'],
+    'sosWaitingNetwork': ['Réseau faible : envoi dès que possible', 'شبكة ضعيفة: الإرسال في أقرب وقت', 'الريزو ضعيف: غادي يتصيفط ملي يمكن', 'Weak network: sending as soon as possible'],
+    'sosNoCamera': ['Caméra indisponible : alerte et position envoyées', 'الكاميرا غير متاحة: تم إرسال التنبيه والموقع', 'الكاميرا ما خدامةش: التنبيه والبلاصة تصيفطو', 'Camera unavailable: alert and location sent'],
+    'sosStarting': ['Démarrage de la caméra…', 'تشغيل الكاميرا…', 'كنشعلو الكاميرا…', 'Starting the camera…'],
+    'sosStop': ['Je suis en sécurité', 'أنا في أمان', 'أنا بخير', 'I am safe'],
+    'sosStopAsk': ['Arrêter l\'enregistrement et clore l\'alerte ?', 'إيقاف التسجيل وإغلاق التنبيه؟', 'نوقفو التسجيل ونسدو التنبيه؟', 'Stop recording and close the alert?'],
+    'sosEnded': ['Alerte close. Prenez soin de vous.', 'تم إغلاق التنبيه. اعتنِ بنفسك.', 'التنبيه تسد. تهلا فراسك.', 'Alert closed. Take care.'],
+    'sosNotice': ['Enregistrement lancé par vous, seulement pendant l\'alerte. Conservé pour l\'enquête et transmis aux seules autorités compétentes (loi 09-08).', 'التسجيل بطلب منك وخلال التنبيه فقط. يُحفظ لأغراض التحقيق ولا يُسلَّم إلا للسلطات المختصة (القانون 09-08).', 'التسجيل بطلب منك وغير وقت التنبيه. كيتحفظ للبحث وما كيتعطى غير للسلطات المختصة (القانون 09-08).', 'Recording started by you, only during the alert. Kept for the investigation and passed only to the competent authorities (law 09-08).'],
+    'sosWarnContacts': ['Prévenir mes proches', 'تنبيه أقاربي', 'علم العائلة ديالي', 'Warn my contacts'],
+    'switchCamera': ['Changer de caméra', 'تبديل الكاميرا', 'بدل الكاميرا', 'Switch camera'],
+    'bioLogin': ['Connexion par empreinte ou visage', 'الدخول بالبصمة أو الوجه', 'الدخول بالبصمة ولا الوجه', 'Fingerprint or face login'],
+    'bioLoginDesc': ['Empreinte digitale ou reconnaissance faciale à l\'ouverture de l\'application', 'بصمة الإصبع أو التعرف على الوجه عند فتح التطبيق', 'البصمة ولا الوجه ملي تحل التطبيق', 'Fingerprint or face recognition when opening the app'],
+    'bioReason': ['Confirmez votre identité pour ouvrir Bab Taxi', 'أكّد هويتك لفتح باب طاكسي', 'أكد شكون نتا باش تحل باب طاكسي', 'Confirm your identity to open Bab Taxi'],
+    'bioUnlock': ['Se connecter', 'تسجيل الدخول', 'دخل', 'Log in'],
+    'bioHello': ['Bonjour', 'مرحبا', 'السلام', 'Hello'],
+    'bioUseCode': ['Utiliser le code SMS', 'استعمال رمز SMS', 'خدم بكود SMS', 'Use the SMS code'],
+    'bioFailed': ['Non reconnu, réessayez', 'لم يتم التعرف، حاول مجددا', 'ما تعرفش عليك، عاود', 'Not recognised, try again'],
+    'bioUnavailable': ['Aucune empreinte ni visage enregistré sur ce téléphone', 'لا توجد بصمة ولا وجه مسجل في هذا الهاتف', 'ما كاين لا بصمة لا وجه مسجل فهاد التيليفون', 'No fingerprint or face registered on this phone'],
+    'bioEnabled': ['Connexion par empreinte ou visage activée', 'تم تفعيل الدخول بالبصمة أو الوجه', 'الدخول بالبصمة ولا الوجه تشعل', 'Fingerprint or face login enabled'],
   };
 
   /// Clés et textes des 4 langues de base (fr, ar, dr, en).
