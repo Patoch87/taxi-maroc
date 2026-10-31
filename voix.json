@@ -1,0 +1,22 @@
+{
+ "agent_ar": {
+  "voice_id": "A9ATTqUUQ6GHu0coCz8t",
+  "nom": "fixée",
+  "modele": "eleven_v3"
+ },
+ "client_ar": {
+  "voice_id": "OfGMGmhShO8iL9jCkXy8",
+  "nom": "Ghizlane - Warm, Natural and Encouraging",
+  "modele": "eleven_v3"
+ },
+ "agent_fr": {
+  "voice_id": "aQROLel5sQbj1vuIVi6B",
+  "nom": "fixée",
+  "modele": "eleven_multilingual_v2"
+ },
+ "client_fr": {
+  "voice_id": "YxrwjAKoUKULGd0g8K9Y",
+  "nom": "Lucie - Support Agent",
+  "modele": "eleven_multilingual_v2"
+ }
+}
