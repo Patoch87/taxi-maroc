@@ -3,16 +3,8 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "P_VERSUS",
-   "texte": "Pas de voiture inconnue : avec Bab Taxi, seulement des taxis officiels, des chauffeurs vérifiés, casier judiciaire compris, et le prix du compteur affiché avant de monter."
-  },
-  {
-   "id": "P34",
-   "texte": "Sur Bab Taxi, chaque taxi est enregistré : chauffeur vérifié, casier judiciaire contrôlé, numéro d'agrément, véhicule identifié."
-  },
-  {
-   "id": "I_IMAGE",
-   "texte": "Des taxis récents et propres, des chauffeurs vérifiés, casier judiciaire compris, et notés par leurs passagers : l'image du taxi change, et les visiteurs sont rassurés."
+   "id": "C_VILLES",
+   "texte": "Petit taxi rouge de Casablanca, bleu de Rabat, ocre de Marrakech, et dans toutes les villes de la Coupe du monde. Grand taxi blanc entre les villes. Bab Taxi est fait pour tous les taxis du Maroc."
   }
  ]
 }
