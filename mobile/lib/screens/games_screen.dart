@@ -11,8 +11,9 @@ import '../widgets/coupon_sheet.dart';
 import '../widgets/promo_card.dart';
 import 'my_offers_screen.dart';
 
-/// « Jouer pendant le trajet » : 3 petits jeux, une partie par jeu et par course.
-/// Gagner donne un cadeau offert par un partenaire fictif, enregistré dans « Mes offres ».
+/// « Le jeu du trajet » : une carte à gratter par course, présentée en grand.
+/// Gagner donne un cadeau offert par un partenaire fictif (tourisme au Maroc), enregistré dans « Mes offres ».
+/// (La roue et le quiz restent disponibles dans [GamePage] mais ne sont plus proposés.)
 class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key, required this.tripId});
   final String tripId;
@@ -22,80 +23,196 @@ class GamesScreen extends StatefulWidget {
 }
 
 class _GamesScreenState extends State<GamesScreen> {
-  static const _games = [
-    (TripGame.scratch, 'gameScratch', 'gameScratchDesc', Icons.auto_awesome, Color(0xFFC1272D)),
-    (TripGame.wheel, 'gameWheel', 'gameWheelDesc', Icons.album_outlined, Color(0xFF006233)),
-    (TripGame.quiz, 'gameQuiz', 'gameQuizDesc', Icons.quiz_outlined, Color(0xFF1565C0)),
-  ];
-
-  Future<void> _open(TripGame g, String titleKey) async {
-    await Navigator.push(
-        context, MaterialPageRoute(builder: (_) => GamePage(game: g, tripId: widget.tripId, titleKey: titleKey)));
+  Future<void> _open() async {
+    await Navigator.push(context,
+        MaterialPageRoute(builder: (_) => GamePage(game: TripGame.scratch, tripId: widget.tripId, titleKey: 'gameScratch')));
     if (mounted) setState(() {});
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(s.t('gamesTitle'))),
-        body: ListView(padding: const EdgeInsets.all(16), children: [
-          Text(s.t('playSubtitle'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(s.t('gamesIntro'), style: const TextStyle(color: AppColors.muted)),
-          const SizedBox(height: 16),
-          for (final (g, title, desc, icon, color) in _games) ...[
-            _tile(g, title, desc, icon, color),
-            const SizedBox(height: 10),
-          ],
-          const SizedBox(height: 6),
-          // Partenaires des cadeaux : exemples fictifs de la démo.
-          Text('${s.t('giftOfferedBy')} : ${tripGifts.map((p) => p.brand).join(', ')} · ${s.t('fictiveExample')}',
-              style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-        ]),
+  Widget build(BuildContext context) {
+    final played = hasPlayed(widget.tripId, TripGame.scratch);
+    return Scaffold(
+      appBar: AppBar(title: Text(s.t('gamesTitle'))),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
+        _hero(played),
+        const SizedBox(height: 22),
+        Text(s.t('gamePrizes'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 10),
+        for (final g in tripGifts) ...[_prize(g), const SizedBox(height: 8)],
+        const SizedBox(height: 6),
+        Text('${s.t('gamesIntro')} ${s.t('giftOfferedBy')} : ${tripGifts.map((p) => p.brand).join(', ')} · ${s.t('fictiveExample')}',
+            style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+      ]),
+    );
+  }
+
+  Widget _hero(bool played) => Semantics(
+        button: true,
+        enabled: !played,
+        label: '${s.t('gameScratch')}. ${played ? s.t('alreadyPlayed') : s.t('gameHeroDesc')}',
+        excludeSemantics: true,
+        child: Material(
+          borderRadius: BorderRadius.circular(26),
+          clipBehavior: Clip.antiAlias,
+          elevation: 6,
+          shadowColor: AppColors.taxiRed.withValues(alpha: 0.4),
+          child: InkWell(
+            onTap: played ? null : _open,
+            child: Ink(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFD8343B), Color(0xFF8E1B22)]),
+              ),
+              child: Stack(children: [
+                const Positioned.fill(child: CustomPaint(painter: _ZelligePainter())),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(20)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.local_taxi, color: Colors.white, size: 15),
+                        const SizedBox(width: 6),
+                        Text(s.t('onePerRide'),
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                      ]),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(s.t('gameScratch'),
+                        style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, height: 1.05)),
+                    const SizedBox(height: 6),
+                    Text(s.t('gameHeroDesc'),
+                        style: const TextStyle(color: Colors.white, fontSize: 14.5, height: 1.3)),
+                    const SizedBox(height: 18),
+                    const _CardPreview(),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.taxiRed,
+                          disabledBackgroundColor: Colors.white.withValues(alpha: 0.35),
+                          disabledForegroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                        ),
+                        onPressed: played ? null : _open,
+                        icon: Icon(played ? Icons.check_circle : Icons.touch_app),
+                        label: Text(played ? s.t('alreadyPlayed') : s.t('playLabel')),
+                      ),
+                    ),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ),
       );
 
-  Widget _tile(TripGame g, String title, String desc, IconData icon, Color color) {
-    final played = hasPlayed(widget.tripId, g);
-    return Semantics(
-      button: true,
-      enabled: !played,
-      label: '${s.t(title)}. ${played ? s.t('alreadyPlayed') : s.t(desc)}',
-      excludeSemantics: true,
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
+  Widget _prize(Promo g) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          onTap: played ? null : () => _open(g, title),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(color: g.color, borderRadius: BorderRadius.circular(12)),
+            child: Icon(g.icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(s.t(g.titleKey), style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800)),
+              Text(g.brand, style: const TextStyle(fontSize: 12.5, color: AppColors.muted)),
+            ]),
+          ),
+          const Icon(Icons.card_giftcard, color: AppColors.gold),
+        ]),
+      );
+}
+
+/// Aperçu de la carte à gratter : bande argentée « ? ? ? » et pièce, légèrement inclinée.
+class _CardPreview extends StatelessWidget {
+  const _CardPreview();
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Transform.rotate(
+          angle: -0.04,
           child: Container(
-            padding: const EdgeInsets.all(14),
+            width: 250,
+            height: 120,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
+              color: AppColors.sand,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.line, width: 1.5),
+              boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 14, offset: Offset(0, 6))],
             ),
             child: Row(children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration:
-                    BoxDecoration(color: played ? AppColors.line : color, borderRadius: BorderRadius.circular(14)),
-                child: Icon(icon, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 12),
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s.t(title), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-                  Text(played ? s.t('alreadyPlayed') : s.t(desc),
-                      style: const TextStyle(fontSize: 13, color: AppColors.muted)),
-                ]),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(colors: [Color(0xFFD9D9D9), Color(0xFFA9A9A9), Color(0xFFE6E6E6)]),
+                  ),
+                  child: const Text('? ? ?',
+                      style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 4)),
+                ),
               ),
-              Icon(played ? Icons.check_circle : Icons.play_circle_fill,
-                  color: played ? AppColors.muted : AppColors.moroccoGreen, size: 30),
+              const SizedBox(width: 10),
+              Container(
+                width: 46,
+                height: 46,
+                decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle),
+                child: const Icon(Icons.redeem, color: Colors.white, size: 26),
+              ),
             ]),
           ),
         ),
-      ),
-    );
+      );
+}
+
+/// Motif d'étoiles à huit branches (zellige), très léger, sur le fond rouge.
+class _ZelligePainter extends CustomPainter {
+  const _ZelligePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    const step = 46.0;
+    for (var y = 0.0; y < size.height + step; y += step) {
+      for (var x = 0.0; x < size.width + step; x += step) {
+        final c = Offset(x, y);
+        for (final a in [0.0, pi / 4]) {
+          final path = Path();
+          for (var i = 0; i < 4; i++) {
+            final ang = a + i * pi / 2;
+            final p = c + Offset(cos(ang), sin(ang)) * 13;
+            i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
+          }
+          path.close();
+          canvas.drawPath(path, paint);
+        }
+      }
+    }
   }
+
+  @override
+  bool shouldRepaint(_ZelligePainter old) => false;
 }
 
 /// Une partie : le jeu, puis le résultat (cadeau gagné ou perdu).

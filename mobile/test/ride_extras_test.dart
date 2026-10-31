@@ -117,8 +117,8 @@ void main() {
     phone(tester);
     await tester.pumpWidget(app(const GamesScreen(tripId: 'T123456')));
     expect(find.text('Grattez et gagnez'), findsOneWidget);
-    expect(find.text('Roue des cadeaux'), findsOneWidget);
-    expect(find.text('Quiz du Maroc'), findsOneWidget);
+    expect(find.text('Roue des cadeaux'), findsNothing);
+    expect(find.text('Thé à la menthe et pâtisseries offerts'), findsOneWidget);
     await tester.tap(find.text('Grattez et gagnez'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tout gratter'));

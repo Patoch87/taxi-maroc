@@ -909,17 +909,17 @@ class S {
     ],
     'playDuringRide': ["Jouer pendant le trajet", "العب أثناء الرحلة", "لعب فالطريق", "Play during the ride"],
     'playSubtitle': [
-      "Petits jeux, cadeaux offerts par des partenaires",
-      "ألعاب صغيرة وهدايا من الشركاء",
-      "لعيبات صغار وكادوات من الشركاء",
-      "Mini games, gifts from partners"
+      "Une carte à gratter, un cadeau de nos partenaires",
+      "بطاقة للكشط وهدية من شركائنا",
+      "كارطة تحكّها وكادو من الشركاء",
+      "A scratch card, a gift from our partners"
     ],
-    'gamesTitle': ["Jeux du trajet", "ألعاب الرحلة", "لعيبات الطريق", "Ride games"],
+    'gamesTitle': ["Le jeu du trajet", "لعبة الرحلة", "لعيبة الطريق", "Ride game"],
     'gamesIntro': [
-      "Une partie par jeu et par course. Les cadeaux gagnés vont dans Mes offres.",
-      "محاولة واحدة لكل لعبة في كل رحلة. الهدايا تُضاف إلى عروضي.",
-      "مرة وحدة لكل لعبة فكل كورصة. الكادوات كيمشيو للعروض ديالي.",
-      "One play per game per ride. Gifts you win go to My offers."
+      "Les cadeaux gagnés vont dans Mes offres.",
+      "الهدايا المربوحة تُضاف إلى عروضي.",
+      "الكادوات اللي ربحتي كيمشيو للعروض ديالي.",
+      "Gifts you win go to My offers."
     ],
     'gameScratch': ["Grattez et gagnez", "اكشط واربح", "حك وربح", "Scratch and win"],
     'gameScratchDesc': [
@@ -984,13 +984,26 @@ class S {
     'seeMyOffers': ["Voir Mes offres", "عرض عروضي", "شوف العروض ديالي", "See My offers"],
     'giftOfferedBy': ["Offert par", "مقدم من", "مهدي من", "Offered by"],
     'fictiveExample': ["exemple fictif", "مثال وهمي", "مثال ماشي حقيقي", "fictitious example"],
-    'giftCafeAtlas': ["-15 % sur votre café", "تخفيض 15% على قهوتك", "-15% على القهوة ديالك", "15% off your coffee"],
-    'giftSoukMode': [
-      "-20 % sur vos achats",
-      "تخفيض 20% على مشترياتك",
-      "-20% على الشرية ديالك",
-      "20% off your purchase"
+    'giftRiadTea': [
+      "Thé à la menthe et pâtisseries offerts",
+      "شاي بالنعناع وحلويات مجاناً",
+      "أتاي بالنعناع وحلويات فابور",
+      "Free mint tea and pastries"
     ],
+    'giftDesertNight': [
+      "-15 % sur la nuit sous les étoiles à Merzouga",
+      "تخفيض 15% على ليلة تحت النجوم في مرزوكة",
+      "-15% على ليلة تحت النجوم فمرزوكة",
+      "15% off a night under the stars in Merzouga"
+    ],
+    'gamePrizes': ["À gagner pendant ce trajet", "يمكن ربحه خلال هذه الرحلة", "تقدر تربح فهاد الطريق", "To win on this ride"],
+    'gameHeroDesc': [
+      "Une carte par course, un cadeau à chaque fois : découvrez le Maroc avec nos partenaires.",
+      "بطاقة واحدة لكل رحلة، وهدية في كل مرة: اكتشف المغرب مع شركائنا.",
+      "كارطة وحدة فكل كورصة، وكادو كل مرة: كتاشف المغرب مع الشركاء ديالنا.",
+      "One card per ride, a gift every time: discover Morocco with our partners."
+    ],
+    'onePerRide': ["1 partie par course", "محاولة واحدة لكل رحلة", "مرة وحدة فكل كورصة", "1 play per ride"],
     'giftSharedRide': [
       "1 course partagée offerte jusqu'à 10 MAD",
       "رحلة مشتركة مجانية حتى 10 دراهم",

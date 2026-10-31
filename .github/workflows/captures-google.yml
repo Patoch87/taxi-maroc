@@ -28,7 +28,7 @@ jobs:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
         run: |
           flutter pub get
-          flutter build web --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=WEB_GOOGLE_MAPS=true --dart-define=NO_ADS=true
+          flutter build web --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=WEB_GOOGLE_MAPS=true --dart-define=NO_ADS=true --dart-define=FILM=true
           sed -i "s|</head>|<script src=\"https://maps.googleapis.com/maps/api/js?key=$MAPS_API_KEY\"></script></head>|" build/web/index.html
           cp ../.github/demo/card.html build/web/demo-card.html
           cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png build/web/logo.png

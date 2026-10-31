@@ -52,6 +52,8 @@ class AppSettings extends ChangeNotifier {
 
   /// Restaurants proposés près de la destination (toujours affichés ; désactivés seulement pour la
   /// vidéo de démonstration, version web « ?video=1 »).
+  ///
+  /// (Voir aussi [filmCapture] : captures du film, sans les commandes de la démo.)
   bool get restaurantSuggestions => _restaurantSuggestions;
   set restaurantSuggestions(bool v) => _set(() => _restaurantSuggestions = v);
 
@@ -109,3 +111,7 @@ class AppSettings extends ChangeNotifier {
 }
 
 final settings = AppSettings();
+
+/// Captures du film de présentation (--dart-define=FILM=true) : la commande « Accélérer » de la démo
+/// est masquée et le trajet simulé avance directement en ×4.
+const filmCapture = bool.fromEnvironment('FILM');
