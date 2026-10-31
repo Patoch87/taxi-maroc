@@ -3,8 +3,16 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "C_VILLES",
-   "texte": "A red petit taxi in Casablanca, blue in Rabat, ochre in Marrakech, and in every World Cup city. White grand taxis between cities. Bab Taxi is made for every taxi in Morocco."
+   "id": "C_HOOK",
+   "texte": "Your taxi. Your passengers. Your earnings. Bab Taxi works for you, not the other way round."
+  },
+  {
+   "id": "P_PUB",
+   "texte": "On the screen in the back, offers to discover Morocco along her route: a riad, an excursion, a hammam, with a discount voucher."
+  },
+  {
+   "id": "P25",
+   "texte": "During the ride: a scratch card, a gift from our partners, and a restaurant table in one tap."
   }
  ]
 }
