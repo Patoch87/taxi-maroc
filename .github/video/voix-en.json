@@ -3,16 +3,8 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "C_HOOK",
-   "texte": "Your taxi. Your passengers. Your earnings. Bab Taxi works for you, not the other way round."
-  },
-  {
-   "id": "P_PUB",
-   "texte": "On the screen in the back, offers to discover Morocco along her route: a riad, an excursion, a hammam, with a discount voucher."
-  },
-  {
-   "id": "P25",
-   "texte": "During the ride: a scratch card, a gift from our partners, and a restaurant table in one tap."
+   "id": "I_PUB",
+   "texte": "In every taxi, the in-ride screen can also play short films promoting Morocco: a tourism showcase seen by thousands of visitors every day."
   }
  ]
 }
