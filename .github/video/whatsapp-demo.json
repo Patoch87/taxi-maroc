@@ -1,0 +1,39 @@
+{
+ "roles": {
+  "agent_ar": {"voice_id": "A9ATTqUUQ6GHu0coCz8t", "modele": "eleven_v3", "langue": "ar"},
+  "client_ar": {"recherche": {"language": "ar", "accent": "moroccan", "gender": "female"}, "secours": "EXAVITQu4vr4xnSDxMaL", "modele": "eleven_v3", "langue": "ar"},
+  "agent_fr": {"voice_id": "aQROLel5sQbj1vuIVi6B", "modele": "eleven_multilingual_v2", "langue": "fr"},
+  "client_fr": {"recherche": {"language": "fr", "gender": "female", "use_cases": "conversational"}, "secours": "EXAVITQu4vr4xnSDxMaL", "modele": "eleven_multilingual_v2", "langue": "fr"}
+ },
+ "lignes": [
+  {"id": "ar-c1", "role": "client_ar", "texte": "السلام، بغيت طاكسي من لاكار كازا فوياجور للمعاريف عافاك."},
+  {"id": "ar-a1", "role": "agent_ar", "texte": "مرحبا بيك فباب طاكسي. غادي للمعاريف، من لاكار كازا فوياجور، ياك؟"},
+  {"id": "ar-c2", "role": "client_ar", "texte": "إيه، هو هداك."},
+  {"id": "ar-a2", "role": "agent_ar", "texte": "صيفطي ليا اللوكاليزاسيون ديالك، باش الشيفور يلقاك نيشان."},
+  {"id": "ar-a3", "role": "agent_ar", "texte": "وصلاتني. عندك تلاتة ديال الاختيارات: مشترك عشرين درهم، بوحدك تلاتة وربعين درهم، ولا بريميوم تلاتة وخمسين درهم. شنو بغيتي؟"},
+  {"id": "ar-c3", "role": "client_ar", "texte": "مشترك، ونخلص كاش."},
+  {"id": "ar-a4", "role": "agent_ar", "texte": "مشترك للمعاريف، عشرين درهم، الخلاص كاش. نطلب ليك الطاكسي؟"},
+  {"id": "ar-c4", "role": "client_ar", "texte": "واخا، طلب."},
+  {"id": "ar-a5", "role": "agent_ar", "texte": "طلبت ليك. الطلب مشى للطاكسيات اللي دايزين فطريقك، وغادي نعلمك هنا ملي يقبل شي شيفور."},
+  {"id": "ar-a6", "role": "agent_ar", "texte": "لقينا ليك طاكسي! حميد، طاكسي صغير نمرة ألفين وربعمية وسبعطاش، بعيد عليك بربعمية متر. تسناي فبلاصتك."},
+  {"id": "ar-c5", "role": "client_ar", "texte": "فين وصل دابا؟"},
+  {"id": "ar-a7", "role": "agent_ar", "texte": "حميد بعيد عليك بخمسين متر، راه واصل."},
+  {"id": "ar-a8", "role": "agent_ar", "texte": "الشيفور بدا الكورسة. طريق السلامة!"},
+  {"id": "ar-a9", "role": "agent_ar", "texte": "وصلتي. شكرا على باب طاكسي، حتى لمرة جاية!"},
+
+  {"id": "fr-c1", "role": "client_fr", "texte": "Bonjour, je voudrais un taxi de la gare Casa Voyageurs jusqu'au Maârif, s'il vous plaît."},
+  {"id": "fr-a1", "role": "agent_fr", "texte": "Bienvenue chez Bab Taxi. Vous allez au Maârif, depuis la gare Casa Voyageurs, c'est bien ça ?"},
+  {"id": "fr-c2", "role": "client_fr", "texte": "Oui, c'est ça."},
+  {"id": "fr-a2", "role": "agent_fr", "texte": "Envoyez-moi votre position, pour que le chauffeur vous trouve facilement."},
+  {"id": "fr-a3", "role": "agent_fr", "texte": "Bien reçu. Trois offres : partagé, vingt dirhams ; seule, quarante-trois dirhams ; ou premium, cinquante-trois dirhams. Laquelle voulez-vous ?"},
+  {"id": "fr-c3", "role": "client_fr", "texte": "Partagé, et je paie en espèces."},
+  {"id": "fr-a4", "role": "agent_fr", "texte": "Partagé pour le Maârif, vingt dirhams, en espèces. Je commande le taxi ?"},
+  {"id": "fr-c4", "role": "client_fr", "texte": "Oui, allez-y."},
+  {"id": "fr-a5", "role": "agent_fr", "texte": "C'est commandé. La demande est partie aux taxis qui passent sur votre route. Je vous préviens ici dès qu'un chauffeur accepte."},
+  {"id": "fr-a6", "role": "agent_fr", "texte": "Un taxi a accepté ! Hamid, petit taxi numéro deux mille quatre cent dix-sept, à quatre cents mètres de vous. Restez à votre point de départ."},
+  {"id": "fr-c5", "role": "client_fr", "texte": "Il est où maintenant ?"},
+  {"id": "fr-a7", "role": "agent_fr", "texte": "Hamid est à cinquante mètres, il arrive."},
+  {"id": "fr-a8", "role": "agent_fr", "texte": "Le chauffeur a démarré la course. Bon trajet !"},
+  {"id": "fr-a9", "role": "agent_fr", "texte": "Vous êtes arrivée. Merci d'avoir choisi Bab Taxi, à bientôt !"}
+ ]
+}

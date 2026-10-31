@@ -1,0 +1,33 @@
+name: Voix démo WhatsApp
+
+# Voix de la vidéo « Commander un taxi par WhatsApp » (textes dans .github/video/whatsapp-demo.json).
+# Résultat publié sur la branche « voix-whatsapp ». Secret nécessaire : ELEVENLABS_API_KEY.
+on:
+  push:
+    branches: [video-whatsapp]
+    paths: ['.github/video/whatsapp-demo.json', '.github/video/voix_whatsapp.py', '.github/workflows/voix-whatsapp.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  voix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Voix
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          if [ -z "$ELEVENLABS_API_KEY" ]; then echo "Secret ELEVENLABS_API_KEY absent"; exit 1; fi
+          python3 .github/video/voix_whatsapp.py .github/video/whatsapp-demo.json out
+      - name: Publier sur la branche voix-whatsapp
+        run: |
+          cd out
+          git init -q -b voix-whatsapp
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Voix démo WhatsApp du commit $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" voix-whatsapp
