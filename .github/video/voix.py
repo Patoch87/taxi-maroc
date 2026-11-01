@@ -31,6 +31,15 @@ def tts(voice, text, prev='', nxt=''):
     return call(f'/text-to-speech/{voice}?output_format=mp3_44100_128', body)
 
 
+def tts_horodate(voice, text, prev='', nxt=''):
+    """Même voix, avec le minutage de chaque caractère (pour caler les plans du film sur les mots)."""
+    import base64
+    body = dict(text=text, model_id=data.get('modele', 'eleven_multilingual_v2'), previous_text=prev, next_text=nxt,
+                voice_settings=dict(stability=0.5, similarity_boost=0.8, style=0.25, use_speaker_boost=True, speed=0.97))
+    r = json.loads(call(f'/text-to-speech/{voice}/with-timestamps?output_format=mp3_44100_128', body))
+    return base64.b64decode(r['audio_base64']), r.get('alignment') or r.get('normalized_alignment')
+
+
 voice = os.environ.get('VOICE_ID', '').strip()
 if not voice:
     os.makedirs(out + '/essais', exist_ok=True)
@@ -64,5 +73,10 @@ else:
     for i, l in enumerate(lines):
         prev = lines[i - 1]['texte'] if i else ''
         nxt = lines[i + 1]['texte'] if i + 1 < len(lines) else ''
-        open(f"{out}/{l['id']}.mp3", 'wb').write(tts(voice, l['texte'], prev, nxt))
+        if l.get('horodatage'):
+            audio, al = tts_horodate(voice, l['texte'], prev, nxt)
+            open(f"{out}/{l['id']}.mp3", 'wb').write(audio)
+            json.dump(al, open(f"{out}/{l['id']}.json", 'w'), ensure_ascii=False)
+        else:
+            open(f"{out}/{l['id']}.mp3", 'wb').write(tts(voice, l['texte'], prev, nxt))
         print('voix', l['id'])
