@@ -373,6 +373,30 @@ const [url, out] = process.argv.slice(2);
     await tap('OK');
     await expectScreen('retour accueil', 'Rechercher une destination', 30);
     await wait(800);
+
+    // Vidéo Samsung : deuxième commande, cette fois à la voix (sans WhatsApp). Les réponses sont
+    // données avec les boutons de réponse du panneau vocal (pas de micro dans le navigateur).
+    if (SAMSUNG) {
+      await wait(1500);
+      await tap('Commander à la voix');
+      await expectScreen('vocal : destination', 'Maison', 20);
+      await wait(3500);
+      const answer = (label) => target(label).click({ timeout: 15000, force: true });
+      await answer('Maison');
+      await expectScreen('vocal : confirmation', 'Oui', 15);
+      await wait(3500);
+      await answer('Oui');
+      await expectScreen('vocal : choix du taxi', 'Petit taxi seul', 20);
+      await wait(5000);
+      await answer('Petit taxi seul');
+      await expectScreen('vocal : paiement', 'Espèces', 15);
+      await wait(2500);
+      await answer('Espèces');
+      await wait(3500);
+      await answer('Oui');
+      await expectScreen('vocal : taxi trouvé', 'Où est mon taxi', 60);
+      await wait(4500);
+    }
   }
 
   // ---------------------------------------------------------------- Chapitre 3 : expérience chauffeur
