@@ -79,11 +79,16 @@ const [url, out] = process.argv.slice(2);
       if (!paused) {
         try {
           const t = now();
-          const { data } = await cdp.send('Page.captureScreenshot', shoot);
+          // Délai maximal : une capture lancée pendant un changement de page peut ne jamais répondre.
+          const { data } = await Promise.race([
+            cdp.send('Page.captureScreenshot', shoot),
+            sleep(2000).then(() => Promise.reject(new Error('capture : délai dépassé'))),
+          ]);
           const file = `f${String(n++).padStart(6, '0')}.jpg`;
           fs.writeFileSync(path.join(framesDir, file), Buffer.from(data, 'base64'));
           marks.frames.push({ file, t });
         } catch (e) {
+          if (process.env.DEMO_DEBUG) console.log("capture", e.message);
           // page en cours de chargement : image suivante
         }
       }
@@ -324,17 +329,20 @@ const [url, out] = process.argv.slice(2);
     await wait(2500);
     // Montée à bord : l'offre du commerçant (Caribou Coffee) est montrée, puis fermée.
     skip(true);
-    await expectScreen('publicité', 'Masquer la publicité', 20);
-    await scrollPanel(120, 3);
-    await wait(800);
-    skip(false);
-    caption('À bord : bon de réduction des commerces, -20 % chez Caribou Coffee');
-    await wait(4000);
-    skip(true);
-    caption(null);
-    await tap('Masquer la publicité');
-    await wait(800);
-    if (await present('Masquer la publicité')) throw new Error('étape « à bord » : offre toujours affichée');
+    // Version sans publicité (NO_ADS) : pas d'offre du commerçant.
+    if (!SAMSUNG || (await waitFor('Masquer la publicité', 8))) {
+      await expectScreen('publicité', 'Masquer la publicité', 20);
+      await scrollPanel(120, 3);
+      await wait(800);
+      skip(false);
+      caption('À bord : bon de réduction des commerces, -20 % chez Caribou Coffee');
+      await wait(4000);
+      skip(true);
+      caption(null);
+      await tap('Masquer la publicité');
+      await wait(800);
+      if (await present('Masquer la publicité')) throw new Error('étape « à bord » : offre toujours affichée');
+    }
     await fast();
     // Panneau replié : la carte et le trajet.
     await tap('Afficher ou masquer les détails');
