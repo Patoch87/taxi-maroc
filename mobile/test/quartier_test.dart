@@ -80,5 +80,7 @@ void main() {
     expect(find.byKey(const ValueKey('myDestBanner')), findsNothing);
     expect(find.byKey(const ValueKey('sayArea')), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
+    // Micro sans réponse dans les tests : son attente s'arrête au bout de 20 secondes.
+    await tester.pump(const Duration(seconds: 21));
   });
 }

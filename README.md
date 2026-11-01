@@ -58,6 +58,15 @@ Sans `API_URL`, l'application tourne en **mode démo** : prix calculés sur le t
 
 **iPhone** : le workflow « iPhone » compile l'application sur un Mac de GitHub et publie une version non signée : https://github.com/Patoch87/taxi-maroc/releases/download/ios/bab-taxi-ios-non-signe.ipa. Pour l'installer sur un iPhone, il faut la signer : avec un compte Apple Developer, ajouter les secrets `IOS_CERTIFICATE_P12` (certificat de distribution en base64), `IOS_CERTIFICATE_PASSWORD`, `IOS_PROVISIONING_PROFILE` (profil App Store en base64), `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY` (clé API App Store Connect) et la variable `IOS_TEAM_ID` : l'application signée est alors envoyée sur TestFlight à chaque version. La carte Google sur iPhone demande d'activer « Maps SDK for iOS » pour la clé `MAPS_API_KEY`.
 
+## Commander par WhatsApp (agent vocal)
+
+Le serveur contient un agent qui prend les commandes sur WhatsApp, par messages vocaux ou écrits, en français et en darija (`backend/src/whatsapp`). Il répète la destination et attend le « oui » du passager, donne seulement les prix totaux, puis crée la course comme l'application et prévient le passager quand un chauffeur accepte, démarre et termine la course.
+
+- Compréhension et dialogue : Claude (`ANTHROPIC_API_KEY`, modèle réglable avec `BAB_AGENT_MODELE`). Sans clé, un agent de démonstration par mots-clés prend le relais.
+- Voix : ElevenLabs pour écouter les vocaux et répondre en vocal (`ELEVENLABS_API_KEY`, voix `ELEVENLABS_VOIX`, voix darija `ELEVENLABS_VOIX_DARIJA`).
+- WhatsApp : API WhatsApp Business Cloud de Meta (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`). Adresse du webhook : `https://bab-taxi.onrender.com/whatsapp/webhook`, champ `messages`.
+- Simulateur sans numéro WhatsApp : `https://bab-taxi.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>` (bouton « Simuler le chauffeur » pour voir les alertes). État : `/whatsapp/etat`.
+
 ## Prochaines étapes
 
 1. Base de données PostgreSQL + PostGIS et positions en direct (WebSockets) à la place du stockage en mémoire.

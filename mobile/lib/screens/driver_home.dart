@@ -259,7 +259,9 @@ class _DriverHomeState extends State<DriverHome> {
               todayRides: _shift.earningsToday,
               todayTips: _shift.tipsToday,
               todayRatingSum: _shift.ratingSumToday,
-              todayRated: _shift.ratedToday)));
+              todayRated: _shift.ratedToday,
+              todayRideCount: _shift.ridesToday,
+              todayTaxi: _kind == TaxiKind.grand ? DemoTaxi.grand : DemoTaxi.petit)));
 
   /// « Passager déposé : Salma · +11,25 DH · ★ 5 » : la note compte pour la prime qualité du mois.
   String _droppedText(ShiftRider r) {
@@ -1019,7 +1021,8 @@ class _DriverHomeState extends State<DriverHome> {
   Widget _divider() => Container(width: 1, height: 24, color: Colors.white24);
 
   Widget _stat(String value, String label) => Column(children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, height: 1.2)),
+        Text(value,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, height: 1.2)),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2)),
       ]);
 
@@ -1032,7 +1035,8 @@ class _DriverHomeState extends State<DriverHome> {
     return Row(children: [
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(s.t('onBoard'), style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(s.t('onBoard'),
+              style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
@@ -1389,13 +1393,16 @@ class _DriverHomeState extends State<DriverHome> {
                     Text('${distanceText(_exactMetersTo(r.rider.pickupIdx))} ${s.t('pickupAhead')}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.moroccoGreen, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                        style: const TextStyle(
+                            color: AppColors.moroccoGreen, fontSize: 12.5, fontWeight: FontWeight.w700)),
                   ]),
                 ),
                 const SizedBox(width: 8),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(dh(r.rider.fare), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
-                  Text(seats, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(dh(r.rider.fare),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
+                  Text(seats,
+                      style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
                 ]),
               ]),
               const SizedBox(height: 6),
@@ -1528,9 +1535,8 @@ class _DriverHomeState extends State<DriverHome> {
 
   /// Hors service : ce que Bab Taxi a rapporté en plus cette semaine, pour donner envie de continuer.
   Widget _weekGainsChip() {
-    final week = driverEarnings
-        .weeks(DateTime.now(), todayRides: _shift.earningsToday, todayTips: _shift.tipsToday)
-        .last;
+    final week =
+        driverEarnings.weeks(DateTime.now(), todayRides: _shift.earningsToday, todayTips: _shift.tipsToday).last;
     return Semantics(
       button: true,
       child: Material(
@@ -1735,10 +1741,13 @@ class _DriverHomeState extends State<DriverHome> {
       );
 
   Widget _onlinePanel() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (_myDest != null)
-          ...[_myDestBanner(), const Divider(height: 14, color: AppColors.line)]
-        else
-          ...[_sayAreaButton(), const SizedBox(height: 10)],
+        if (_myDest != null) ...[
+          _myDestBanner(),
+          const Divider(height: 14, color: AppColors.line)
+        ] else ...[
+          _sayAreaButton(),
+          const SizedBox(height: 10)
+        ],
         _seatCounter(),
         const Divider(height: 14, color: AppColors.line),
         _stops(),
@@ -1881,8 +1890,8 @@ class _HazardBlink extends StatefulWidget {
 }
 
 class _HazardBlinkState extends State<_HazardBlink> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat(reverse: true);
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))
+    ..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -1934,8 +1943,7 @@ class _AreaSheetState extends State<_AreaSheet> {
   }
 
   /// Lecture à voix haute sans bloquer l'écran si la synthèse vocale ne répond pas.
-  Future<void> _say(String text) =>
-      widget.voice.say(text).timeout(const Duration(seconds: 4), onTimeout: () {});
+  Future<void> _say(String text) => widget.voice.say(text).timeout(const Duration(seconds: 4), onTimeout: () {});
 
   Future<void> _listen() async {
     if (_listening) {
@@ -2030,8 +2038,8 @@ class _AreaSheetState extends State<_AreaSheet> {
                     if (found != null)
                       Text('${s.t('areaHeadingTo')} ${found.name}',
                           key: const ValueKey('areaFound'),
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.moroccoGreen))
+                          style:
+                              const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.moroccoGreen))
                     else
                       Text(
                         _listening && _heard.isNotEmpty ? '« $_heard »' : _status ?? s.t('speakArea'),

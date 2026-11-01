@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taxi_maroc/main.dart';
+import 'package:taxi_maroc/screens/sos_screen.dart';
 import 'package:taxi_maroc/services/rides.dart';
 import 'package:taxi_maroc/services/settings.dart';
 import 'package:taxi_maroc/widgets/promo_card.dart';
@@ -93,11 +94,17 @@ void main() {
     await tester.pump();
     expect(find.byType(AdBanner), findsNothing);
 
+    // SOS : l'enregistrement démarre tout de suite (pas de caméra dans les tests : alerte et position).
+    loadCameras = () async => [];
     await tester.tap(find.byTooltip('SOS urgence'));
     await tester.pumpAndSettle();
-    expect(find.text('Numéros d\'urgence'), findsOneWidget);
-    Navigator.of(tester.element(find.text('Numéros d\'urgence'))).pop();
+    expect(find.byKey(const ValueKey('sosLive')), findsOneWidget);
+    expect(find.text('Caméra indisponible : alerte et position envoyées'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('sosStop')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('sosStopConfirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('sosLive')), findsNothing);
 
     // Toucher la poignée rouvre les détails.
     await tester.tap(handle);

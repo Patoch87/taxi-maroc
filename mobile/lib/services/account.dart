@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Pays proposés pour la nationalité : code ISO, noms en français, arabe et anglais,
 /// et langue de l'application proposée par défaut.
@@ -86,7 +88,7 @@ List<Country> searchCountries(String query) {
   return countries.where((c) => [c.fr, c.ar, c.en, c.code].any((n) => norm(n).contains(q))).toList();
 }
 
-/// Compte du passager (démo : gardé en mémoire pendant la session).
+/// Compte du passager (gardé sur le téléphone, pour la connexion par empreinte ou visage).
 /// La nationalité sert à proposer la langue et à aider les touristes, jamais à la publicité (loi 09-08).
 class Account {
   const Account({
@@ -109,6 +111,30 @@ class Account {
 
   /// Pays de l'indicatif du numéro (code ISO).
   final String phoneCountry;
+
+  Map<String, String> toJson() => {
+        'id': id,
+        'firstName': firstName,
+        'lastName': lastName,
+        'phone': phone,
+        'email': email,
+        'nationality': nationality,
+        'phoneCountry': phoneCountry,
+      };
+
+  static Account? fromJson(Map<String, dynamic> j) {
+    final id = j['id'], first = j['firstName'], last = j['lastName'], phone = j['phone'], nat = j['nationality'];
+    if (id is! String || first is! String || last is! String || phone is! String || nat is! String) return null;
+    return Account(
+      id: id,
+      firstName: first,
+      lastName: last,
+      phone: phone,
+      nationality: nat,
+      phoneCountry: j['phoneCountry'] is String ? j['phoneCountry'] as String : 'MA',
+      email: j['email'] is String ? j['email'] as String : '',
+    );
+  }
 }
 
 /// Code SMS de la démo (aucun SMS n'est envoyé).
@@ -129,8 +155,13 @@ String newAccountId([Random? rnd]) {
   return 'U${List.generate(5, (_) => chars[r.nextInt(chars.length)]).join()}';
 }
 
+/// Compte du passager, gardé sur le téléphone pour la connexion par empreinte ou visage.
 class AccountStore extends ChangeNotifier {
+  static const _key = 'account';
   Account? _account;
+
+  /// Enregistrement sur le téléphone, à partir de [load] (lancement de l'application, pas dans les tests).
+  bool _persistent = false;
   bool _skipped = false;
 
   Account? get account => _account;
@@ -141,6 +172,34 @@ class AccountStore extends ChangeNotifier {
   void save(Account a) {
     _account = a;
     notifyListeners();
+    _persist();
+  }
+
+  /// Lancement : compte enregistré sur le téléphone (aucun dans la version web ni dans les tests).
+  Future<void> load() async {
+    _persistent = true;
+    try {
+      final raw = (await SharedPreferences.getInstance()).getString(_key);
+      if (raw == null) return;
+      final a = Account.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      if (a != null) {
+        _account = a;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _persist() async {
+    if (!_persistent) return;
+    try {
+      final p = await SharedPreferences.getInstance();
+      final a = _account;
+      if (a == null) {
+        await p.remove(_key);
+      } else {
+        await p.setString(_key, jsonEncode(a.toJson()));
+      }
+    } catch (_) {}
   }
 
   void skip() {
@@ -152,6 +211,7 @@ class AccountStore extends ChangeNotifier {
     _account = null;
     _skipped = false;
     notifyListeners();
+    _persist();
   }
 }
 

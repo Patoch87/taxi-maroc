@@ -26,11 +26,18 @@ class ShiftRider {
 }
 
 /// Prime qualité payée par Bab Taxi au chauffeur en fin de mois (rien n'est demandé au passager).
-/// Elle dépend de la note moyenne de toutes les courses notées du mois : chaque course compte,
-/// et la prime est versée pour chaque course Bab Taxi du mois.
+/// Elle dépend de deux choses :
+/// - la note moyenne de toutes les courses notées du mois, qui fixe la prime par course ;
+/// - le nombre de courses faites dans le mois, qui multiplie cette prime (plus il roule avec
+///   Bab Taxi, plus chaque course rapporte).
+/// La prime suit le chauffeur (sa carte professionnelle), pas le véhicule : un chauffeur qui
+/// conduit plusieurs taxis dans le mois additionne les courses et les notes de tous ses taxis.
 class RatingBonus {
   /// Paliers : note moyenne minimale → prime par course du mois.
   static const tiers = [(4.9, 2.0), (4.8, 1.5), (4.6, 1.0)];
+
+  /// Paliers de volume : courses du mois (tous taxis confondus) → multiplicateur de la prime.
+  static const volumeTiers = [(200, 1.3), (150, 1.2), (100, 1.1)];
 
   /// Nombre minimum de courses notées dans le mois pour toucher la prime.
   static const minRides = 20;
@@ -43,9 +50,18 @@ class RatingBonus {
     return 0;
   }
 
-  /// Prime du mois : prime par course × nombre de courses du mois.
-  static double forMonth({required double average, required int rides}) =>
-      rides >= minRides ? perRide(average) * rides : 0;
+  /// Multiplicateur selon le nombre de courses du mois (×1 sous le premier palier).
+  static double volumeFactor(int rides) {
+    for (final (min, factor) in volumeTiers) {
+      if (rides >= min) return factor;
+    }
+    return 1;
+  }
+
+  /// Prime du mois : prime par course × multiplicateur de volume × nombre de courses du mois.
+  /// [rated] = courses notées (minimum [minRides]) ; par défaut toutes les courses sont notées.
+  static double forMonth({required double average, required int rides, int? rated}) =>
+      (rated ?? rides) >= minRides ? perRide(average) * volumeFactor(rides) * rides : 0;
 }
 
 class DriverShift {
