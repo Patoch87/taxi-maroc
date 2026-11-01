@@ -3,8 +3,32 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "V_ACCUEIL",
-   "texte": "On arrival, a recent white grand taxi is waiting for you: a verified driver, a warm welcome, and your luggage taken care of."
+   "id": "S_HOOK",
+   "texte": "Your drivers. Your union. Shared income. Bab Taxi is built with the unions, not without them."
+  },
+  {
+   "id": "S_MEMBRES",
+   "texte": "For your members: more rides, the full meter fare for themselves, blocked seats compensated, a share of advertising, a monthly quality bonus, and an SOS button."
+  },
+  {
+   "id": "S_GAINS",
+   "texte": "Every driver sees in “My earnings” what Bab Taxi adds for him, day after day."
+  },
+  {
+   "id": "S_REVENU",
+   "texte": "And your union earns too: a share of the advertising shown in your members' taxis, and a bonus for every active driver you bring on board. Every month, a clear statement."
+  },
+  {
+   "id": "S_ROLE",
+   "texte": "Your role: inform your members, organise sign-up days, and pass on needs from the ground. The more your members drive with Bab Taxi, the more your union earns."
+  },
+  {
+   "id": "S_ENGAGE",
+   "texte": "Our commitments: licensed taxis only, never private cars, no commission on the meter, and regular dialogue with the unions."
+  },
+  {
+   "id": "S_FIN",
+   "texte": "Bab Taxi, the taxi app. Taxi unions, become our partners from launch in Casablanca."
   }
  ]
 }

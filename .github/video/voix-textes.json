@@ -3,8 +3,32 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "V_ACCUEIL",
-   "texte": "À l'arrivée, un grand taxi blanc récent vous attend : chauffeur vérifié, accueil soigné, et vos bagages pris en charge."
+   "id": "S_HOOK",
+   "texte": "Vos chauffeurs. Votre syndicat. Un revenu partagé. Bab Taxi se construit avec les syndicats, pas sans eux."
+  },
+  {
+   "id": "S_MEMBRES",
+   "texte": "Pour vos membres : plus de courses, le prix du compteur qui leur revient en entier, les places bloquées compensées, une part de la publicité, une prime qualité chaque mois, et un bouton SOS."
+  },
+  {
+   "id": "S_GAINS",
+   "texte": "Chaque chauffeur voit dans « Mes gains » ce que Bab Taxi lui apporte en plus, jour après jour."
+  },
+  {
+   "id": "S_REVENU",
+   "texte": "Et votre syndicat gagne aussi : une part de la publicité diffusée dans les taxis de vos membres, et une prime pour chaque chauffeur actif que vous faites rejoindre. Chaque mois, un relevé clair."
+  },
+  {
+   "id": "S_ROLE",
+   "texte": "Votre rôle : informer vos membres, organiser des journées d'inscription, et faire remonter les besoins du terrain. Plus vos membres roulent avec Bab Taxi, plus votre syndicat y gagne."
+  },
+  {
+   "id": "S_ENGAGE",
+   "texte": "Nos engagements : uniquement des taxis agréés, jamais de voitures de particuliers, aucune commission sur le compteur, et un dialogue régulier avec les syndicats."
+  },
+  {
+   "id": "S_FIN",
+   "texte": "Bab Taxi, l'application des taxis. Syndicats de taxis, devenez nos partenaires dès le lancement à Casablanca."
   }
  ]
 }
