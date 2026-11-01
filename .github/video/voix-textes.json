@@ -3,12 +3,8 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "S_DEMANDES",
-   "texte": "Vos revendications trouvent des réponses concrètes. Face au gasoil : moins de kilomètres à vide et plus de revenus par trajet. Face au transport clandestin : une application réservée aux taxis agréés. Pour les tarifs : des chiffres anonymes pour appuyer vos négociations. Pour les contrats : des relevés clairs pour chaque chauffeur. Et un même compte chauffeur, valable dans toutes les villes."
-  },
-  {
-   "id": "S_FONDS",
-   "texte": "Et avec les revenus que lui verse Bab Taxi, le syndicat peut aider directement ses membres : une aide carburant, une caisse d'entraide, des formations, et des permanences pour les chauffeurs."
+   "id": "P07",
+   "texte": "Les demandes arrivent sur sa route. Il accepte ou il refuse. Le premier qui accepte prend la course, et elle lui est réservée."
   }
  ]
 }

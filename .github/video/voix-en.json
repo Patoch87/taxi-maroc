@@ -3,12 +3,8 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "S_DEMANDES",
-   "texte": "Your demands get concrete answers. Against diesel prices: fewer empty kilometres and more income per trip. Against illegal transport: an app reserved for licensed taxis. On fares: anonymous figures to support your negotiations. On contracts: clear statements for every driver. And one driver account, valid in every city."
-  },
-  {
-   "id": "S_FONDS",
-   "texte": "And with the income Bab Taxi pays it, the union can help its members directly: fuel support, a mutual aid fund, training, and help desks for drivers."
+   "id": "P07",
+   "texte": "Requests come along his route. He accepts or declines. The first to accept gets the ride, and it is reserved for him."
   }
  ]
 }
