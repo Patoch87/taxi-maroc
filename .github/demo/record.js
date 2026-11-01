@@ -11,12 +11,17 @@ const path = require('path');
 // Scénario : « complet » (passager, chauffeur, rentabilité) ou « chauffeur » (vidéo pour les
 // chauffeurs : service, course, puis « Mes gains »). Variable d'environnement DEMO_SCENARIO.
 const SCENARIO = process.env.DEMO_SCENARIO || 'complet';
+// DEMO_SAMSUNG=1 : enregistrement d'écran façon téléphone Samsung (écran 412 points de large,
+// densité 2,625, points de toucher visibles, sans cartes de titre ni de chapitre). Scénarios
+// « passager » ou « chauffeur ». Le montage (barre d'état, barre de navigation) : compose_samsung.py.
+const SAMSUNG = process.env.DEMO_SAMSUNG === '1';
 const DRIVERS = SCENARIO === 'chauffeur';
 // Texte de la carte de fin (modifiable ici).
 const END_LINE = DRIVERS ? 'Plus de courses sur votre route, zéro commission' : 'Casablanca 2026 → Mondial 2030';
 // Écran de téléphone 390 x 634 points, densité 2 : images 780 x 1268, ramenées à 720 x 1170 au montage ;
 // la légende (110 px) est ajoutée dessous.
-const VIEW = { width: 390, height: 634 };
+const VIEW = SAMSUNG ? { width: 412, height: 820 } : { width: 390, height: 634 };
+const DPR = SAMSUNG ? 2.625 : 2;
 
 // Page en cours, pour la capture d'écran en cas d'échec.
 let failPage = null;
@@ -28,12 +33,32 @@ const [url, out] = process.argv.slice(2);
   const browser = await chromium.launch();
   const context = await browser.newContext({
     viewport: VIEW,
-    deviceScaleFactor: 2,
+    deviceScaleFactor: DPR,
     locale: 'fr-FR',
     ignoreHTTPSErrors: true,
   });
   // Réseau particulier (tests locaux derrière un proxy) : module facultatif.
   if (process.env.DEMO_NET) await require(path.resolve(process.env.DEMO_NET))(context);
+  // Points de toucher (comme « Afficher les appuis » d'Android).
+  if (SAMSUNG)
+    await context.addInitScript(() => {
+      let dot = null;
+      const show = (e) => {
+        if (!dot) {
+          dot = document.createElement('div');
+          dot.style.cssText =
+            'position:fixed;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;pointer-events:none;' +
+            'z-index:2147483647;background:rgba(255,255,255,.6);border:1.5px solid rgba(0,0,0,.28);transition:opacity .15s';
+          document.documentElement.appendChild(dot);
+        }
+        dot.style.opacity = '1';
+        dot.style.left = e.clientX + 'px';
+        dot.style.top = e.clientY + 'px';
+      };
+      addEventListener('pointerdown', show, true);
+      addEventListener('pointermove', (e) => e.buttons && show(e), true);
+      addEventListener('pointerup', () => dot && setTimeout(() => (dot.style.opacity = '0'), 120), true);
+    });
   const page = await context.newPage();
   failPage = page;
   const t0 = Date.now() / 1000;
@@ -47,7 +72,7 @@ const [url, out] = process.argv.slice(2);
     paused = false,
     running = true;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const shoot = { format: 'jpeg', quality: 88, clip: { x: 0, y: 0, ...VIEW, scale: 2 } };
+  const shoot = { format: 'jpeg', quality: 88, clip: { x: 0, y: 0, ...VIEW, scale: DPR } };
   const recorder = (async () => {
     while (running) {
       const start = Date.now();
@@ -182,6 +207,7 @@ const [url, out] = process.argv.slice(2);
   // Carte de chapitre posée par-dessus l'application (l'état de l'application est conservé).
   const chapterCard = async (q, ms = 4000) => {
     caption(null);
+    if (SAMSUNG) return;
     skip(true);
     await page.evaluate((src) => {
       const f = document.createElement('iframe');
@@ -207,16 +233,16 @@ const [url, out] = process.argv.slice(2);
     await wait(400);
     if (!(await present(text))) throw new Error(`saisie « ${text} » dans « ${label} » non prise en compte`);
   };
-  const ONLY = process.env.DEMO_ONLY; // tests : « client » ou « driver » seulement
+  const ONLY = process.env.DEMO_ONLY || (SAMSUNG ? (DRIVERS ? 'driver' : 'client') : undefined); // tests : « client » ou « driver » seulement
 
   // Carte de titre
-  await page.goto(
+  if (!SAMSUNG) await page.goto(
     card({
       title: 'Bab Taxi',
       line: DRIVERS ? 'Chauffeurs de taxi : gagnez plus avec Bab Taxi' : 'Le taxi officiel marocain, simple, juste et sûr',
     }),
   );
-  await wait(3500);
+  if (!SAMSUNG) await wait(3500);
 
   // Chargement de l'application : coupé au montage. « video=1 » : sans suggestions de restaurants ;
   // « demo=1 » : sans écran d'inscription.
@@ -290,8 +316,8 @@ const [url, out] = process.argv.slice(2);
     await wait(1200);
 
     // Attente du taxi en ×4 : coupée au montage.
-    await fast();
     skip(true);
+    await fast();
     await expectScreen('arrivée du taxi', 'Montez à bord', 300);
     skip(false);
     caption('Le taxi est arrivé : le passager monte, le chauffeur démarre la course');
@@ -521,7 +547,7 @@ const [url, out] = process.argv.slice(2);
 
   // ---------------------------------------------------------------- Chapitre 3 : rentabilité
   caption(null);
-  if (!DRIVERS) {
+  if (!DRIVERS && !SAMSUNG) {
     await page.goto(
       card({
         kicker: 'Chapitre 3/3 · Rentabilité',
@@ -543,8 +569,10 @@ const [url, out] = process.argv.slice(2);
 
   // Carte de fin
   caption(null);
-  await page.goto(card({ title: 'Bab Taxi', line: END_LINE }));
-  await wait(3500);
+  if (!SAMSUNG) {
+    await page.goto(card({ title: 'Bab Taxi', line: END_LINE }));
+    await wait(3500);
+  } else await wait(1500);
   marks.duration = now();
 
   running = false;

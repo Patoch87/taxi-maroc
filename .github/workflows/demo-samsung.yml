@@ -1,0 +1,72 @@
+name: Démo Samsung
+
+# Démos « enregistrement d'écran Samsung » (passager, chauffeur) avec la vraie carte Google Maps.
+# Seules les vidéos sont publiées, sur la branche « demo-samsung-videos ».
+on:
+  push:
+    branches: [demo-samsung]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  demo:
+    runs-on: ubuntu-24.04
+    environment: MAPS_API_KEY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+      - name: Version web avec Google Maps
+        working-directory: mobile
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: |
+          flutter pub get
+          flutter build web --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=WEB_GOOGLE_MAPS=true --dart-define=NO_ADS=true
+          sed -i "s|</head>|<script src=\"https://maps.googleapis.com/maps/api/js?key=$MAPS_API_KEY\"></script></head>|" build/web/index.html
+          cp ../.github/demo/card.html build/web/demo-card.html
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Navigateur, polices et ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-color-emoji fonts-noto-core fonts-noto-extra ffmpeg
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Vidéo passager
+        continue-on-error: true
+        env:
+          DEMO_SAMSUNG: '1'
+          DEMO_SCENARIO: passager
+        run: |
+          (cd mobile/build/web && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          mkdir -p p out
+          node .github/demo/record.js http://localhost:8765/ p
+          python3 .github/demo/compose_samsung.py p out/Bab-Taxi-demo-Samsung-passager.mp4
+      - name: Vidéo chauffeur
+        continue-on-error: true
+        env:
+          DEMO_SAMSUNG: '1'
+          DEMO_SCENARIO: chauffeur
+        run: |
+          mkdir -p c out
+          node .github/demo/record.js http://localhost:8765/ c
+          python3 .github/demo/compose_samsung.py c out/Bab-Taxi-demo-Samsung-chauffeur.mp4
+      - name: Publier sur la branche demo-samsung-videos
+        run: |
+          cp p/echec.png out/echec-passager.png 2>/dev/null || true
+          cp c/echec.png out/echec-chauffeur.png 2>/dev/null || true
+          cd out
+          git init -q -b demo-samsung-videos
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Démos Samsung du commit $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" demo-samsung-videos
