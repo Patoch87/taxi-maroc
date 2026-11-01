@@ -3,32 +3,12 @@
  "modele": "eleven_multilingual_v2",
  "lignes": [
   {
-   "id": "S_HOOK",
-   "texte": "Vos chauffeurs. Votre syndicat. Un revenu partagé. Bab Taxi se construit avec les syndicats, pas sans eux."
+   "id": "S_DEMANDES",
+   "texte": "Vos revendications trouvent des réponses concrètes. Face au gasoil : moins de kilomètres à vide et plus de revenus par trajet. Face au transport clandestin : une application réservée aux taxis agréés. Pour les tarifs : des chiffres anonymes pour appuyer vos négociations. Pour les contrats : des relevés clairs pour chaque chauffeur. Et un même compte chauffeur, valable dans toutes les villes."
   },
   {
-   "id": "S_MEMBRES",
-   "texte": "Pour vos membres : plus de courses, le prix du compteur qui leur revient en entier, les places bloquées compensées, une part de la publicité, une prime qualité chaque mois, et un bouton SOS."
-  },
-  {
-   "id": "S_GAINS",
-   "texte": "Chaque chauffeur voit dans « Mes gains » ce que Bab Taxi lui apporte en plus, jour après jour."
-  },
-  {
-   "id": "S_REVENU",
-   "texte": "Et votre syndicat gagne aussi : une part de la publicité diffusée dans les taxis de vos membres, et une prime pour chaque chauffeur actif que vous faites rejoindre. Chaque mois, un relevé clair."
-  },
-  {
-   "id": "S_ROLE",
-   "texte": "Votre rôle : informer vos membres, organiser des journées d'inscription, et faire remonter les besoins du terrain. Plus vos membres roulent avec Bab Taxi, plus votre syndicat y gagne."
-  },
-  {
-   "id": "S_ENGAGE",
-   "texte": "Nos engagements : uniquement des taxis agréés, jamais de voitures de particuliers, aucune commission sur le compteur, et un dialogue régulier avec les syndicats."
-  },
-  {
-   "id": "S_FIN",
-   "texte": "Bab Taxi, l'application des taxis. Syndicats de taxis, devenez nos partenaires dès le lancement à Casablanca."
+   "id": "S_FONDS",
+   "texte": "Et avec les revenus que lui verse Bab Taxi, le syndicat peut aider directement ses membres : une aide carburant, une caisse d'entraide, des formations, et des permanences pour les chauffeurs."
   }
  ]
 }
