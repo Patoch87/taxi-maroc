@@ -160,6 +160,23 @@ export class RidesService {
   }
 
   /**
+   * Course en cours d'un passager, quel que soit le canal de commande (application ou WhatsApp) :
+   * même identifiant de compte, ou même numéro de téléphone que le compte. L'application la reprend à l'écran.
+   */
+  enCoursPour(passagerId: string, telephone?: string): (DemandeCourse & { taxi?: TaxiPublic }) | null {
+    this.reprendre();
+    const tel = (telephone ?? '').replace(/\D/g, '');
+    const trouvees = [...this.demandes.values()].filter((d) => {
+      this.expirer(d);
+      if (!['en_attente', 'acceptee', 'a_bord'].includes(d.statut)) return false;
+      const p = d.demande.passager;
+      return p?.id === passagerId || (!!tel && (p?.telephone ?? '').replace(/\D/g, '') === tel);
+    });
+    const d = trouvees.sort((a, b) => b.creeLe.localeCompare(a.creeLe))[0];
+    return d ? this.getRequest(d.id) : null;
+  }
+
+  /**
    * Demandes encore ouvertes proposées à un taxi. Le calcul est refait à chaque fois : un taxi
    * qui passe en ligne après la demande la reçoit aussi s'il passe sur la route du passager.
    */

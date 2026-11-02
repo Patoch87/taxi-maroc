@@ -18,6 +18,8 @@ export interface Conversation {
   /** Le dernier message du passager était un vocal : on lui répond aussi en vocal. */
   vocal: boolean;
   derniereTranscription?: string;
+  /** Langue du dernier vocal quand la transcription est fiable (sinon la langue de la conversation est gardée). */
+  langueVocal?: string;
   depart?: { point: Point; nom?: string };
   destination?: { lieu: Lieu; tour: number };
   /** Tour où les prix ont été annoncés. */

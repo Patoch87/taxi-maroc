@@ -563,4 +563,5 @@ const Map<String, String> fa = {
   'driverAppPromo': "راننده تاکسی هستید؟",
   'driverAppPromoHint': "برنامه باب تاکسی راننده را دانلود کنید",
   'priceTo': "تا",
+  'rideFromWhatsapp': "سفر شما از طریق واتساپ سفارش داده شد",
 };

@@ -713,6 +713,7 @@ class S {
       'Download the Bab Taxi Driver app'
     ],
     'priceTo': ['à', 'إلى', 'حتى لـ', 'to'],
+    'rideFromWhatsapp': ['Votre course commandée sur WhatsApp', 'رحلتك المطلوبة عبر واتساب', 'الكورسة لي طلبتي فالواتساب', 'Your ride ordered on WhatsApp'],
     'wrongCode': ['Code incorrect', 'رمز غير صحيح', 'الكود غالط', 'Wrong code'],
     'requiredField': ['Champ obligatoire', 'حقل إلزامي', 'خاصك تعمرها', 'Required field'],
     'invalidPhone': [

@@ -43,12 +43,49 @@ async function envoyer(message: Record<string, unknown>) {
 export const envoyerTexte = (a: string, texte: string) => envoyer({ to: a, type: 'text', text: { body: texte } });
 
 export async function envoyerAudio(a: string, audio: Buffer, type: string) {
+  // WhatsApp ne lit tout seul (sans « Télécharger ») que les notes vocales ogg/opus : on convertit le mp3.
+  const vocal = await versNoteVocale(audio, type);
   const form = new FormData();
   form.append('messaging_product', 'whatsapp');
-  form.append('type', type);
-  form.append('file', new Blob([new Uint8Array(audio)], { type }), type === 'audio/mpeg' ? 'bab.mp3' : 'bab.ogg');
+  form.append('type', vocal.type);
+  form.append('file', new Blob([new Uint8Array(vocal.donnees)], { type: vocal.type }), vocal.type === 'audio/ogg' ? 'bab.ogg' : 'bab.mp3');
   const { id } = (await (await graph(`/${numero()}/media`, { method: 'POST', body: form })).json()) as { id: string };
-  await envoyer({ to: a, type: 'audio', audio: { id } });
+  if (vocal.type === 'audio/ogg') {
+    // « voice: true » : affiché comme une note vocale (micro bleu), lecture directe.
+    await envoyer({ to: a, type: 'audio', audio: { id, voice: true } }).catch(() => envoyer({ to: a, type: 'audio', audio: { id } }));
+  } else {
+    await envoyer({ to: a, type: 'audio', audio: { id } });
+  }
+}
+
+/** mp3 -> ogg/opus mono (format des notes vocales WhatsApp). En cas d'échec, le mp3 part tel quel. */
+export async function versNoteVocale(audio: Buffer, type: string): Promise<{ donnees: Buffer; type: string }> {
+  if (type === 'audio/ogg') return { donnees: audio, type };
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ffmpeg: string | null = require('ffmpeg-static');
+    if (!ffmpeg) throw new Error('ffmpeg absent');
+    const { spawn } = await import('child_process');
+    const donnees = await new Promise<Buffer>((ok, ko) => {
+      const p = spawn(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', '-f', 'ogg', 'pipe:1']);
+      const morceaux: Buffer[] = [];
+      let erreur = '';
+      const minuteur = setTimeout(() => p.kill('SIGKILL'), 15_000);
+      p.stdout.on('data', (d: Buffer) => morceaux.push(d));
+      p.stderr.on('data', (d: Buffer) => (erreur += d.toString()));
+      p.on('error', ko);
+      p.on('close', (code) => {
+        clearTimeout(minuteur);
+        if (code === 0 && morceaux.length) ok(Buffer.concat(morceaux));
+        else ko(new Error(`ffmpeg ${code} ${erreur.slice(0, 200)}`));
+      });
+      p.stdin.on('error', () => undefined);
+      p.stdin.end(audio);
+    });
+    return { donnees, type: 'audio/ogg' };
+  } catch {
+    return { donnees: audio, type };
+  }
 }
 
 /**

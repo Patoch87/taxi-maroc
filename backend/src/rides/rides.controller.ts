@@ -72,6 +72,17 @@ export class RidesController {
     return this.rides.createRequest({ ...body, mode: body.mode ?? 'partage', passagers: body.passagers ?? 1 });
   }
 
+  /**
+   * Course en cours du passager (commandée dans l'application ou sur WhatsApp avec le numéro du compte).
+   * Le numéro vient du compte enregistré sur le serveur, jamais de la requête : on ne peut pas suivre la course d'un autre.
+   */
+  @Get('passagers/:id/course-en-cours')
+  courseEnCours(@Param('id') id: string) {
+    if (!/^[A-Za-z0-9_-]{3,64}$/.test(id ?? '')) throw new BadRequestException('id invalide');
+    const compte = this.comptes?.get(id);
+    return { course: this.rides.enCoursPour(id, compte?.verifie ? compte.telephone : undefined) };
+  }
+
   @Get('rides/requests/:id')
   getRequest(@Param('id') id: string) {
     return this.rides.getRequest(id);

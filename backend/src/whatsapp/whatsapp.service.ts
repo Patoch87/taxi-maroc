@@ -260,6 +260,13 @@ export class WhatsappService implements OnModuleDestroy {
         const t = await transcrire(m.audio.donnees, m.audio.type);
         texte = t.texte;
         this.log.log(`Vocal transcrit en ${Date.now() - debut} ms (langue ${t.langue ?? '?'}, ${texte.length} caractères)`);
+        // Vocal très court, bruit, ou langue improbable au Maroc (un « oui » d'une seconde reconnu comme du
+        // russe) : on ne change pas de langue, et on redemande si rien d'utile n'a été compris.
+        conv.langueVocal = langueFiable(t.langue, texte) ? t.langue : undefined;
+        if (!conv.langueVocal && texte.replace(/[^\p{L}\p{N}]/gu, '').length < 2) {
+          conv.vocal = true;
+          return [await this.habiller(conv, conv.langue === 'fr' ? "Je n'ai pas bien entendu, pouvez-vous répéter ?" : 'ما سمعتكش مزيان، عاود عافاك؟')];
+        }
         conv.derniereTranscription = texte;
       } catch (e) {
         this.log.error(e);
@@ -282,6 +289,9 @@ export class WhatsappService implements OnModuleDestroy {
     const heure = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Africa/Casablanca', hour: '2-digit', minute: '2-digit' }).format(new Date());
     const contexte = [
       position ? 'le passager a envoyé sa position WhatsApp' : c.vocal ? 'message vocal transcrit' : 'message écrit',
+      // Langue de la conversation : la transcription d'un vocal court se trompe parfois de langue.
+      `langue de la conversation jusqu'ici : ${c.langue === 'darija' ? 'darija marocaine' : c.langue === 'fr' ? 'français' : c.langue}`,
+      c.vocal && !c.langueVocal ? 'transcription incertaine : garde la langue de la conversation' : '',
       c.depart ? `position de départ connue${c.depart.nom ? ` (${c.depart.nom})` : ''}` : 'position de départ inconnue',
       `heure à Casablanca ${heure}`,
       c.nom ? `nom WhatsApp ${c.nom}` : '',
@@ -327,4 +337,12 @@ export class WhatsappService implements OnModuleDestroy {
       if (texte) await this.enFile(c.id, async () => this.envoyer(c.id, await this.habiller(c, texte)));
     }
   }
+}
+
+/** Langues attendues des passagers (codes ISO 639-3 donnés par ElevenLabs Scribe). */
+const LANGUES_ATTENDUES = new Set(['ara', 'ary', 'fra', 'eng', 'spa', 'deu', 'ita', 'por', 'nld', 'zgh', 'ber', 'tzm', 'kab']);
+
+/** Langue détectée crédible : attendue au Maroc, et vocal assez long pour être sûr. */
+export function langueFiable(langue: string | undefined, texte: string): boolean {
+  return !!langue && LANGUES_ATTENDUES.has(langue) && texte.trim().length >= 4;
 }

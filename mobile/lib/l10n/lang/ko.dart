@@ -561,4 +561,5 @@ const Map<String, String> ko = {
   'driverAppPromo': "택시 기사이신가요?",
   'driverAppPromoHint': "Bab Taxi 기사용 앱 다운로드",
   'priceTo': "~",
+  'rideFromWhatsapp': "WhatsApp으로 주문한 택시",
 };

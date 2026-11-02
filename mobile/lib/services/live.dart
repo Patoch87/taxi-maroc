@@ -187,17 +187,38 @@ LiveStatus _status(String s) => switch (s) {
 
 /// Course vue par le passager.
 class LiveRide {
-  LiveRide(this.id, this.status, this.proposedTo, this.taxi);
-  factory LiveRide.fromJson(Map<String, dynamic> j) => LiveRide(
-        j['id'] as String,
-        _status(j['statut'] as String),
-        [for (final c in (j['proposeeA'] as List? ?? const [])) c['taxiId'] as String],
-        j['taxi'] == null ? null : LiveTaxi.fromJson(j['taxi'] as Map<String, dynamic>),
-      );
+  LiveRide(this.id, this.status, this.proposedTo, this.taxi,
+      {this.pickup, this.drop, this.destinationName = '', this.fare = 0, this.alone = false, this.premium = false,
+      this.whatsapp = false});
+  factory LiveRide.fromJson(Map<String, dynamic> j) {
+    final d = j['demande'] as Map<String, dynamic>?;
+    return LiveRide(
+      j['id'] as String,
+      _status(j['statut'] as String),
+      [for (final c in (j['proposeeA'] as List? ?? const [])) c['taxiId'] as String],
+      j['taxi'] == null ? null : LiveTaxi.fromJson(j['taxi'] as Map<String, dynamic>),
+      pickup: d?['depart'] == null ? null : _ll(d!['depart']),
+      drop: d?['destination'] == null ? null : _ll(d!['destination']),
+      destinationName: d?['destinationNom'] as String? ?? '',
+      fare: (d?['prixMad'] as num?)?.toDouble() ?? 0,
+      alone: d?['mode'] == 'seul',
+      premium: d?['categorie'] == 'premium',
+      whatsapp: d?['source'] == 'whatsapp',
+    );
+  }
   final String id;
   final LiveStatus status;
   final List<String> proposedTo;
   final LiveTaxi? taxi;
+
+  /// Demande du passager (pour reprendre à l'écran une course commandée ailleurs, ex. sur WhatsApp).
+  final LatLng? pickup;
+  final LatLng? drop;
+  final String destinationName;
+  final double fare;
+  final bool alone;
+  final bool premium;
+  final bool whatsapp;
 }
 
 /// Demande reçue par le chauffeur.
@@ -320,6 +341,13 @@ class LiveApi {
 
   Future<LiveRide> ride(String id) async =>
       LiveRide.fromJson(await _send('GET', '/rides/requests/$id') as Map<String, dynamic>);
+
+  /// Course en cours du passager : commandée dans l'application ou sur WhatsApp avec le numéro du compte.
+  Future<LiveRide?> activeRide() async {
+    final r = await _send('GET', '/passagers/${live.deviceId}/course-en-cours') as Map<String, dynamic>;
+    final c = r['course'];
+    return c is Map<String, dynamic> ? LiveRide.fromJson(c) : null;
+  }
 
   Future<void> cancel(String id) => _send('POST', '/rides/requests/$id/cancel');
 

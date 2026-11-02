@@ -564,4 +564,5 @@ const Map<String, String> it = {
   'driverAppPromo': "Sei un tassista?",
   'driverAppPromoHint': "Scarica l'app Bab Taxi Autista",
   'priceTo': "a",
+  'rideFromWhatsapp': "La tua corsa ordinata su WhatsApp",
 };

@@ -179,6 +179,8 @@ class _RiderHomeState extends State<RiderHome> {
       if (!mounted || _step.index >= RiderStep.arriving.index) return;
       if (live.enabled) {
         _refreshNearby();
+        // Toutes les 6 s : une course commandée sur WhatsApp (même numéro que le compte) s'affiche ici.
+        if (++_activeTick % 3 == 1) _checkActiveRide();
         return;
       }
       setState(() {
@@ -893,6 +895,66 @@ class _RiderHomeState extends State<RiderHome> {
   void _liveError() {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('liveUnreachable'))));
+  }
+
+  int _activeTick = 0;
+  bool _activeBusy = false;
+
+  /// Reprend à l'écran la course en cours du passager commandée ailleurs (WhatsApp, ou avant un redémarrage).
+  Future<void> _checkActiveRide() async {
+    if (_activeBusy || _liveRideId != null || (_step != RiderStep.idle && _step != RiderStep.choosing)) return;
+    _activeBusy = true;
+    try {
+      final r = await _liveApi.activeRide();
+      if (r == null || r.pickup == null || r.drop == null) return;
+      if (!mounted || _liveRideId != null || (_step != RiderStep.idle && _step != RiderStep.choosing)) return;
+      final pickup = r.pickup!, drop = r.drop!;
+      final place = Place(r.destinationName.isEmpty ? 'Destination' : r.destinationName, drop.latitude,
+          drop.longitude, const []);
+      final route = await fetchRoute(pickup, drop);
+      if (!mounted || _liveRideId != null || (_step != RiderStep.idle && _step != RiderStep.choosing)) return;
+      final routeM = routeLengthM(route);
+      final options = rideOptions(destination: place, routeM: routeM, passengers: _party);
+      _liveRideId = r.id;
+      setState(() {
+        _me = pickup;
+        _dest = place;
+        _route = route;
+        _routeM = routeM;
+        _options = options;
+        _selected = options.firstWhere(
+            (o) => o.seul == r.alone && (o.kind == TaxiKind.premium) == r.premium,
+            orElse: () => options.first);
+        _candidates = [];
+        _step = RiderStep.dispatching;
+        _collapsed = false;
+      });
+      if (r.whatsapp) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: AppColors.moroccoGreen,
+          content: Row(children: [
+            const Icon(Icons.chat, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(child: Text(s.t('rideFromWhatsapp'), style: const TextStyle(fontWeight: FontWeight.w700))),
+          ]),
+        ));
+      }
+      _fit(route);
+      final taxi = r.taxi;
+      if (taxi != null) _liveTaxiPos = taxi.position;
+      if (r.status == LiveStatus.accepted && taxi != null) {
+        await _liveAccepted(taxi);
+      } else if (r.status == LiveStatus.onBoard && taxi != null) {
+        setState(() => _driver = _liveDriver(taxi));
+        _liveStartTrip();
+      }
+      _livePoll?.cancel();
+      _livePoll = Timer.periodic(const Duration(seconds: 2), (_) => _pollRide());
+    } catch (_) {
+      // Serveur injoignable : on réessaie au tour suivant.
+    } finally {
+      _activeBusy = false;
+    }
   }
 
   /// La demande part au serveur, qui la propose aux chauffeurs dont la route passe par le passager.

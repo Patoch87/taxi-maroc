@@ -218,3 +218,41 @@ describe('Serveur de test (Render) : santé, CORS, prix et publicités', () => {
     await request(app.getHttpServer()).post('/ads/INCONNUE/events').send({}).expect(404);
   });
 });
+
+describe('Course commandée sur WhatsApp, reprise dans l’application', () => {
+  let app: INestApplication;
+  beforeAll(async () => {
+    const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = mod.createNestApplication();
+    await app.init();
+  });
+  afterAll(() => app.close());
+
+  it('le compte vérifié retrouve la course de son numéro WhatsApp', async () => {
+    const http = () => request(app.getHttpServer());
+    await http().post('/auth/code').send({ phone: '0611223344' }).expect(200);
+    await http().post('/auth/verify').send({ phone: '0611223344', code: '1234' }).expect(200);
+    await http().post('/accounts').send({ id: 'PASSWA', phone: '+212 611223344', firstName: 'Salma', lastName: 'B' }).expect(201);
+    expect((await http().get('/passagers/PASSWA/course-en-cours').expect(200)).body.course).toBeNull();
+
+    const d = await http()
+      .post('/rides/requests')
+      .send({
+        depart: { lat: 33.575, lng: -7.625 },
+        destination: { lat: 33.588, lng: -7.612 },
+        passager: { nom: 'Salma (WhatsApp)', telephone: '212611223344' },
+        source: 'whatsapp',
+        destinationNom: 'Maârif',
+      })
+      .expect(201);
+    const r = await http().get('/passagers/PASSWA/course-en-cours').expect(200);
+    expect(r.body.course.id).toBe(d.body.id);
+    expect(r.body.course.demande.destinationNom).toBe('Maârif');
+
+    // Un autre compte (ou un compte sans numéro vérifié) ne la voit pas.
+    expect((await http().get('/passagers/AUTRE1/course-en-cours').expect(200)).body.course).toBeNull();
+
+    await http().post(`/rides/requests/${d.body.id}/cancel`).expect(201);
+    expect((await http().get('/passagers/PASSWA/course-en-cours').expect(200)).body.course).toBeNull();
+  });
+});
