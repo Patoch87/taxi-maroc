@@ -28,7 +28,7 @@ jobs:
       - name: Construire
         working-directory: mobile
         env:
-          API_URL: ${{ vars.API_URL || 'https://bab-taxi.onrender.com' }}
+          API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
         run: |
           flutter pub get
           flutter build web --release --dart-define=API_URL="$API_URL"

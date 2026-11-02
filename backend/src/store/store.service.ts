@@ -2,6 +2,21 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { Pool } from 'pg';
 
 /**
+ * Chiffrement de la connexion : adresse externe (avec un nom de domaine, ex. …frankfurt-postgres.render.com) chiffrée ;
+ * adresse interne Render (« dpg-… », sans point) et base locale des tests : sans.
+ */
+export function sslPour(url: string) {
+  let hote = '';
+  try {
+    hote = new URL(url).hostname;
+  } catch {
+    return undefined;
+  }
+  if (/sslmode=disable/.test(url) || !hote.includes('.') || /^(localhost|127\.0\.0\.1)$/.test(hote)) return undefined;
+  return { rejectUnauthorized: false };
+}
+
+/**
  * Données à garder d'un redémarrage à l'autre (comptes, plaintes, compteurs de publicité, courses terminées).
  *
  * Tout est lu en mémoire au démarrage, puis chaque écriture part aussi dans PostgreSQL quand la variable
@@ -27,8 +42,7 @@ export class StoreService implements OnModuleInit, OnModuleDestroy {
       const pool = new Pool({
         connectionString: url,
         max: 5,
-        // Base Render : connexion chiffrée ; base locale (tests) : sans.
-        ssl: /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false },
+        ssl: sslPour(url),
       });
       await pool.query(
         `CREATE TABLE IF NOT EXISTS bab_donnees (

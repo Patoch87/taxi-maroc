@@ -69,7 +69,7 @@ jobs:
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL"
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
-          API_URL: ${{ vars.API_URL || 'https://bab-taxi.onrender.com' }}
+          API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
       # Prototype : même application sans serveur, avec des taxis et des passagers simulés.
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"

@@ -72,3 +72,12 @@ const base = process.env.TEST_DATABASE_URL;
     await app.close();
   });
 });
+
+describe('Connexion à la base', () => {
+  it('chiffre seulement les adresses externes', async () => {
+    const { sslPour } = await import('../src/store/store.service');
+    expect(sslPour('postgresql://u:p@dpg-abc123-a/babtaxi')).toBeUndefined();
+    expect(sslPour('postgres://postgres@localhost:5433/postgres')).toBeUndefined();
+    expect(sslPour('postgresql://u:p@dpg-abc123-a.frankfurt-postgres.render.com/babtaxi')).toEqual({ rejectUnauthorized: false });
+  });
+});

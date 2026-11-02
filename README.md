@@ -64,8 +64,8 @@ Le serveur contient un agent qui prend les commandes sur WhatsApp, par messages 
 
 - Compréhension et dialogue : Claude (`ANTHROPIC_API_KEY`, modèle réglable avec `BAB_AGENT_MODELE`). Sans clé, un agent de démonstration par mots-clés prend le relais.
 - Voix : ElevenLabs pour écouter les vocaux et répondre en vocal (`ELEVENLABS_API_KEY`, voix `ELEVENLABS_VOIX`, voix darija `ELEVENLABS_VOIX_DARIJA`).
-- WhatsApp : API WhatsApp Business Cloud de Meta (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`). Adresse du webhook : `https://bab-taxi.onrender.com/whatsapp/webhook`, champ `messages`.
-- Simulateur sans numéro WhatsApp : `https://bab-taxi.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>` (bouton « Simuler le chauffeur » pour voir les alertes). État : `/whatsapp/etat`.
+- WhatsApp : API WhatsApp Business Cloud de Meta (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`). Adresse du webhook : `https://bab-taxi-eu.onrender.com/whatsapp/webhook`, champ `messages`.
+- Simulateur sans numéro WhatsApp : `https://bab-taxi-eu.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>` (bouton « Simuler le chauffeur » pour voir les alertes). État : `/whatsapp/etat`.
 
 ## Prochaines étapes
 

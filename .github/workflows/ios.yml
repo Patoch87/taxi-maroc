@@ -29,7 +29,7 @@ jobs:
         working-directory: mobile
     env:
       MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
-      API_URL: ${{ vars.API_URL || 'https://bab-taxi.onrender.com' }}
+      API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
       BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'ma.taxi.taxiMaroc' }}
       SIGNED: ${{ secrets.IOS_CERTIFICATE_P12 != '' && secrets.IOS_PROVISIONING_PROFILE != '' }}
     steps:

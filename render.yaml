@@ -1,10 +1,12 @@
-# Test réel Bab Taxi sur Render (offre gratuite) : le serveur partagé et le site web pour l'iPhone.
+# Test réel Bab Taxi sur Render, à Francfort (le plus proche du Maroc) : serveur toujours éveillé
+# (offre Starter) + base PostgreSQL qui garde comptes, courses, plaintes et compteurs de publicité.
 # Déploiement : https://render.com/deploy?repo=https://github.com/Patoch87/taxi-maroc
 services:
   - type: web
-    name: bab-taxi
+    name: bab-taxi-eu
     runtime: node
-    plan: free
+    plan: starter
+    region: frankfurt
     rootDir: backend
     buildCommand: npm ci && npm run build
     startCommand: npm start
@@ -12,12 +14,17 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Base de données (adresse interne, même région).
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bab-taxi-db
+          property: connectionString
       # Clé du centre de sécurité (vidéos SOS) : tirée au hasard par Render, lisible dans le tableau de bord.
-      # Page : https://bab-taxi.onrender.com/sos/centre?cle=<SOS_CENTRE_TOKEN>
+      # Page : https://bab-taxi-eu.onrender.com/sos/centre?cle=<SOS_CENTRE_TOKEN>
       - key: SOS_CENTRE_TOKEN
         generateValue: true
       # Agent WhatsApp de commande vocale (backend/src/whatsapp).
-      # Jeton à recopier dans Meta (webhook) et clé du simulateur https://bab-taxi.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>
+      # Jeton à recopier dans Meta (webhook) et clé du simulateur https://bab-taxi-eu.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>
       - key: WHATSAPP_VERIFY_TOKEN
         generateValue: true
       - key: WHATSAPP_DEMO_CLE
@@ -55,3 +62,10 @@ services:
       - path: /*
         name: Cache-Control
         value: no-cache
+
+databases:
+  - name: bab-taxi-db
+    databaseName: babtaxi
+    plan: basic-256mb
+    region: frankfurt
+    postgresMajorVersion: "16"
