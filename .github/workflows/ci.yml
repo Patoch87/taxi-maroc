@@ -71,20 +71,24 @@ jobs:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
           API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
-      # Prototype : même application sans serveur, avec des taxis et des passagers simulés.
+      # « Bab Taxi Démo » : application séparée (installable à côté de la vraie), sans serveur,
+      # avec des taxis et des passagers simulés. Même fichier sous l'ancien nom « prototype ».
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
-      - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc-prototype.apk
+          BAB_DEMO: oui
+      - run: |
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/bab-taxi-demo.apk
+          cp build/app/outputs/flutter-apk/bab-taxi-demo.apk build/app/outputs/flutter-apk/taxi-maroc-prototype.apk
       - uses: actions/upload-artifact@v4
         with:
           name: taxi-maroc-apk
           path: |
             mobile/build/app/outputs/flutter-apk/taxi-maroc.apk
-            mobile/build/app/outputs/flutter-apk/taxi-maroc-prototype.apk
+            mobile/build/app/outputs/flutter-apk/bab-taxi-demo.apk
       # Lien direct, sans compte GitHub :
       # https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc.apk
-      # https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc-prototype.apk
+      # https://github.com/Patoch87/taxi-maroc/releases/latest/download/bab-taxi-demo.apk
       - name: Publier les APK
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -95,7 +99,7 @@ jobs:
           gh release download demo -p taxi-maroc-demo.mp4 -D /tmp/keep || true
           gh release delete demo --yes --cleanup-tag || true
           gh release create demo build/app/outputs/flutter-apk/taxi-maroc.apk \
-            build/app/outputs/flutter-apk/taxi-maroc-prototype.apk $(ls /tmp/keep/taxi-maroc-demo.mp4 2>/dev/null) \
+            build/app/outputs/flutter-apk/bab-taxi-demo.apk build/app/outputs/flutter-apk/taxi-maroc-prototype.apk $(ls /tmp/keep/taxi-maroc-demo.mp4 2>/dev/null) \
             --target "$GITHUB_SHA" \
             --title "Bab Taxi" \
-            --notes "taxi-maroc.apk : application reliée au serveur. taxi-maroc-prototype.apk : prototype autonome (taxis et passagers simulés, sans serveur). Commit $GITHUB_SHA."
+            --notes "taxi-maroc.apk : Bab Taxi, l'application réelle (serveur, sans mode démo). bab-taxi-demo.apk : Bab Taxi Démo, application séparée avec taxis et passagers simulés. Commit $GITHUB_SHA."

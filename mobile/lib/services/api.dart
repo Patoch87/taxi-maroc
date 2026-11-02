@@ -10,6 +10,10 @@ import 'demo.dart';
 const apiUrl = String.fromEnvironment('API_URL');
 bool get isDemo => apiUrl.isEmpty;
 
+/// Application de déploiement (compilée avec l'adresse du serveur) : pas de mode démo, jamais de taxis
+/// simulés. L'application de démonstration « Bab Taxi Démo » est compilée sans adresse.
+const isProduction = apiUrl != '';
+
 /// Client du serveur Taxi Maroc (dossier backend/).
 class Api {
   Api({String? baseUrl}) : baseUrl = baseUrl ?? apiUrl;

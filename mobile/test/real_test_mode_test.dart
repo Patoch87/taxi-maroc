@@ -53,6 +53,25 @@ void main() {
     expect(appels.where((a) => a.startsWith('/auth/verify')), hasLength(2));
   });
 
+  test("application de déploiement : jamais de bascule en démo quand le serveur tarde", () async {
+    live.url = 'https://serveur.test';
+    live.enabled = true;
+    live.production = true;
+    var essais = 0;
+    final api = LiveApi(
+      client: MockClient((r) async {
+        essais++;
+        return essais < 4 ? http.Response('', 503) : http.Response(jsonEncode({'status': 'ok'}), 200);
+      }),
+    );
+    // Même après le délai maximal, l'application continue d'essayer au lieu de passer en démo.
+    final attente = live.warmUp(api: api, max: Duration.zero, every: const Duration(milliseconds: 1));
+    expect(live.enabled, isTrue, reason: 'le serveur reste utilisé pendant le réveil');
+    expect(await attente, isTrue);
+    expect(essais, 4);
+    expect(live.fellBack, isFalse);
+  });
+
   test('numéro marocain : 9 chiffres après +212, avec ou sans le 0', () {
     for (final ok in ['612345678', '0612345678', '06 61 39 26 81', '0522-000000']) {
       expect(validLocalNumber(ok, dial: '+212'), isTrue, reason: ok);

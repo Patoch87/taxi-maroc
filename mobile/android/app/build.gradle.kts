@@ -31,6 +31,13 @@ android {
         versionName = flutter.versionName
         // Clé Google Maps : variable d'environnement MAPS_API_KEY (secret GitHub), vide par défaut.
         manifestPlaceholders["MAPS_API_KEY"] = System.getenv("MAPS_API_KEY") ?: ""
+        // Deux applications installables côte à côte : « Bab Taxi » (réelle) et « Bab Taxi Démo » (BAB_DEMO=oui).
+        if (System.getenv("BAB_DEMO") == "oui") {
+            applicationIdSuffix = ".demo"
+            manifestPlaceholders["appLabel"] = "Bab Taxi Démo"
+        } else {
+            manifestPlaceholders["appLabel"] = "Bab Taxi"
+        }
     }
 
     buildTypes {

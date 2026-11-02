@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/strings.dart';
 import '../main.dart';
 import '../services/account.dart';
+import '../services/api.dart';
 import '../services/biometric_auth.dart';
 import '../services/dial_codes.dart';
 import '../services/live.dart';
@@ -555,7 +556,9 @@ class _AccountScreenState extends State<AccountScreen> {
               onPressed: _submit,
               child: Text(_existing == null ? s.t('createAccount') : s.t('saveAccount')),
             ),
-            if (widget.firstLaunch) TextButton(onPressed: accountStore.skip, child: Text(s.t('continueDemo'))),
+            // Application de déploiement : compte obligatoire (numéro vérifié, commande WhatsApp liée au compte).
+            if (widget.firstLaunch && !isProduction)
+              TextButton(onPressed: accountStore.skip, child: Text(s.t('continueDemo'))),
           ],
         ),
       ),

@@ -11,7 +11,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../l10n/strings.dart';
 import '../main.dart';
 import '../services/ads.dart';
-import '../services/api.dart';
 import '../services/navigation_apps.dart';
 import '../services/live.dart';
 import '../services/location.dart';
@@ -2847,22 +2846,7 @@ class _RiderHomeState extends State<RiderHome> {
               value: settings.personalizedOffers,
               onChanged: (v) => settings.personalizedOffers = v,
             ),
-            // Application reliée au serveur : le mode démo (taxis simulés) reste disponible.
-            if (apiUrl.isNotEmpty)
-              ListenableBuilder(
-                listenable: live,
-                builder: (_, __) => SwitchListTile(
-                  key: const ValueKey('demoMode'),
-                  secondary: const Icon(Icons.science_outlined),
-                  title: Text(s.t('demoMode')),
-                  subtitle: Text(s.t('demoModeDesc'), style: const TextStyle(color: AppColors.muted)),
-                  value: !live.enabled && !live.connecting,
-                  onChanged: (demo) {
-                    live.enabled = !demo;
-                    if (!demo) live.warmUp().then((ok) => ok ? adCatalog.refresh() : null);
-                  },
-                ),
-              ),
+            // Plus de bouton « Mode démo » : la démonstration est une application à part, « Bab Taxi Démo ».
           ],
         ),
       );

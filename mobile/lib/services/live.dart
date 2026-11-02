@@ -18,7 +18,12 @@ class LiveConfig extends ChangeNotifier {
   bool _enabled;
 
   /// Serveur utilisé : activé, adresse connue, et pas en train de se réveiller.
-  bool get enabled => _enabled && url.isNotEmpty && !_connecting;
+  /// Application de déploiement : le serveur reste utilisé pendant un réveil ou une coupure (les écrans
+  /// réessaient), sans jamais basculer sur des taxis simulés.
+  bool get enabled => _enabled && url.isNotEmpty && (production || !_connecting);
+
+  /// Application de déploiement (voir [isProduction]) ; modifiable dans les tests.
+  bool production = isProduction;
   set enabled(bool v) {
     if (v == _enabled) return;
     _enabled = v;
@@ -57,11 +62,12 @@ class LiveConfig extends ChangeNotifier {
     var ok = false;
     while (!ok && _enabled) {
       ok = await client.ping();
-      if (ok || !DateTime.now().isBefore(end)) break;
+      // Déploiement : on réessaie jusqu'à ce que le serveur réponde (« Connexion au serveur… » reste affiché).
+      if (ok || (!production && !DateTime.now().isBefore(end))) break;
       await Future<void>.delayed(every);
     }
     _connecting = false;
-    if (!ok && _enabled) {
+    if (!ok && _enabled && !production) {
       _enabled = false;
       _fellBack = true;
     }
@@ -88,6 +94,7 @@ class LiveConfig extends ChangeNotifier {
     _enabled = apiUrl.isNotEmpty;
     _connecting = false;
     _fellBack = false;
+    production = isProduction;
     url = apiUrl;
     notifyListeners();
   }
