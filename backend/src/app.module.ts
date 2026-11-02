@@ -13,6 +13,8 @@ import { WhatsappService } from './whatsapp/whatsapp.service';
 
 @Controller()
 class HealthController {
+  constructor(private readonly store: StoreService) {}
+
   /** Page d'accueil du serveur : utile pour vérifier qu'il est réveillé (offre gratuite Render). */
   @Get()
   root() {
@@ -49,7 +51,8 @@ class HealthController {
 
   @Get('health')
   health() {
-    return { status: 'ok', heure: new Date().toISOString() };
+    // « base » : postgresql quand DATABASE_URL est branchée, sinon memoire (données perdues au redémarrage).
+    return { status: 'ok', heure: new Date().toISOString(), base: this.store.persistante ? 'postgresql' : 'memoire' };
   }
 }
 
