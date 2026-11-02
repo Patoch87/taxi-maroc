@@ -12,6 +12,9 @@ export interface Compte {
   langue?: string;
   /** Numéro confirmé par un code SMS (envoyé par Twilio, ou code de test sans Twilio). */
   verifie: boolean;
+  /** Compte bloqué par Bab Taxi (console d'administration) : plus de commandes. */
+  bloque?: boolean;
+  motifBlocage?: string;
   creeLe: string;
   majLe: string;
 }
@@ -85,6 +88,8 @@ export class AccountsService {
       nationalite: corps.nationality ?? ancien?.nationalite,
       langue: corps.lang ?? ancien?.langue,
       verifie: (ancien?.verifie && ancien.telephone === telephone) || this.verifies.has(telephone),
+      bloque: ancien?.bloque,
+      motifBlocage: ancien?.motifBlocage,
       creeLe: ancien?.creeLe ?? maintenant,
       majLe: maintenant,
     };
@@ -105,6 +110,17 @@ export class AccountsService {
     this.index();
     const id = this.parTelephone.get(normaliserTelephone(telephone));
     return id ? this.get(id) : undefined;
+  }
+
+  liste(): Compte[] {
+    return this.store.list<Compte>(COMPTES);
+  }
+
+  /** Bloque ou débloque un compte (console d'administration). */
+  bloquer(id: string, bloque: boolean, motif?: string): Compte {
+    const c = this.get(id);
+    if (!c) throw new BadRequestException('compte inconnu');
+    return this.store.put(COMPTES, id, { ...c, bloque, motifBlocage: bloque ? (motif ?? '').slice(0, 300) : undefined });
   }
 
   nombre() {

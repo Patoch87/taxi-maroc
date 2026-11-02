@@ -172,7 +172,8 @@ export class Commande {
       mode: offre === 'seul' || offre === 'premium' ? 'seul' : 'partage',
       passagers: c.passagers,
       categorie: offre === 'premium' ? 'premium' : undefined,
-      passager: { nom: `${c.nom ?? 'Passager'} (WhatsApp)` },
+      passager: { nom: `${c.nom ?? 'Passager'} (WhatsApp)`, telephone: c.id.startsWith('demo-') ? undefined : c.id },
+      source: 'whatsapp',
       destinationNom: dest.nom,
       prixMad: prix.totalMad,
     });

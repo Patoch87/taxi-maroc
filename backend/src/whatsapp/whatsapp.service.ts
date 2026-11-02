@@ -238,6 +238,9 @@ export class WhatsappService implements OnModuleDestroy {
     if (!compte && !m.de.startsWith('demo-') && process.env.BAB_WHATSAPP_OUVERT !== 'oui') {
       return [{ texte: sansCompte(m.texte) }];
     }
+    if (compte?.bloque) {
+      return [{ texte: 'Votre compte Bab Taxi est suspendu. Contactez Bab Taxi. / الحساب ديالك موقوف، تواصل مع باب طاكسي.' }];
+    }
     const conv = this.conversation(m.de, compte?.prenom || m.nom);
     const cmd = new Commande(this.rides, conv);
     let texte = (m.texte ?? '').trim();

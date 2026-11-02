@@ -312,7 +312,8 @@ class LiveApi {
         'mode': alone ? 'seul' : 'partage',
         'passagers': seats,
         if (premium) 'categorie': 'premium',
-        'passager': {'nom': riderName ?? live.displayName('Passager')},
+        'passager': {'nom': riderName ?? live.displayName('Passager'), 'id': live.deviceId},
+        'source': 'app',
         'destinationNom': destinationName,
         'prixMad': fare,
       }) as Map<String, dynamic>);

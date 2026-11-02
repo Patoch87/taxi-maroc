@@ -1,6 +1,8 @@
 import { Controller, Get, Module } from '@nestjs/common';
 import { AccountsController } from './accounts/accounts.controller';
 import { AccountsService } from './accounts/accounts.service';
+import { AdminController } from './admin/admin.controller';
+import { AdminService } from './admin/admin.service';
 import { AdsController } from './ads/ads.controller';
 import { StoreService } from './store/store.service';
 import { DriversController } from './drivers/drivers.controller';
@@ -39,6 +41,7 @@ class HealthController {
         'POST /rides/requests/:id/(cancel|accept|decline|pickup|dropoff)',
         'POST /chauffeurs/:id/(pieces/:piece|dossier)',
         'GET /chauffeurs/:id(/photo)',
+        'GET /admin (console)',
         'GET /admin/chauffeurs?cle=…',
         'POST /complaints',
         'GET /ads',
@@ -62,7 +65,7 @@ class HealthController {
 }
 
 @Module({
-  controllers: [HealthController, AccountsController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController, DriversController],
-  providers: [StoreService, AccountsService, DriversService, RidesService, WhatsappService],
+  controllers: [HealthController, AccountsController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController, DriversController, AdminController],
+  providers: [StoreService, AccountsService, DriversService, RidesService, WhatsappService, AdminService],
 })
 export class AppModule {}

@@ -7,7 +7,7 @@ import { StoreService } from '../store/store.service';
 export const PIECES = ['photo', 'cinRecto', 'cinVerso', 'permis', 'cartePro', 'casier', 'vehicule'] as const;
 export type Piece = (typeof PIECES)[number];
 
-export type StatutDossier = 'en_attente' | 'valide' | 'refuse';
+export type StatutDossier = 'en_attente' | 'valide' | 'refuse' | 'suspendu';
 
 /** Dossier d'inscription d'un chauffeur, vérifié par Bab Taxi avant la première course. */
 export interface DossierChauffeur {
@@ -120,12 +120,12 @@ export class DriversService {
   decider(id: string, decision: string, motif?: string): DossierChauffeur {
     const d = this.get(id);
     if (!d) throw new NotFoundException('dossier inconnu');
-    if (decision !== 'valide' && decision !== 'refuse') throw new BadRequestException('décision invalide');
-    if (decision === 'refuse' && !texte(motif, 300)) throw new BadRequestException('motif obligatoire pour un refus');
+    if (decision !== 'valide' && decision !== 'refuse' && decision !== 'suspendu') throw new BadRequestException('décision invalide');
+    if (decision !== 'valide' && !texte(motif, 300)) throw new BadRequestException('motif obligatoire');
     return this.store.put(DOSSIERS, id, {
       ...d,
       statut: decision,
-      motif: decision === 'refuse' ? texte(motif, 300) : undefined,
+      motif: decision !== 'valide' ? texte(motif, 300) : undefined,
       decideLe: new Date().toISOString(),
     });
   }

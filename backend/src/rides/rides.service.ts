@@ -16,7 +16,15 @@ export interface DemandeCourse {
   creeLe: string;
   /** Chauffeurs qui ont refusé : la demande ne leur est plus proposée. */
   refuseePar: string[];
+  /** Horodatage de chaque étape (console d'administration : délais, durées). */
+  accepteeLe?: string;
+  aBordLe?: string;
+  termineeLe?: string;
+  annuleeLe?: string;
 }
+
+/** Taxi en ligne vu par la console d'administration. */
+export type TaxiSuivi = TaxiEnRoute & { majLe: number };
 
 /** Taxi vu par le passager : profil et position en direct. */
 export interface TaxiPublic {
@@ -175,6 +183,7 @@ export class RidesService {
     }
     d.statut = 'acceptee';
     d.accepteePar = taxiId;
+    d.accepteeLe = this.iso();
     return this.garder(d);
   }
 
@@ -190,12 +199,41 @@ export class RidesService {
     if (d.accepteePar !== taxiId) throw new ConflictException("Cette course n'est pas à ce taxi");
     if (d.statut === 'annulee') throw new ConflictException('Course annulée par le passager');
     d.statut = statut;
+    if (statut === 'a_bord') d.aBordLe = this.iso();
+    else d.termineeLe = this.iso();
     return this.garder(d);
   }
 
   cancel(id: string): DemandeCourse {
     const d = this.find(id);
-    if (d.statut === 'en_attente' || d.statut === 'acceptee') d.statut = 'annulee';
+    if (d.statut === 'en_attente' || d.statut === 'acceptee') {
+      d.statut = 'annulee';
+      d.annuleeLe = this.iso();
+    }
     return this.garder(d);
+  }
+
+  private iso() {
+    return new Date(this.now()).toISOString();
+  }
+
+  // ---------- Console d'administration ----------
+
+  /** Taxis en ligne (position envoyée depuis moins de 90 s). */
+  taxisEnLigne(): TaxiSuivi[] {
+    const limite = this.now() - TAXI_HORS_LIGNE_MS;
+    return [...this.taxis.values()].filter((t) => t.majLe >= limite);
+  }
+
+  /** Toutes les courses : celles de la base et celles en mémoire (les plus récentes d'abord). */
+  toutes(): DemandeCourse[] {
+    this.reprendre();
+    const parId = new Map<string, DemandeCourse>();
+    for (const d of this.store?.list<DemandeCourse>('courses') ?? []) parId.set(d.id, d);
+    for (const d of this.demandes.values()) {
+      this.expirer(d);
+      parId.set(d.id, d);
+    }
+    return [...parId.values()].sort((a, b) => b.creeLe.localeCompare(a.creeLe));
   }
 }

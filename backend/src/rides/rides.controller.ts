@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Optional, Param, Post, Put, Query } from '@nestjs/common';
 import { DemandePassager, TaxiEnRoute } from '../domain/matching';
+import { AccountsService } from '../accounts/accounts.service';
 import { DriversService, validationRequise } from '../drivers/drivers.service';
 import { RidesService } from './rides.service';
 
@@ -8,6 +9,7 @@ export class RidesController {
   constructor(
     private readonly rides: RidesService,
     @Optional() private readonly drivers?: DriversService,
+    @Optional() private readonly comptes?: AccountsService,
   ) {}
 
   /** Le chauffeur envoie sa position et son itinéraire (taxi disponible). */
@@ -63,6 +65,8 @@ export class RidesController {
   @Post('rides/requests')
   createRequest(@Body() body: DemandePassager) {
     if (!body?.depart || !body?.destination) throw new BadRequestException('depart et destination sont requis');
+    const id = body.passager?.id;
+    if (id && this.comptes?.get(id)?.bloque) throw new ForbiddenException('Compte suspendu par Bab Taxi');
     return this.rides.createRequest({ ...body, mode: body.mode ?? 'partage', passagers: body.passagers ?? 1 });
   }
 

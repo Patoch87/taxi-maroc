@@ -27,7 +27,10 @@ export interface DemandePassager {
   passagers: number;
   categorie?: TaxiCategory;
   /** Infos affichées au chauffeur (test réel). */
-  passager?: { nom: string };
+  /** id : compte de l'application ; telephone : numéro WhatsApp (console d'administration). */
+  passager?: { nom: string; id?: string; telephone?: string };
+  /** Canal de la commande : application ou WhatsApp. */
+  source?: 'app' | 'whatsapp';
   destinationNom?: string;
   prixMad?: number;
 }

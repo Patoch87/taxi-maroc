@@ -35,7 +35,7 @@ interface Segment {
   data?: Buffer;
 }
 
-interface AlerteSos {
+export interface AlerteSos {
   id: string;
   passagerId?: string;
   nom?: string;
@@ -80,9 +80,12 @@ function lireCorps(req: IncomingMessage, max: number): Promise<Buffer> {
  * (aucun raccordement direct à la police n'existe encore). Stockage en mémoire pour la première version.
  * Les vidéos ne sont lisibles qu'avec la clé du centre (variable SOS_CENTRE_TOKEN) : loi 09-08.
  */
+/** Alertes en mémoire, lues aussi par la console d'administration (carte en temps réel). */
+export const alertesSos = new Map<string, AlerteSos>();
+
 @Controller('sos')
 export class SosController {
-  private readonly alertes = new Map<string, AlerteSos>();
+  private readonly alertes = alertesSos;
 
   private verifierCle(cle?: string) {
     const attendue = process.env.SOS_CENTRE_TOKEN;
