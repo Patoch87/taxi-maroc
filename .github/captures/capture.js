@@ -3,9 +3,34 @@
 const { chromium } = require('playwright');
 
 (async () => {
-  const [url, out] = process.argv.slice(2);
+  const [baseUrl, out] = process.argv.slice(2);
+  // CAPTURE_LANG=en|dr : application en anglais ou en darija (?lang=en, ?lang=dr) ; les libellés français du script sont traduits
+  // avec le tableau des textes de l'application (mobile/lib/l10n/strings.dart : fr, ar, darija, en).
+  const LANG = process.env.CAPTURE_LANG || 'fr';
+  const url = LANG === 'fr' ? baseUrl : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}lang=${LANG}`;
+  const FR_EN = [];
+  const COL = { ar: 3, dr: 5, en: 7 }[LANG];
+  // En arabe et en darija, l'écran est en miroir (droite à gauche) : le menu est à droite.
+  const X = (x) => (LANG === 'ar' || LANG === 'dr' ? 390 - x : x);
+  if (COL) {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../../mobile/lib/l10n/strings.dart'), 'utf8');
+    const q = String.raw`(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")`;
+    const re = new RegExp(String.raw`'\w+':\s*\[\s*` + q + String.raw`\s*,\s*` + q + String.raw`\s*,\s*` + q + String.raw`\s*,\s*` + q + String.raw`\s*,?\s*\]`, 'g');
+    for (const m of src.matchAll(re)) {
+      const fr = (m[1] ?? m[2] ?? '').replace(/\\'/g, "'"), en = (m[COL] ?? m[COL + 1] ?? '').replace(/\\'/g, "'");
+      if (fr && en && !fr.includes('$')) FR_EN.push([fr, en]);
+    }
+    console.log('libellés traduits :', FR_EN.length);
+  }
+  const tr = (label) => {
+    if (!COL) return label;
+    const exact = FR_EN.find(([fr]) => fr === label);
+    if (exact) return exact[1];
+    const part = FR_EN.find(([fr]) => fr.includes(label));
+    return part ? part[1] : label;
+  };
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR' });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: { en: 'en-US', dr: 'ar-MA', ar: 'ar-MA' }[LANG] || 'fr-FR' });
   if (process.env.FAKE_TILES) {
     const fs = require('fs');
     await page.route(/cartocdn|openstreetmap/, (r) => r.fulfill({ body: fs.readFileSync(process.env.FAKE_TILES), contentType: 'image/png' }));
@@ -17,8 +42,10 @@ const { chromium } = require('playwright');
     console.log('capture', name);
   };
   // Élément cliquable de Flutter (bouton, puce...) dont le libellé contient [label].
-  const target = (label) =>
-    page.locator(`[role][aria-label*="${label}"], flt-semantics[role]:has-text("${label}")`).last();
+  const target = (fr) => {
+    const label = tr(fr);
+    return page.locator(`[role][aria-label*="${label}"], flt-semantics[role]:has-text("${label}")`).last();
+  };
   const tap = async (label) => {
     await target(label).click({ timeout: 15000 });
   };
@@ -68,7 +95,7 @@ const { chromium } = require('playwright');
 
   // Chauffeur
   await open();
-  await page.mouse.click(32, 34); // menu
+  await page.mouse.click(X(32), 34); // menu
   await page.waitForTimeout(1000);
   await tap('Mode chauffeur');
   await shot('6-chauffeur-hors-ligne', 3000);
@@ -144,7 +171,7 @@ const { chromium } = require('playwright');
   // Contacts de confiance
   await step('contacts', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Contacts de confiance');
     await page.waitForTimeout(1500);
@@ -283,7 +310,7 @@ const { chromium } = require('playwright');
   // Chauffeur : rappel des feux de détresse à 50 m du passager.
   await step('feux', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -301,7 +328,7 @@ const { chromium } = require('playwright');
   // Chauffeur : « Naviguer vers » le prochain passager, rester dans l'application ou ouvrir Waze.
   await step('naviguer', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -318,7 +345,7 @@ const { chromium } = require('playwright');
   // ou le touche dans la liste si le micro n'est pas disponible ; seulement les passagers sur la route.
   await step('quartier-vocal', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -353,7 +380,7 @@ const { chromium } = require('playwright');
   // Chauffeur : « Devenir chauffeur Premium » (réglages chauffeur) et ses critères.
   await step('criteres-premium', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);
@@ -366,7 +393,7 @@ const { chromium } = require('playwright');
   // Chauffeur : « Mes gains », ce que Bab Taxi rapporte en plus par rapport à avant.
   await step('mes-gains', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await shot('48-chauffeur-gains-de-la-semaine', 2500);
@@ -377,7 +404,7 @@ const { chromium } = require('playwright');
     await shot('50-mes-gains-historique', 1200);
     await page.mouse.wheel(0, -1400);
     await page.waitForTimeout(600);
-    await page.mouse.click(285, 76); // « Mois »
+    await page.mouse.click(X(285), 76); // « Mois »
     await shot('51-mes-gains-mois', 1500);
   });
 
@@ -489,7 +516,7 @@ const { chromium } = require('playwright');
   // Chauffeur qui rentre chez lui : seulement les passagers sur son trajet
   await step('ma-destination', async () => {
     await open();
-    await page.mouse.click(32, 34); // menu
+    await page.mouse.click(X(32), 34); // menu
     await page.waitForTimeout(1000);
     await tap('Mode chauffeur');
     await page.waitForTimeout(2500);

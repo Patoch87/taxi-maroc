@@ -5,7 +5,7 @@ import 'dart:math';
 class Demo {
   static const priseEnCharge = 2.0;
   static const parKm = 3.5;
-  static const minimum = 7.5;
+  static const minimum = 12.0;
   static const facteurRoute = 1.3;
 
   static double _distanceKm(Map<String, double> a, Map<String, double> b) {
