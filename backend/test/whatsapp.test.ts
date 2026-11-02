@@ -150,7 +150,7 @@ describe('Agent WhatsApp', () => {
     try {
       const r = await dire('test-ia', { texte: 'Morocco Mall stp' });
       expect(r).toContain('Morocco Mall');
-      expect(appels[0].model).toBe('claude-opus-5-5');
+      expect(appels[0].model).toBe('claude-sonnet-5-5');
       const resultats = appels[2].messages.at(-1).content;
       expect(resultats[0].content).toContain('Morocco Mall');
       expect(resultats[1].is_error).toBe(true);

@@ -32,12 +32,15 @@ export async function synthetiser(texte: string, arabe: boolean): Promise<{ donn
   // Une voix par langue si besoin (ex. une voix marocaine pour la darija), sinon la même voix multilingue.
   const voix =
     (arabe ? process.env.ELEVENLABS_VOIX_DARIJA : undefined) || process.env.ELEVENLABS_VOIX || 'JBFqnCBsd6RMkjVDRZzb';
-  const res = await fetch(`${API}/text-to-speech/${voix}?output_format=mp3_44100_128`, {
+  // Format léger (voix au téléphone) : envoi plus rapide à WhatsApp.
+  const format = process.env.ELEVENLABS_FORMAT || 'mp3_22050_32';
+  const res = await fetch(`${API}/text-to-speech/${voix}?output_format=${format}`, {
     method: 'POST',
     headers: { 'xi-api-key': cle()!, 'content-type': 'application/json' },
     body: JSON.stringify({
       text: texte,
-      model_id: process.env.ELEVENLABS_TTS_MODELE || 'eleven_multilingual_v2',
+      // Turbo : voix générée en une fraction de seconde (multilingual_v2 prenait plusieurs secondes).
+      model_id: process.env.ELEVENLABS_TTS_MODELE || 'eleven_turbo_v2_5',
       voice_settings: { stability: 0.5, similarity_boost: 0.8 },
     }),
     signal: AbortSignal.timeout(30_000),

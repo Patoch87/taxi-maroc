@@ -51,9 +51,15 @@ export async function envoyerAudio(a: string, audio: Buffer, type: string) {
   await envoyer({ to: a, type: 'audio', audio: { id } });
 }
 
-/** Marque le message comme lu (coches bleues) : le passager voit que Bab l'a reçu. */
+/**
+ * Marque le message comme lu (coches bleues) et affiche « en train d'écrire… » chez le passager pendant que
+ * Bab prépare la réponse (jusqu'à 25 s ou la réponse) : il sait tout de suite que son message est pris en compte.
+ */
 export async function marquerLu(messageId: string) {
-  if (whatsappActif()) await envoyer({ status: 'read', message_id: messageId }).catch(() => undefined);
+  if (!whatsappActif()) return;
+  await envoyer({ status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }).catch(() =>
+    envoyer({ status: 'read', message_id: messageId }).catch(() => undefined),
+  );
 }
 
 /** Télécharge le fichier d'un vocal reçu. */

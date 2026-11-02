@@ -182,8 +182,21 @@ export class WhatsappService implements OnModuleDestroy {
   }
 
   private async traiterEtEnvoyer(m: MessageEntrant) {
-    const reponses = await this.traiter(m);
+    // Vrai WhatsApp : le texte part dès qu'il est prêt, le vocal suit (la voix ne retarde plus la réponse).
+    const reel = !m.de.startsWith('demo-') && wa.whatsappActif() && process.env.WHATSAPP_TEXTE_AVEC_VOCAL !== 'non';
+    const reponses = await this.traiter(m, !reel);
     for (const r of reponses) await this.envoyer(m.de, r);
+    const conv = this.conversations.get(m.de);
+    if (!reel || !conv?.vocal || !voixActive()) return;
+    for (const r of reponses) {
+      if (!r.texte) continue;
+      try {
+        const audio = await synthetiser(r.texte, arabe(r.texte));
+        await wa.envoyerAudio(m.de, audio.donnees, audio.type);
+      } catch (e) {
+        this.log.error(e);
+      }
+    }
   }
 
   /** Envoie au passager : sur WhatsApp si c'est un vrai numéro, sinon dans la boîte du simulateur. */
@@ -218,7 +231,7 @@ export class WhatsappService implements OnModuleDestroy {
   }
 
   /** Comprend le message et prépare la réponse (texte, et voix si le passager a parlé). */
-  async traiter(m: MessageEntrant): Promise<Reponse[]> {
+  async traiter(m: MessageEntrant, voix = true): Promise<Reponse[]> {
     // Commande WhatsApp réservée aux passagers qui ont l'application : le numéro WhatsApp doit être celui du compte.
     // Le simulateur (numéros « demo-… ») et BAB_WHATSAPP_OUVERT=oui (essais) laissent passer tout le monde.
     const compte = m.de.startsWith('demo-') ? undefined : this.comptes.parNumero(m.de);
@@ -234,14 +247,16 @@ export class WhatsappService implements OnModuleDestroy {
       const r = this.ia
         ? await this.repondreIA(cmd, 'Je vous envoie ma position.', true)
         : await this.demo.positionRecue(cmd);
-      return [await this.habiller(conv, r)];
+      return [voix ? await this.habiller(conv, r) : { texte: r }];
     }
 
     conv.vocal = !!m.audio;
     if (m.audio) {
       try {
+        const debut = Date.now();
         const t = await transcrire(m.audio.donnees, m.audio.type);
         texte = t.texte;
+        this.log.log(`Vocal transcrit en ${Date.now() - debut} ms (langue ${t.langue ?? '?'}, ${texte.length} caractères)`);
         conv.derniereTranscription = texte;
       } catch (e) {
         this.log.error(e);
@@ -253,8 +268,10 @@ export class WhatsappService implements OnModuleDestroy {
     conv.tour++;
     conv.langue = detecterLangue(texte, conv.langue);
 
+    const debut = Date.now();
     const r = this.ia ? await this.repondreIA(cmd, texte, false) : await this.demo.repondre(cmd, texte);
-    return [await this.habiller(conv, r)];
+    this.log.log(`Réponse de l'agent en ${Date.now() - debut} ms`);
+    return [voix ? await this.habiller(conv, r) : { texte: r }];
   }
 
   private async repondreIA(cmd: Commande, texte: string, position: boolean): Promise<string> {

@@ -4,8 +4,8 @@ import { Commande } from './commande';
 type Message = Anthropic.Beta.BetaMessageParam;
 type Outil = Anthropic.Beta.BetaTool;
 
-/** Modèle Claude de l'agent (réglable sur Render : BAB_AGENT_MODELE). */
-export const MODELE = process.env.BAB_AGENT_MODELE || 'claude-opus-5-5';
+/** Modèle Claude de l'agent (réglable sur Render : BAB_AGENT_MODELE). Sonnet : réponses plus rapides au téléphone. */
+export const MODELE = process.env.BAB_AGENT_MODELE || 'claude-sonnet-5-5';
 /** Effort de réflexion : « low » garde des réponses rapides, ce qui compte au téléphone. */
 const EFFORT = (process.env.BAB_AGENT_EFFORT || 'low') as 'low' | 'medium' | 'high';
 /** Nombre maximal d'appels d'outils pour un seul message du passager. */
@@ -106,7 +106,7 @@ export class AgentIA {
     for (let i = 0; i < MAX_TOURS_OUTILS; i++) {
       const rep = await this.client.beta.messages.create({
         model: MODELE,
-        max_tokens: 4000,
+        max_tokens: 1500,
         system: [{ type: 'text', text: PROMPT, cache_control: { type: 'ephemeral' } }],
         tools: OUTILS,
         messages,
