@@ -631,6 +631,88 @@ class S {
     'whatsappNeedsAccount': ["Créez d'abord votre compte : WhatsApp reconnaît votre numéro.", "أنشئ حسابك أولا: واتساب يتعرف على رقمك.", "صاوب الحساب ديالك هو اللول: واتساب كيعرف النمرة ديالك.", "Create your account first: WhatsApp recognises your number."],
     'cardSoon': ["Paiement par carte bientôt disponible : espèces pour l'instant.", "الدفع بالبطاقة متاح قريبا: نقدا حاليا.", "الخلاص بلاكارط جاي قريب: دابا غير بالكاش.", "Card payment coming soon: cash for now."],
     'tipInCash': ["Pourboire à donner en espèces au chauffeur", "البقشيش يُعطى نقدا للسائق", "البوربوار عطيه كاش للشيفور", "Tip to give the driver in cash"],
+    // Application « Bab Taxi Chauffeur » : inscription et validation du dossier.
+    'driverSignupTitle': ['Devenir chauffeur Bab Taxi', 'كن سائقا مع باب طاكسي', 'ولّي شيفور مع باب طاكسي', 'Drive with Bab Taxi'],
+    'driverSignupIntro': [
+      "Remplissez votre dossier une seule fois. Bab Taxi vérifie vos documents puis vous pouvez recevoir des courses.",
+      'املأ ملفك مرة واحدة. يتحقق باب طاكسي من وثائقك ثم يمكنك استقبال الرحلات.',
+      'عمّر الدوسي ديالك مرة وحدة. باب طاكسي كيشوف الوراق ديالك ومن بعد تقدر تاخد الكورسات.',
+      'Fill in your file once. Bab Taxi checks your documents, then you can receive rides.'
+    ],
+    'dsYou': ['Vous', 'أنت', 'نتا', 'You'],
+    'dsPhoto': ['Votre photo', 'صورتك', 'التصويرة ديالك', 'Your photo'],
+    'dsPhotoHint': [
+      'Visage bien visible : elle est montrée aux passagers',
+      'وجه واضح: تُعرض على الركاب',
+      'الوجه باين مزيان: كتبان للكليان',
+      'Face clearly visible: shown to riders'
+    ],
+    'dsLanguages': ['Langues parlées', 'اللغات التي تتحدثها', 'اللغات اللي كتهضر', 'Languages spoken'],
+    'dsIdentity': ['Documents', 'الوثائق', 'الوراق', 'Documents'],
+    'dsCin': ['Numéro de CIN', 'رقم البطاقة الوطنية', 'نمرة لاكارط', 'National ID number'],
+    'dsCinFront': ['CIN : recto', 'البطاقة الوطنية: الوجه', 'لاكارط: القدام', 'ID card: front'],
+    'dsCinBack': ['CIN : verso', 'البطاقة الوطنية: الظهر', 'لاكارط: اللور', 'ID card: back'],
+    'dsLicense': ['Numéro du permis de conduire', 'رقم رخصة السياقة', 'نمرة البيرمي', 'Driving licence number'],
+    'dsLicensePhoto': ['Permis de conduire', 'رخصة السياقة', 'البيرمي', 'Driving licence'],
+    'dsProCard': [
+      'Numéro de la carte professionnelle (permis de confiance)',
+      'رقم البطاقة المهنية (رخصة الثقة)',
+      'نمرة لاكارط المهنية (بيرمي دو كونفيونس)',
+      'Professional card number (taxi licence)'
+    ],
+    'dsProCardPhoto': ['Carte professionnelle', 'البطاقة المهنية', 'لاكارط المهنية', 'Professional card'],
+    'dsRecord': ['Casier judiciaire', 'السجل العدلي', 'السجل العدلي (لاكازيي)', 'Criminal record'],
+    'dsRecordHint': [
+      'Extrait de moins de 3 mois',
+      'مستخرج لا يتجاوز 3 أشهر',
+      'ماشي قديم كتر من 3 شهور',
+      'Extract less than 3 months old'
+    ],
+    'dsTaxi': ['Votre taxi', 'سيارة الأجرة', 'الطاكسي ديالك', 'Your taxi'],
+    'dsTaxiNumber': ['Numéro du taxi (sur la portière)', 'رقم الطاكسي (على الباب)', 'نمرة الطاكسي (فالباب)', 'Taxi number (on the door)'],
+    'dsPlate': ["Plaque d'immatriculation", 'لوحة الترقيم', 'لاماتريكيلا', 'Licence plate'],
+    'dsVehiclePhoto': ['Photo du taxi', 'صورة الطاكسي', 'تصويرة الطاكسي', 'Photo of the taxi'],
+    'dsTakePhoto': ['Prendre une photo', 'التقاط صورة', 'صوّر', 'Take a photo'],
+    'dsFromGallery': ['Choisir dans la galerie', 'اختيار من المعرض', 'ختار من الصور', 'Choose from gallery'],
+    'dsUploadFailed': ["Envoi impossible, touchez pour réessayer", 'تعذر الإرسال، اضغط لإعادة المحاولة', 'ما تصيفطاتش، ورك باش تعاود', 'Upload failed, tap to retry'],
+    'dsMissing': [
+      'Il manque des informations ou des photos.',
+      'تنقص معلومات أو صور.',
+      'كاين شي معلومات ولا تصاور ناقصين.',
+      'Some information or photos are missing.'
+    ],
+    'dsSendFailed': [
+      "Le dossier n'a pas pu partir. Vérifiez les photos et réessayez.",
+      'تعذر إرسال الملف. تحقق من الصور وأعد المحاولة.',
+      'الدوسي ما تصيفطش. شوف التصاور وعاود.',
+      'Your file could not be sent. Check the photos and try again.'
+    ],
+    'dsSubmit': ['Envoyer mon dossier', 'إرسال ملفي', 'صيفط الدوسي ديالي', 'Send my file'],
+    'dsPrivacy': [
+      'Vos documents ne sont vus que par l\'équipe Bab Taxi chargée de la vérification (loi 09-08).',
+      'لا يطلع على وثائقك إلا فريق باب طاكسي المكلف بالتحقق (القانون 09-08).',
+      'الوراق ديالك ما كيشوفهم غير الفريق ديال باب طاكسي اللي كيتحقق (قانون 09-08).',
+      'Your documents are only seen by the Bab Taxi verification team (law 09-08).'
+    ],
+    'dsPendingTitle': ['Dossier en cours de vérification', 'ملفك قيد التحقق', 'الدوسي ديالك كيتشاف', 'Your file is being checked'],
+    'dsPendingBody': [
+      'Bab Taxi vérifie vos documents, en général sous 48 heures. Vous pourrez alors vous mettre en service.',
+      'يتحقق باب طاكسي من وثائقك، عادة خلال 48 ساعة. بعدها يمكنك بدء العمل.',
+      'باب طاكسي كيشوف الوراق ديالك، عادة فـ 48 ساعة. من بعد تقدر تبدا الخدمة.',
+      'Bab Taxi checks your documents, usually within 48 hours. You can then go online.'
+    ],
+    'dsRejectedTitle': ['Dossier à corriger', 'ملف يحتاج تصحيحا', 'الدوسي خاصو يتصلح', 'File needs changes'],
+    'dsRefresh': ['Actualiser', 'تحديث', 'شوف واش تبدل شي حاجة', 'Refresh'],
+    'dsEdit': ['Modifier mon dossier', 'تعديل ملفي', 'بدّل الدوسي ديالي', 'Edit my file'],
+    'dsApproved': ['Dossier validé', 'تم قبول ملفك', 'الدوسي ديالك تقبل', 'File approved'],
+    'driverAppPromo': ['Vous êtes chauffeur de taxi ?', 'هل أنت سائق طاكسي؟', 'واش نتا شيفور طاكسي؟', 'Are you a taxi driver?'],
+    'driverAppPromoHint': [
+      "Téléchargez l'application Bab Taxi Chauffeur",
+      'حمّل تطبيق باب طاكسي للسائقين',
+      'تيليشارجي التطبيق ديال باب طاكسي للشيفورات',
+      'Download the Bab Taxi Driver app'
+    ],
+    'priceTo': ['à', 'إلى', 'حتى لـ', 'to'],
     'wrongCode': ['Code incorrect', 'رمز غير صحيح', 'الكود غالط', 'Wrong code'],
     'requiredField': ['Champ obligatoire', 'حقل إلزامي', 'خاصك تعمرها', 'Required field'],
     'invalidPhone': [

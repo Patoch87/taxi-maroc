@@ -1,10 +1,14 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Optional, Param, Post, Put, Query } from '@nestjs/common';
 import { DemandePassager, TaxiEnRoute } from '../domain/matching';
+import { DriversService, validationRequise } from '../drivers/drivers.service';
 import { RidesService } from './rides.service';
 
 @Controller()
 export class RidesController {
-  constructor(private readonly rides: RidesService) {}
+  constructor(
+    private readonly rides: RidesService,
+    @Optional() private readonly drivers?: DriversService,
+  ) {}
 
   /** Le chauffeur envoie sa position et son itinéraire (taxi disponible). */
   @Put('taxis/:id/route')
@@ -13,7 +17,17 @@ export class RidesController {
     if (!Array.isArray(body?.itineraire) || body.itineraire.length < 1) {
       throw new BadRequestException('itineraire doit contenir au moins 1 point');
     }
-    this.rides.updateTaxi({ ...body, id });
+    // Seuls les chauffeurs dont Bab Taxi a validé le dossier reçoivent des courses ; le passager voit
+    // alors le nom, la plaque, la photo et les langues du dossier, pas ce que le téléphone envoie.
+    const d = this.drivers?.get(id);
+    if (validationRequise() && d?.statut !== 'valide') {
+      throw new ForbiddenException('Dossier chauffeur non validé par Bab Taxi');
+    }
+    const profil =
+      d?.statut === 'valide'
+        ? { nom: this.drivers!.nomPublic(d), plaque: d.plaque, photo: `/chauffeurs/${id}/photo`, langues: d.langues, type: d.taxiType }
+        : {};
+    this.rides.updateTaxi({ ...body, ...profil, id });
     return { ok: true };
   }
 

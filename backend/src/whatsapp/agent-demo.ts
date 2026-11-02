@@ -1,4 +1,4 @@
-import { Commande, Conversation, Langue, Offre, prixOffres } from './commande';
+import { Commande, Conversation, Langue, Offre, prixOffres, prixParle } from './commande';
 import { chercherCatalogue, normaliser } from './lieux';
 
 /**
@@ -125,7 +125,7 @@ export class AgentDemo {
       cmd.estimerPrix();
       c.etape = 'offre';
       const offres = prixOffres(c);
-      const liste = offres.map((o) => `${noms[o.offre]} ${o.totalMad} ${c.langue === 'darija' ? 'درهم' : 'dirhams'}`).join(c.langue === 'darija' ? '، ' : ', ');
+      const liste = offres.map((o) => `${noms[o.offre]} ${prixParle(o, c.langue === 'darija')} ${c.langue === 'darija' ? 'درهم' : 'dirhams'}`).join(c.langue === 'darija' ? '، ' : ', ');
       if (offres[0]?.offre === 'grand_taxi') {
         c.offre = 'partage';
         c.etape = 'confirmer_commande';
@@ -163,8 +163,8 @@ export class AgentDemo {
         if (!offre) return P.offreInconnue();
         c.offre = offre;
         c.etape = 'confirmer_commande';
-        const prix = prixOffres(c).find((o) => o.offre === offre)!.totalMad;
-        return P.resume(c.destination!.lieu[c.langue === 'darija' ? 'ar' : 'nom'], noms[offre], String(prix));
+        const prix = prixParle(prixOffres(c).find((o) => o.offre === offre)!, c.langue === 'darija');
+        return P.resume(c.destination!.lieu[c.langue === 'darija' ? 'ar' : 'nom'], noms[offre], prix);
       }
       case 'confirmer_commande':
         if (oui(texte)) {
@@ -178,7 +178,7 @@ export class AgentDemo {
           c.destination = undefined;
           return P.pasCommande();
         }
-        return P.resume(c.destination!.lieu.nom, noms[c.offre ?? 'partage'], String(prixOffres(c).find((o) => o.offre === c.offre)?.totalMad ?? ''));
+        return P.resume(c.destination!.lieu.nom, noms[c.offre ?? 'partage'], (() => { const o = prixOffres(c).find((x) => x.offre === c.offre); return o ? prixParle(o, c.langue === 'darija') : ''; })());
     }
 
     // Nouvelle destination.

@@ -153,9 +153,19 @@ LatLng _ll(dynamic m) => LatLng((m['lat'] as num).toDouble(), (m['lng'] as num).
 
 /// Taxi en ligne vu par le passager.
 class LiveTaxi {
-  LiveTaxi(this.id, this.name, this.plate, this.grand, this.position);
-  factory LiveTaxi.fromJson(Map<String, dynamic> j) => LiveTaxi(j['id'] as String, j['nom'] as String? ?? 'Taxi',
-      j['plaque'] as String? ?? '', j['type'] == 'grand', _ll(j['position']));
+  LiveTaxi(this.id, this.name, this.plate, this.grand, this.position, {this.photo = '', this.languages = const []});
+  factory LiveTaxi.fromJson(Map<String, dynamic> j) {
+    final photo = j['photo'] as String? ?? '';
+    return LiveTaxi(j['id'] as String, j['nom'] as String? ?? 'Taxi', j['plaque'] as String? ?? '', j['type'] == 'grand',
+        _ll(j['position']),
+        // Photo du dossier validé : adresse relative au serveur.
+        photo: photo.startsWith('/') ? '${live.url.replaceAll(RegExp(r'/+$'), '')}$photo' : photo,
+        languages: (j['langues'] as List?)?.whereType<String>().toList() ?? const []);
+  }
+
+  /// Photo du chauffeur (adresse web) et langues parlées (codes dr, ar, zgh, fr, en, es), quand son dossier est validé.
+  final String photo;
+  final List<String> languages;
   final String id;
   final String name;
   final String plate;

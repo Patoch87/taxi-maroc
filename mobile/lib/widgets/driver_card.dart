@@ -54,8 +54,16 @@ class DriverPhoto extends StatelessWidget {
 /// Fiche du chauffeur affichée pendant la course.
 class DriverCard extends StatelessWidget {
   const DriverCard(
-      {super.key, required this.driver, this.passengerName, this.lowVision = false, this.babySeat = false});
+      {super.key,
+      required this.driver,
+      this.passengerName,
+      this.lowVision = false,
+      this.babySeat = false,
+      this.grand = false});
   final DemoDriver driver;
+
+  /// Grand taxi : pas de photo du modèle (la photo montre le petit taxi rouge de Casablanca).
+  final bool grand;
 
   /// Course commandée pour quelqu'un d'autre : le nom du passager, comme le voit le chauffeur.
   final String? passengerName;
@@ -110,31 +118,7 @@ class DriverCard extends StatelessWidget {
           ]),
         ),
         const SizedBox(width: 8),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.ink, width: 1.5),
-            ),
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(driver.plate,
-                  textDirection: TextDirection.ltr,
-                  style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: .5)),
-            ),
-          ),
-          const SizedBox(height: 4),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(driver.taxiNumber, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-            ),
-          ),
-        ]),
+        _TaxiPicture(plate: driver.plate, label: driver.taxiNumber, grand: grand),
       ]);
 
   Widget _badge(IconData icon, String text, Color color) => Container(
@@ -150,6 +134,56 @@ class DriverCard extends StatelessWidget {
             child: Text(text,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          ),
+        ]),
+      );
+}
+
+/// Photo du modèle de taxi avec la plaque dessous, à reconnaître d'un coup d'œil dans la rue.
+class _TaxiPicture extends StatelessWidget {
+  const _TaxiPicture({required this.plate, required this.label, required this.grand});
+  final String plate;
+  final String label;
+  final bool grand;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 112,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 112,
+            height: 74,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: grand ? AppColors.grandTaxi : AppColors.sandDeep,
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: grand
+                ? const Icon(Icons.airport_shuttle_rounded, size: 44, color: AppColors.ink)
+                : Image.asset('assets/taxi/petit_taxi.jpg', fit: BoxFit.cover),
+          ),
+          const SizedBox(height: 6),
+          // Plaque façon plaque marocaine : fond blanc, bord noir.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppColors.ink, width: 1.5),
+            ),
+            constraints: const BoxConstraints(maxWidth: 112),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(plate,
+                  textDirection: TextDirection.ltr,
+                  style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: .5)),
+            ),
+          ),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ),
         ]),
       );

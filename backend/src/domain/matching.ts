@@ -13,6 +13,9 @@ export interface TaxiEnRoute {
   /** Profil affiché au passager (test réel). */
   nom?: string;
   plaque?: string;
+  /** Chauffeur au dossier validé : adresse de sa photo et langues parlées. */
+  photo?: string;
+  langues?: string[];
   /** Position GPS actuelle (par défaut, le premier point de l'itinéraire). */
   position?: Point;
 }

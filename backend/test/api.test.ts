@@ -4,6 +4,9 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/setup';
 
+// Ces tests publient des taxis sans dossier chauffeur (la validation a ses propres tests).
+process.env.BAB_CHAUFFEUR_VALIDATION = 'non';
+
 describe('API', () => {
   let app: INestApplication;
 

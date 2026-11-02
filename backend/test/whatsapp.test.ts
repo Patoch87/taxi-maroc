@@ -96,9 +96,9 @@ describe('Agent WhatsApp', () => {
     expect(await dire(id, { texte: 'Je vais au Maarif' })).toMatch(/Maârif.*C'est bien ça/);
     expect(await dire(id, { texte: 'oui' })).toContain('position');
     const prix = await dire(id, { position: { lat: 33.5897, lng: -7.5906 } });
-    expect(prix).toMatch(/partagé \d+ dirhams, seul \d+ dirhams, premium \d+ dirhams/);
+    expect(prix).toMatch(/partagé entre \d+ et \d+ dirhams, seul entre \d+ et \d+ dirhams, premium entre \d+ et \d+ dirhams/);
     expect(prix).not.toMatch(/compensation|frais|supplément|compteur/i);
-    expect(await dire(id, { texte: 'Seul' })).toMatch(/seul vers Maârif, \d+ dirhams.*Je commande/);
+    expect(await dire(id, { texte: 'Seul' })).toMatch(/seul vers Maârif, entre \d+ et \d+ dirhams.*Je commande/);
     expect(await dire(id, { texte: "oui c'est ça" })).toContain("C'est commandé");
 
     const conv = service.conversation(`demo-${id}`);

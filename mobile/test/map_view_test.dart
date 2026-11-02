@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taxi_maroc/widgets/driver_card.dart';
 import 'package:taxi_maroc/main.dart';
 import 'package:taxi_maroc/screens/sos_screen.dart';
 import 'package:taxi_maroc/services/rides.dart';
@@ -109,7 +110,7 @@ void main() {
     // Toucher la poignée rouvre les détails.
     await tester.tap(handle);
     await tester.pump();
-    expect(find.byTooltip('Carte plein écran'), findsOneWidget);
+    expect(find.byType(DriverCard), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -158,7 +159,7 @@ void main() {
     await tester.tap(find.text('Revenir au mode normal'));
     await tester.pump();
     expect(settings.senior, isFalse);
-    expect(find.byTooltip('Carte plein écran'), findsOneWidget); // panneau normal de la course
+    expect(find.byType(DriverCard), findsOneWidget); // panneau normal de la course
     await tester.pumpWidget(const SizedBox());
   });
 

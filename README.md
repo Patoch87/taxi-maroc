@@ -56,6 +56,8 @@ Sans `API_URL`, l'application tourne en **mode démo** : prix calculés sur le t
 
 À chaque envoi sur `main`, GitHub Actions fabrique le fichier **taxi-maroc.apk** et le publie ici : https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc.apk. Ouvrir ce lien sur le téléphone, ouvrir le fichier téléchargé et autoriser l'installation d'applications inconnues.
 
+Les chauffeurs installent **Bab Taxi Chauffeur** : https://github.com/Patoch87/taxi-maroc/releases/latest/download/bab-taxi-chauffeur.apk. Ils y envoient leur dossier (photo, CIN, permis, carte professionnelle, casier judiciaire, taxi) ; Bab Taxi le valide sur `https://bab-taxi-eu.onrender.com/admin/chauffeurs?cle=<BAB_ADMIN_TOKEN>` (clé dans Render → Environment). Sans dossier validé, le serveur refuse de mettre le taxi en ligne.
+
 **iPhone** : le workflow « iPhone » compile l'application sur un Mac de GitHub et publie une version non signée : https://github.com/Patoch87/taxi-maroc/releases/download/ios/bab-taxi-ios-non-signe.ipa. Pour l'installer sur un iPhone, il faut la signer : avec un compte Apple Developer, ajouter les secrets `IOS_CERTIFICATE_P12` (certificat de distribution en base64), `IOS_CERTIFICATE_PASSWORD`, `IOS_PROVISIONING_PROFILE` (profil App Store en base64), `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY` (clé API App Store Connect) et la variable `IOS_TEAM_ID` : l'application signée est alors envoyée sur TestFlight à chaque version. La carte Google sur iPhone demande d'activer « Maps SDK for iOS » pour la clé `MAPS_API_KEY`.
 
 ## Commander par WhatsApp (agent vocal)

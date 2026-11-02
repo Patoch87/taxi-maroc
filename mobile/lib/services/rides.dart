@@ -103,6 +103,20 @@ String dh(double v) {
   return '${S(langNotifier.value).decimalPoint ? txt : txt.replaceAll('.', ',')} DH';
 }
 
+/// Fourchette de prix : le prix final est celui du compteur, l'application n'en donne qu'une estimation
+/// (−10 % à +15 %, en dirhams entiers, au moins 2 DH d'écart) : « 26 – 34 DH ».
+(int, int) priceRange(double v) {
+  final low = (v * 0.9).floor();
+  var high = (v * 1.15).ceil();
+  if (high - low < 2) high = low + 2;
+  return (low, high);
+}
+
+String dhRange(double v) {
+  final (a, b) = priceRange(v);
+  return '$a – $b DH';
+}
+
 /// Distance lisible : « 850 m » ou « 2,2 km ».
 String distanceText(double m) {
   if (m < 1000) return '${m.round()} m';

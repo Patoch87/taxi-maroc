@@ -254,7 +254,7 @@ void main() {
             destination: first.place,
             routeM: routeLengthM(interpolate(casablancaCenter, LatLng(first.lat, first.lng), 40)))
         .first;
-    expect(newPrice, dh(expected.priceMad));
+    expect(newPrice, dhRange(expected.priceMad));
 
     // Annuler : la destination ne change pas.
     await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Cancel')));

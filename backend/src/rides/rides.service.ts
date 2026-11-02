@@ -23,6 +23,8 @@ export interface TaxiPublic {
   id: string;
   nom?: string;
   plaque?: string;
+  photo?: string;
+  langues?: string[];
   type: TaxiEnRoute['type'];
   position: Point;
 }
@@ -76,7 +78,15 @@ export class RidesService {
   }
 
   private public(t: TaxiEnRoute): TaxiPublic {
-    return { id: t.id, nom: t.nom, plaque: t.plaque, type: t.type, position: t.position ?? t.itineraire[0] };
+    return {
+      id: t.id,
+      nom: t.nom,
+      plaque: t.plaque,
+      photo: t.photo,
+      langues: t.langues,
+      type: t.type,
+      position: t.position ?? t.itineraire[0],
+    };
   }
 
   /** Taxis en ligne autour d'un point (carte du passager). */

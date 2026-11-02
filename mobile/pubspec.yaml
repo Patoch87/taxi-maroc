@@ -28,6 +28,7 @@ dependencies:
   camera: ^0.12.2
   local_auth: ^3.0.2
   shared_preferences: ^2.5.6
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
@@ -41,3 +42,4 @@ flutter:
     - assets/sounds/
     - assets/map/
     - assets/ads/
+    - assets/taxi/

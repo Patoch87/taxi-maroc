@@ -29,6 +29,8 @@ export class StoreService implements OnModuleInit, OnModuleDestroy {
   private readonly data = new Map<string, Map<string, unknown>>();
   private pool?: Pool;
   private ecritures: Promise<unknown> = Promise.resolve();
+  /** Fichiers sans base (tests, serveur local) : en mémoire. */
+  private readonly fichiers = new Map<string, { type: string; donnees: Buffer }>();
 
   /** Base de données branchée (sinon mémoire seulement). */
   get persistante() {
@@ -57,6 +59,15 @@ export class StoreService implements OnModuleInit, OnModuleDestroy {
         'SELECT collection, id, donnees FROM bab_donnees',
       );
       for (const row of r.rows) this.coll(row.collection).set(row.id, row.donnees);
+      // Fichiers (photos et documents des chauffeurs) : lus seulement quand on les demande.
+      await pool.query(
+        `CREATE TABLE IF NOT EXISTS bab_fichiers (
+           id text PRIMARY KEY,
+           type text NOT NULL,
+           donnees bytea NOT NULL,
+           cree_le timestamptz NOT NULL DEFAULT now()
+         )`,
+      );
       this.pool = pool;
       this.log.log(`PostgreSQL branchée : ${r.rowCount} enregistrements chargés`);
     } catch (e) {
@@ -103,6 +114,25 @@ export class StoreService implements OnModuleInit, OnModuleDestroy {
         .catch((e) => this.log.error(`Écriture ${collection}/${id} : ${(e as Error).message}`));
     }
     return valeur;
+  }
+
+  /** Enregistre un fichier (photo, document) : gardé en base, pas en mémoire. */
+  async putFichier(id: string, type: string, donnees: Buffer) {
+    if (!this.pool) {
+      this.fichiers.set(id, { type, donnees });
+      return;
+    }
+    await this.pool.query(
+      `INSERT INTO bab_fichiers (id, type, donnees) VALUES ($1, $2, $3)
+       ON CONFLICT (id) DO UPDATE SET type = EXCLUDED.type, donnees = EXCLUDED.donnees`,
+      [id, type, donnees],
+    );
+  }
+
+  async getFichier(id: string): Promise<{ type: string; donnees: Buffer } | undefined> {
+    if (!this.pool) return this.fichiers.get(id);
+    const r = await this.pool.query<{ type: string; donnees: Buffer }>('SELECT type, donnees FROM bab_fichiers WHERE id = $1', [id]);
+    return r.rows[0];
   }
 
   /** Attend la fin des écritures en cours (tests). */

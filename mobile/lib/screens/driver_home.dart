@@ -14,6 +14,8 @@ import 'search_screen.dart';
 import '../main.dart';
 import '../services/demo.dart';
 import '../services/driver_earnings.dart';
+import '../services/driver_profile.dart';
+import '../services/account.dart';
 import '../services/driver_shift.dart';
 import '../services/live.dart';
 import '../services/location.dart';
@@ -63,7 +65,11 @@ class _Request {
 /// Écran chauffeur : carte en mode navigation, compteur de passagers à bord,
 /// demandes des passagers qui sont devant le taxi et vont dans sa direction.
 class DriverHome extends StatefulWidget {
-  const DriverHome({super.key});
+  const DriverHome({super.key, this.driverApp = false});
+
+  /// Application « Bab Taxi Chauffeur » : écran principal (pas de retour vers le passager), taxi et
+  /// plaque pris dans le dossier validé par Bab Taxi.
+  final bool driverApp;
 
   /// Écart minimum entre deux demandes (horloge réelle). Les tests le mettent à zéro pour ne pas
   /// dépendre de la vitesse de la machine.
@@ -90,7 +96,7 @@ class _DriverHomeState extends State<DriverHome> {
   ShiftRider? _guideRider;
 
   bool _online = false;
-  TaxiKind _kind = TaxiKind.petit;
+  late TaxiKind _kind = widget.driverApp && driverProfileStore.profile.grand ? TaxiKind.grand : TaxiKind.petit;
   LatLng _me = casablancaCenter;
   Place? _heading;
 
@@ -409,7 +415,7 @@ class _DriverHomeState extends State<DriverHome> {
     final seats = r.rider.seats > 1 ? ' ×${r.rider.seats}' : '';
     _notifications.showRequest(
       key: '${identityHashCode(r)}',
-      title: '${s.t('newRequest')} · ${dh(r.rider.fare)}',
+      title: '${s.t('newRequest')} · ${dhRange(r.rider.fare)}',
       body: '${r.rider.name}$seats → ${r.destination} · ${s.t('pickUp')} : '
           '${_exactMetersTo(r.rider.pickupIdx).round()} m',
       accept: s.t('accept'),
@@ -543,8 +549,40 @@ class _DriverHomeState extends State<DriverHome> {
   /// il est retiré si la demande est refusée.
   bool _previewRoute = false;
 
+  /// Dossier validé du chauffeur (application chauffeur).
+  void _showProfile() {
+    final p = driverProfileStore.profile;
+    final a = accountStore.account;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${a?.firstName ?? ''} ${a?.lastName ?? ''}'.trim(),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Row(children: [
+              const Icon(Icons.verified, color: AppColors.moroccoGreen, size: 20),
+              const SizedBox(width: 6),
+              Text(s.t('dsApproved'), style: const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w700)),
+            ]),
+            const SizedBox(height: 12),
+            Text('${s.t(p.grand ? 'grandTaxi' : 'petitTaxi')} n° ${p.taxiNumber} · ${p.plate}',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(p.city, style: const TextStyle(color: AppColors.muted)),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Future<void> _goOnlineLive() async {
-    final plate = await _askPlate();
+    final profile = driverProfileStore.profile;
+    // Application chauffeur : la plaque vient du dossier validé, rien à saisir.
+    final plate = widget.driverApp && profile.plate.isNotEmpty ? profile.plate : await _askPlate();
     if (plate == null || !mounted) return;
     _plate = plate;
     final here = await currentLatLng();
@@ -924,7 +962,9 @@ class _DriverHomeState extends State<DriverHome> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: Row(children: [
-            MapCircleButton(icon: Icons.arrow_back, onTap: () => Navigator.pop(context)),
+            widget.driverApp
+                ? MapCircleButton(icon: Icons.badge_outlined, onTap: _showProfile)
+                : MapCircleButton(icon: Icons.arrow_back, onTap: () => Navigator.pop(context)),
             const SizedBox(width: 8),
             // Interrupteur en ligne / hors ligne
             Expanded(
@@ -1173,7 +1213,7 @@ class _DriverHomeState extends State<DriverHome> {
                 // Test réel : destination et prix au compteur annoncé au passager.
                 if (st.rider.destination.isNotEmpty)
                   Text(
-                    '→ ${st.rider.destination}${st.rider.fare > 0 ? ' · ${dh(st.rider.fare)}' : ''}',
+                    '→ ${st.rider.destination}${st.rider.fare > 0 ? ' · ${dhRange(st.rider.fare)}' : ''}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600),
@@ -1439,7 +1479,7 @@ class _DriverHomeState extends State<DriverHome> {
                 ),
                 const SizedBox(width: 8),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(dh(r.rider.fare),
+                  Text(dhRange(r.rider.fare),
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
                   Text(seats,
                       style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),

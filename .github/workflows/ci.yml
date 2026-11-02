@@ -71,6 +71,13 @@ jobs:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
           API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
+      # « Bab Taxi Chauffeur » : application des chauffeurs (inscription, dossier validé par Bab Taxi, courses).
+      - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL" --dart-define=BAB_APP=chauffeur
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+          API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
+          BAB_APP: chauffeur
+      - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/bab-taxi-chauffeur.apk
       # « Bab Taxi Démo » : application séparée (installable à côté de la vraie), sans serveur,
       # avec des taxis et des passagers simulés. Même fichier sous l'ancien nom « prototype ».
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
@@ -85,6 +92,7 @@ jobs:
           name: taxi-maroc-apk
           path: |
             mobile/build/app/outputs/flutter-apk/taxi-maroc.apk
+            mobile/build/app/outputs/flutter-apk/bab-taxi-chauffeur.apk
             mobile/build/app/outputs/flutter-apk/bab-taxi-demo.apk
       # Lien direct, sans compte GitHub :
       # https://github.com/Patoch87/taxi-maroc/releases/latest/download/taxi-maroc.apk
@@ -98,8 +106,8 @@ jobs:
           mkdir -p /tmp/keep
           gh release download demo -p taxi-maroc-demo.mp4 -D /tmp/keep || true
           gh release delete demo --yes --cleanup-tag || true
-          gh release create demo build/app/outputs/flutter-apk/taxi-maroc.apk \
+          gh release create demo build/app/outputs/flutter-apk/taxi-maroc.apk build/app/outputs/flutter-apk/bab-taxi-chauffeur.apk \
             build/app/outputs/flutter-apk/bab-taxi-demo.apk build/app/outputs/flutter-apk/taxi-maroc-prototype.apk $(ls /tmp/keep/taxi-maroc-demo.mp4 2>/dev/null) \
             --target "$GITHUB_SHA" \
             --title "Bab Taxi" \
-            --notes "taxi-maroc.apk : Bab Taxi, l'application réelle (serveur, sans mode démo). bab-taxi-demo.apk : Bab Taxi Démo, application séparée avec taxis et passagers simulés. Commit $GITHUB_SHA."
+            --notes "taxi-maroc.apk : Bab Taxi, l'application passager (serveur, sans mode démo). bab-taxi-chauffeur.apk : Bab Taxi Chauffeur, l'application des chauffeurs (inscription et dossier validé). bab-taxi-demo.apk : Bab Taxi Démo, application séparée avec taxis et passagers simulés. Commit $GITHUB_SHA."

@@ -36,8 +36,29 @@ export interface Conversation {
 const FACTEUR_ROUTE = 1.3;
 const arrondi = (n: number) => Math.round(n);
 
+/**
+ * Fourchette annoncée au passager : le prix réel est celui du compteur (−10 % à +15 %, dirhams entiers,
+ * au moins 2 DH d'écart). Même calcul que l'application (priceRange).
+ */
+export function fourchette(totalMad: number): { min: number; max: number } {
+  const min = Math.floor(totalMad * 0.9);
+  let max = Math.ceil(totalMad * 1.15);
+  if (max - min < 2) max = min + 2;
+  return { min, max };
+}
+
+/** Texte « 26 à 34 » (petit taxi, au compteur) ou le prix fixe du grand taxi. */
+export function prixParle(o: { offre: Offre | 'grand_taxi'; totalMad: number; fixe?: boolean }, darija: boolean): string {
+  if (o.fixe) return String(o.totalMad);
+  const f = fourchette(o.totalMad);
+  return darija ? `بين ${f.min} و ${f.max}` : `entre ${f.min} et ${f.max}`;
+}
+
 /** Prix TOTAL de chaque offre. Le détail (compensation, frais, supplément) n'est jamais donné au passager. */
-export function prixOffres(conv: Conversation, date = new Date()): { offre: Offre | 'grand_taxi'; totalMad: number; libelle: string }[] {
+export function prixOffres(
+  conv: Conversation,
+  date = new Date(),
+): { offre: Offre | 'grand_taxi'; totalMad: number; libelle: string; fixe?: boolean }[] {
   if (!conv.destination) return [];
   const dest = conv.destination.lieu;
   const passagers = conv.passagers;
@@ -45,8 +66,9 @@ export function prixOffres(conv: Conversation, date = new Date()): { offre: Offr
     const places = estimateGrandTaxi({ ligne: dest.ligne, places: Math.min(passagers, 6), taxiEntier: false });
     const entier = estimateGrandTaxi({ ligne: dest.ligne, places: 6, taxiEntier: true });
     return [
-      { offre: 'grand_taxi', totalMad: arrondi(places.montantMad), libelle: `Grand taxi, ${passagers} place(s)` },
-      { offre: 'seul', totalMad: arrondi(entier.montantMad), libelle: 'Grand taxi entier' },
+      // Grand taxi entre deux villes : tarif fixe par place, pas de compteur.
+      { offre: 'grand_taxi', totalMad: arrondi(places.montantMad), libelle: `Grand taxi, ${passagers} place(s)`, fixe: true },
+      { offre: 'seul', totalMad: arrondi(entier.montantMad), libelle: 'Grand taxi entier', fixe: true },
     ];
   }
   const depart = conv.depart?.point ?? dest;
@@ -116,8 +138,13 @@ export class Commande {
     return {
       passagers: this.conv.passagers,
       depart_connu: !!this.conv.depart,
-      offres: prixOffres(this.conv).map((o) => ({ offre: o.offre, libelle: o.libelle, prix_total_mad: o.totalMad })),
-      rappel: 'Annoncez uniquement les prix totaux, jamais leur détail.',
+      offres: prixOffres(this.conv).map((o) =>
+        o.fixe
+          ? { offre: o.offre, libelle: o.libelle, prix_fixe_mad: o.totalMad }
+          : { offre: o.offre, libelle: o.libelle, fourchette_mad: fourchette(o.totalMad) },
+      ),
+      rappel:
+        "Petit taxi : le prix final est celui du compteur, annoncez seulement la fourchette (« entre 26 et 34 dirhams »), jamais un prix exact ni son détail. Grand taxi : prix fixe.",
     };
   }
 
@@ -156,7 +183,7 @@ export class Commande {
       course_id: d.id,
       statut: d.statut,
       taxis_prevenus: d.proposeeA.length,
-      prix_total_mad: prix.totalMad,
+      ...(prix.fixe ? { prix_fixe_mad: prix.totalMad } : { fourchette_mad: fourchette(prix.totalMad) }),
       paiement,
       a_faire: 'Dites au passager que la demande est envoyée aux taxis sur sa route et qu’il sera prévenu ici dès qu’un chauffeur accepte.',
     };

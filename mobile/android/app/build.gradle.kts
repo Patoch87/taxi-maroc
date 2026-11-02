@@ -32,9 +32,13 @@ android {
         // Clé Google Maps : variable d'environnement MAPS_API_KEY (secret GitHub), vide par défaut.
         manifestPlaceholders["MAPS_API_KEY"] = System.getenv("MAPS_API_KEY") ?: ""
         // Deux applications installables côte à côte : « Bab Taxi » (réelle) et « Bab Taxi Démo » (BAB_DEMO=oui).
+        // « Bab Taxi Chauffeur » (BAB_APP=chauffeur) : troisième application, réservée aux chauffeurs.
         if (System.getenv("BAB_DEMO") == "oui") {
             applicationIdSuffix = ".demo"
             manifestPlaceholders["appLabel"] = "Bab Taxi Démo"
+        } else if (System.getenv("BAB_APP") == "chauffeur") {
+            applicationIdSuffix = ".chauffeur"
+            manifestPlaceholders["appLabel"] = "Bab Taxi Chauffeur"
         } else {
             manifestPlaceholders["appLabel"] = "Bab Taxi"
         }

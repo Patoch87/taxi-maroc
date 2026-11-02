@@ -7,6 +7,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/strings.dart';
 import 'screens/account_screen.dart';
+import 'screens/driver_signup_screen.dart';
+import 'services/driver_profile.dart';
 import 'screens/lock_screen.dart';
 import 'screens/rider_home.dart';
 import 'services/ads.dart';
@@ -114,7 +116,10 @@ class TaxiMarocApp extends StatelessWidget {
               ? const LockScreen()
               : onboarding && accountStore.account == null && !accountStore.skipped
                   ? const AccountScreen(firstLaunch: true)
-                  : RiderHome(key: ValueKey(lang), locate: locate),
+                  // « Bab Taxi Chauffeur » : inscription du chauffeur et validation avant le mode chauffeur.
+                  : isDriverApp
+                      ? DriverGate(key: ValueKey(lang))
+                      : RiderHome(key: ValueKey(lang), locate: locate),
         ),
       ),
     );

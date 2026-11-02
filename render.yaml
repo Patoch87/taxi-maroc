@@ -23,6 +23,10 @@ services:
       # Page : https://bab-taxi-eu.onrender.com/sos/centre?cle=<SOS_CENTRE_TOKEN>
       - key: SOS_CENTRE_TOKEN
         generateValue: true
+      # Clé de la page des dossiers chauffeurs (CIN, permis, casier...) : validation avant la première course.
+      # Page : https://bab-taxi-eu.onrender.com/admin/chauffeurs?cle=<BAB_ADMIN_TOKEN>
+      - key: BAB_ADMIN_TOKEN
+        generateValue: true
       # Agent WhatsApp de commande vocale (backend/src/whatsapp).
       # Jeton à recopier dans Meta (webhook) et clé du simulateur https://bab-taxi-eu.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>
       - key: WHATSAPP_VERIFY_TOKEN

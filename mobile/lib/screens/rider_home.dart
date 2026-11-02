@@ -13,6 +13,7 @@ import '../main.dart';
 import '../services/ads.dart';
 import '../services/navigation_apps.dart';
 import '../services/live.dart';
+import '../services/driver_profile.dart';
 import '../services/location.dart';
 import '../services/places.dart';
 import '../services/promos.dart';
@@ -552,7 +553,10 @@ class _RiderHomeState extends State<RiderHome> {
   String _vjPlaceName(Place p) => s.lang == 'ar' || s.lang == 'dr' ? p.arabicName : p.name;
 
   /// Prix lu à voix haute : « 35 dirhams » plutôt que « 35 D H ».
-  String _vjPrice(double v) => dh(v).replaceAll('DH', s.t('vjDirhams'));
+  String _vjPrice(double v) {
+    final (a, b) = priceRange(v);
+    return '$a ${s.t('priceTo')} $b ${s.t('vjDirhams')}';
+  }
 
   /// Lieu dit à voix haute : adresses enregistrées, lieux connus, quartiers, puis adresses (test réel).
   Future<Place?> _vjFindPlace(String said) async {
@@ -628,7 +632,7 @@ class _RiderHomeState extends State<RiderHome> {
     final heard = await _vjAsk(
       '${s.t('vjToDest')} $dest, ${distanceText(_routeM)}, ${_minutesText(minutes)}. $list. ${s.t('vjWhichTaxi')}',
       [
-        for (final o in _options) VoiceChoice('${o.title} · ${dh(o.priceMad)}', 'opt:${o.id}', icon: Icons.local_taxi),
+        for (final o in _options) VoiceChoice('${o.title} · ${dhRange(o.priceMad)}', 'opt:${o.id}', icon: Icons.local_taxi),
         VoiceChoice(s.t('vjOtherDest'), 'annuler', icon: Icons.edit_location_alt_outlined),
       ],
     );
@@ -878,8 +882,13 @@ class _RiderHomeState extends State<RiderHome> {
     }
   }
 
-  DemoDriver _liveDriver(LiveTaxi t) => DemoDriver(t.name, s.t(t.grand ? 'grandTaxi' : 'petitTaxi'),
-      t.plate.isEmpty ? '—' : t.plate, 5, '', const [darija, francais], 0);
+  DemoDriver _liveDriver(LiveTaxi t) {
+    const langs = {'dr': darija, 'ar': arabe, 'zgh': tamazight, 'fr': francais, 'en': anglais, 'es': espagnol};
+    final spoken = [for (final l in t.languages) if (langs[l] != null) langs[l]!];
+    return DemoDriver(t.name, s.t(t.grand ? 'grandTaxi' : 'petitTaxi'), t.plate.isEmpty ? '—' : t.plate, 5, '',
+        spoken.isEmpty ? const [darija, francais] : spoken, 0,
+        photo: t.photo);
+  }
 
   void _liveError() {
     if (!mounted) return;
@@ -1268,7 +1277,7 @@ class _RiderHomeState extends State<RiderHome> {
       TripRecord(destination: p.name, option: option.title, price: option.priceMad, date: pickup, scheduled: true),
     );
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('${s.t('tripBooked')} ${scheduleLabel(pickup, lang: s.lang)} · ${r.name} · ${dh(option.priceMad)}'),
+      content: Text('${s.t('tripBooked')} ${scheduleLabel(pickup, lang: s.lang)} · ${r.name} · ${dhRange(option.priceMad)}'),
     ));
   }
 
@@ -1347,7 +1356,7 @@ class _RiderHomeState extends State<RiderHome> {
               ]),
             TableRow(children: [
               Text('${s.t('newPrice')} · ${next.title}', style: const TextStyle(fontWeight: FontWeight.w700)),
-              Text(dh(next.priceMad),
+              Text(dhRange(next.priceMad),
                   key: const ValueKey('newPrice'),
                   textAlign: TextAlign.end,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.moroccoGreen)),
@@ -1496,7 +1505,7 @@ class _RiderHomeState extends State<RiderHome> {
             ),
             const SizedBox(width: 10),
             FilledButton(
-                style: _rowButton, onPressed: _request, child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}')),
+                style: _rowButton, onPressed: _request, child: Text('${s.t('confirm')} · ${dhRange(_selected!.priceMad)}')),
           ]),
         RiderStep.dispatching => Row(key: const ValueKey('mini-dispatch'), children: [
             const SizedBox.square(
@@ -1512,7 +1521,7 @@ class _RiderHomeState extends State<RiderHome> {
           KeyedSubtree(key: const ValueKey('mini-trip'), child: _taxiStrip()),
         RiderStep.done => Row(key: const ValueKey('mini-done'), children: [
             Expanded(
-              child: Text('${s.t('tripDone')} · ${dh(_selected!.priceMad + _tip)}',
+              child: Text('${s.t('tripDone')} · ${dhRange(_selected!.priceMad + _tip)}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
@@ -2050,12 +2059,12 @@ class _RiderHomeState extends State<RiderHome> {
             Expanded(
               child: Semantics(
                 button: true,
-                label: '${s.t('confirm')} ${_selected!.title}, ${dh(_selected!.priceMad)}'
+                label: '${s.t('confirm')} ${_selected!.title}, ${dhRange(_selected!.priceMad)}'
                     '${_scheduledAt == null ? '' : ', ${scheduleLabel(_scheduledAt!, lang: s.lang)}'}',
                 excludeSemantics: true,
                 child: FilledButton(
                   onPressed: _request,
-                  child: Text('${s.t('confirm')} · ${dh(_selected!.priceMad)}', overflow: TextOverflow.ellipsis),
+                  child: Text('${s.t('confirm')} · ${dhRange(_selected!.priceMad)}', overflow: TextOverflow.ellipsis),
                 ),
               ),
             ),
@@ -2197,7 +2206,7 @@ class _RiderHomeState extends State<RiderHome> {
         button: true,
         selected: selected,
         enabled: fits,
-        label: '${o.title}, ${dh(o.priceMad)}, ${o.description}, ${o.luggage} ${s.t('suitcasesMax')}'
+        label: '${o.title}, ${dhRange(o.priceMad)}, ${o.description}, ${o.luggage} ${s.t('suitcasesMax')}'
             '${o.kind == TaxiKind.premium ? ', ${s.t('premiumIncludes')}' : ''}'
             '${fits ? '' : ', ${s.t('tooManyBags')}'}',
         excludeSemantics: true,
@@ -2247,7 +2256,7 @@ class _RiderHomeState extends State<RiderHome> {
                               fontWeight: fits ? null : FontWeight.w600)),
                     ]),
                   ),
-                  Text(dh(o.priceMad), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                  Text(dhRange(o.priceMad), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
                 ]),
                 // Premium : seulement le prix total, et ce qu'il comprend (pas de détail du prix).
                 if (o.kind == TaxiKind.premium) ...[
@@ -2392,16 +2401,16 @@ class _RiderHomeState extends State<RiderHome> {
                         fontFeatures: [FontFeature.tabularFigures()])),
               ),
             ),
-          const SizedBox(width: 4),
-          IconButton(
-            tooltip: s.t('mapView'),
-            onPressed: () => _setCollapsed(true),
-            icon: const Icon(Icons.fullscreen, color: AppColors.ink),
-          ),
+          const SizedBox(width: 8),
           _safetyButton(),
         ]),
         const SizedBox(height: 14),
-        DriverCard(driver: d, passengerName: _forOther?.name, lowVision: settings.lowVision, babySeat: _babySeat),
+        DriverCard(
+            driver: d,
+            passengerName: _forOther?.name,
+            lowVision: settings.lowVision,
+            babySeat: _babySeat,
+            grand: _selected?.kind == TaxiKind.grand),
         if (_forOther != null) ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -2429,7 +2438,7 @@ class _RiderHomeState extends State<RiderHome> {
             Icon(_cash ? Icons.payments_outlined : Icons.credit_card, size: 20),
             const SizedBox(width: 8),
             Expanded(child: Text(_selected!.title, style: const TextStyle(fontWeight: FontWeight.w600))),
-            Text(dh(_selected!.priceMad), style: const TextStyle(fontWeight: FontWeight.w900)),
+            Text(dhRange(_selected!.priceMad), style: const TextStyle(fontWeight: FontWeight.w900)),
           ]),
         ),
         if (_dest != null)
@@ -2614,7 +2623,7 @@ class _RiderHomeState extends State<RiderHome> {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(s.t('pay'), style: const TextStyle(color: AppColors.muted)),
-                Text(dh(_selected!.priceMad), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+                Text(dhRange(_selected!.priceMad), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
                 Text('${_driver!.name} · ${_driver!.taxiNumber}', style: const TextStyle(color: AppColors.muted)),
               ]),
             ),
@@ -2772,7 +2781,20 @@ class _RiderHomeState extends State<RiderHome> {
                   _openWhatsapp();
                 },
               ),
-            _menuItem(Icons.drive_eta_outlined, s.t('driverMode'), () => const DriverHome()),
+            // Application passager : le mode chauffeur est dans l'application « Bab Taxi Chauffeur ».
+            if (isRiderApp)
+              ListTile(
+                key: const ValueKey('drawerDriverApp'),
+                leading: const Icon(Icons.drive_eta_outlined),
+                title: Text(s.t('driverAppPromo')),
+                subtitle: Text(s.t('driverAppPromoHint'), style: const TextStyle(color: AppColors.muted)),
+                onTap: () {
+                  Navigator.pop(context);
+                  launchUrl(Uri.parse(driverAppLink), mode: LaunchMode.externalApplication).catchError((_) => false);
+                },
+              )
+            else
+              _menuItem(Icons.drive_eta_outlined, s.t('driverMode'), () => const DriverHome()),
             ListTile(
               leading: const Icon(Icons.shield_outlined),
               title: Text(s.t('safety')),
@@ -2939,14 +2961,14 @@ class _RiderHomeState extends State<RiderHome> {
                 Expanded(child: Text(_selected!.title, style: seniorText)),
               ]),
               const SizedBox(height: 10),
-              Text(dh(_selected!.priceMad), style: seniorText.copyWith(fontSize: 40)),
+              Text(dhRange(_selected!.priceMad), style: seniorText.copyWith(fontSize: 40)),
             ]),
           ),
           const SizedBox(height: 22),
           SeniorButton(
             icon: Icons.check_circle,
             label: s.t('confirm'),
-            subtitle: dh(_selected!.priceMad),
+            subtitle: dhRange(_selected!.priceMad),
             onTap: _request,
           ),
           SeniorTextButton(label: s.t('cancel'), onTap: _reset),
@@ -3017,7 +3039,7 @@ class _RiderHomeState extends State<RiderHome> {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(s.t('pay'), style: seniorSmall.copyWith(color: AppColors.muted)),
-                  Text(dh(_selected!.priceMad), style: seniorText.copyWith(fontSize: 44)),
+                  Text(dhRange(_selected!.priceMad), style: seniorText.copyWith(fontSize: 44)),
                 ]),
               ),
             ]),
@@ -3112,7 +3134,7 @@ class _RiderHomeState extends State<RiderHome> {
         ? '${d.name} · ${d.car}'
             '${_step == RiderStep.arrived ? ' · ${s.t('arrived')}' : ' · $_countdown'}'
         : _step == RiderStep.choosing && _selected != null
-            ? '${_dest!.name} · ${_selected!.title} · ${dh(_selected!.priceMad)}'
+            ? '${_dest!.name} · ${_selected!.title} · ${dhRange(_selected!.priceMad)}'
             : _vjStatus;
     return VoiceJourneyPanel(
       prompt: _vjPrompt,
