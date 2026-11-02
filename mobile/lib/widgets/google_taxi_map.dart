@@ -6,8 +6,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../services/rides.dart';
 
-/// Dessin d'un point sur la carte, à la manière d'Uber : position (point bleu), prise en charge (rond noir),
-/// destination (carré noir). [PinStyle.hue] garde l'épingle Google classique de la couleur donnée.
+/// Dessin d'un point sur la carte, aux couleurs de Bab Taxi : position (point vert), prise en charge
+/// (rond vert), destination (carré rouge). [PinStyle.hue] garde l'épingle Google classique de la couleur donnée.
 enum PinStyle { hue, me, pickup, dest }
 
 /// Point affiché sur la carte Google.
@@ -20,33 +20,40 @@ class GooglePin {
   const GooglePin(this.id, this.at, this.title, this.hue, {this.style = PinStyle.hue});
 }
 
-/// Style de carte clair et épuré (inspiré d'Uber) : fond gris très clair, rues blanches, grands axes bleu pâle,
-/// commerces masqués pour que les taxis, l'itinéraire et les arrêts ressortent.
+/// Carte aux couleurs de Bab Taxi : fond sable, rues blanches bordées de beige, grands axes rose sable,
+/// parcs vert doux, noms de quartiers en vert marocain ; commerces masqués pour que les taxis rouges,
+/// l'itinéraire vert et les arrêts ressortent.
 const babMapStyle = '''[
-  {"elementType":"geometry","stylers":[{"color":"#eef0f3"}]},
-  {"elementType":"labels.icon","stylers":[{"saturation":-100},{"lightness":20}]},
-  {"elementType":"labels.text.fill","stylers":[{"color":"#5f6368"}]},
-  {"elementType":"labels.text.stroke","stylers":[{"color":"#ffffff"},{"weight":3}]},
+  {"elementType":"geometry","stylers":[{"color":"#f7f1e3"}]},
+  {"elementType":"labels.icon","stylers":[{"saturation":-60},{"lightness":15}]},
+  {"elementType":"labels.text.fill","stylers":[{"color":"#575e6e"}]},
+  {"elementType":"labels.text.stroke","stylers":[{"color":"#fffaf0"},{"weight":3}]},
   {"featureType":"administrative.land_parcel","stylers":[{"visibility":"off"}]},
-  {"featureType":"administrative.neighborhood","elementType":"labels.text.fill","stylers":[{"color":"#7b8ca8"}]},
-  {"featureType":"poi","elementType":"geometry","stylers":[{"color":"#e6e8ec"}]},
+  {"featureType":"administrative.neighborhood","elementType":"labels.text.fill","stylers":[{"color":"#006233"}]},
+  {"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#0f2a1e"}]},
+  {"featureType":"poi","elementType":"geometry","stylers":[{"color":"#efe5cf"}]},
   {"featureType":"poi.business","stylers":[{"visibility":"off"}]},
   {"featureType":"poi.medical","elementType":"labels","stylers":[{"visibility":"simplified"}]},
-  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#d3ecd0"}]},
-  {"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#4f9a5a"}]},
-  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#ffffff"}]},
+  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#d6eadb"}]},
+  {"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#006233"}]},
+  {"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#ffffff"}]},
+  {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#e5dac2"}]},
   {"featureType":"road","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
-  {"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#ffffff"}]},
-  {"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#c3d1ec"}]},
-  {"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#aebfe0"}]},
-  {"featureType":"road.local","elementType":"labels.text.fill","stylers":[{"color":"#8a9099"}]},
-  {"featureType":"transit.line","stylers":[{"visibility":"simplified"},{"color":"#d6d9de"}]},
-  {"featureType":"transit.station","elementType":"labels.icon","stylers":[{"saturation":-100}]},
-  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#c6dbef"}]},
-  {"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#7a9cc0"}]}
+  {"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#f6d9d3"}]},
+  {"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#e9b9b0"}]},
+  {"featureType":"road.local","elementType":"labels.text.fill","stylers":[{"color":"#8a8576"}]},
+  {"featureType":"transit.line","stylers":[{"visibility":"simplified"},{"color":"#e2d6bd"}]},
+  {"featureType":"transit.station","elementType":"labels.icon","stylers":[{"saturation":-40}]},
+  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#cfe4e4"}]},
+  {"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#5d8f8f"}]}
 ]''';
 
-/// Icônes dessinées une fois au lancement (point bleu, rond et carré noirs, bulle « 2 min »).
+/// Couleurs de Bab Taxi utilisées sur la carte (voir theme.dart).
+const _green = Color(0xFF006233);
+const _red = Color(0xFFC1272D);
+const _ink = Color(0xFF0F2A1E);
+
+/// Icônes dessinées une fois au lancement (point vert, rond vert, carré rouge, bulle « 2 min »).
 class MapIcons {
   static final ready = ValueNotifier<int>(0);
   static final Map<String, gm.BitmapDescriptor> _cache = {};
@@ -97,25 +104,25 @@ class MapIcons {
 
   static void _paintMe(Canvas c, Size s) {
     final o = s.center(Offset.zero);
-    c.drawCircle(o, 15, Paint()..color = const Color(0x331A73E8));
+    c.drawCircle(o, 15, Paint()..color = const Color(0x33006233));
     c.drawCircle(o.translate(0, .8), 8.5, Paint()..color = const Color(0x40000000)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5));
     c.drawCircle(o, 8.5, Paint()..color = Colors.white);
-    c.drawCircle(o, 6, Paint()..color = const Color(0xFF1A73E8));
+    c.drawCircle(o, 6, Paint()..color = _green);
   }
 
   static void _paintPickup(Canvas c, Size s) {
     final o = s.center(Offset.zero);
-    c.drawCircle(o, 10, Paint()..color = const Color(0xFF111111));
+    c.drawCircle(o, 10, Paint()..color = _green);
     c.drawCircle(o, 4, Paint()..color = Colors.white);
   }
 
   static void _paintDest(Canvas c, Size s) {
-    c.drawRect(Offset.zero & s, Paint()..color = const Color(0xFF111111));
+    c.drawRect(Offset.zero & s, Paint()..color = _red);
     c.drawRect(Rect.fromCenter(center: s.center(Offset.zero), width: 7, height: 7), Paint()..color = Colors.white);
   }
 
   static TextPainter _text(String t) => TextPainter(
-        text: TextSpan(text: t, style: const TextStyle(color: Color(0xFF111111), fontSize: 15, fontWeight: FontWeight.w700)),
+        text: TextSpan(text: t, style: const TextStyle(color: _ink, fontSize: 15, fontWeight: FontWeight.w700)),
         textDirection: TextDirection.ltr,
       )..layout();
 
@@ -129,6 +136,7 @@ class MapIcons {
     c.drawRRect(box.shift(const Offset(0, 1.5)),
         Paint()..color = const Color(0x33000000)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
     c.drawRRect(box, Paint()..color = Colors.white);
+    c.drawRRect(box, Paint()..color = _green..style = PaintingStyle.stroke..strokeWidth = 1.5);
     final p = _text(t);
     p.paint(c, Offset((s.width - p.width) / 2, (s.height - 4 - p.height) / 2));
   }
@@ -247,7 +255,7 @@ class _GoogleTaxiMapState extends State<GoogleTaxiMap> {
       tiltGesturesEnabled: false,
       style: babMapStyle,
       padding: w.padding,
-      // Itinéraire noir bordé de blanc, lisible sur le fond clair (comme Uber).
+      // Itinéraire vert Bab Taxi bordé de blanc, lisible sur le fond sable.
       polylines: {
         if (w.route.length > 1) ...[
           gm.Polyline(
@@ -263,7 +271,7 @@ class _GoogleTaxiMapState extends State<GoogleTaxiMap> {
           gm.Polyline(
             polylineId: const gm.PolylineId('route'),
             points: [for (final p in w.route) toGoogle(p)],
-            color: const Color(0xFF111111),
+            color: _green,
             width: 5,
             jointType: gm.JointType.round,
             startCap: gm.Cap.roundCap,
