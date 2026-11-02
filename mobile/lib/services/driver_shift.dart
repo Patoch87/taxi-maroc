@@ -8,8 +8,12 @@ class ShiftRider {
       required this.fare,
       this.seats = 1,
       this.tip = 0,
-      this.rating = 0});
+      this.rating = 0,
+      this.destination = ''});
   final String name;
+
+  /// Test réel : nom de la destination du passager, affiché au chauffeur.
+  final String destination;
 
   /// Positions sur l'itinéraire du taxi (indices des points).
   final int pickupIdx;

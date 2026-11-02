@@ -41,6 +41,9 @@ class _Request {
   /// Test réel : identifiant de la demande sur le serveur.
   String? liveId;
 
+  /// Test réel : point où attend le passager.
+  LatLng? pickup;
+
   /// Passager malvoyant : le chauffeur se présente et le guide jusqu'à la portière.
   final bool lowVision;
 
@@ -470,6 +473,21 @@ class _DriverHomeState extends State<DriverHome> {
   /// Test réel : passagers dont le taxi est arrivé près du point de prise en charge (GPS).
   final _atPickup = <ShiftRider>{};
 
+  /// Test réel : point exact où attend chaque passager (le point de l'itinéraire peut en être loin).
+  final _pickupPoints = <ShiftRider, LatLng>{};
+
+  /// Le bouton « Démarrer la course » apparaît à 150 m du passager. Vérifié à chaque position GPS, à
+  /// l'acceptation et toutes les 500 ms : un taxi déjà garé près du passager ne bouge pas, le GPS ne
+  /// donne alors aucune nouvelle position.
+  void _checkPickups() {
+    const d = Distance();
+    for (final r in _shift.riders) {
+      if (r.onBoard || _atPickup.contains(r)) continue;
+      final target = _pickupPoints[r] ?? (_route.isEmpty ? null : _route[min(r.pickupIdx, _route.length - 1)]);
+      if (target != null && d(_me, target) <= 150) _atPickup.add(r);
+    }
+  }
+
   /// Passagers à prendre maintenant : le chauffeur démarre leur course quand ils sont à bord.
   List<ShiftRider> get _readyToStart => _liveOn
       ? [
@@ -482,7 +500,10 @@ class _DriverHomeState extends State<DriverHome> {
   void _startRide(ShiftRider r) {
     setState(() {
       _shift.pickUp(r);
+      // Le passager est à bord : le tracé repart du point de prise en charge.
+      if (_liveOn) _pos = max(_pos, min(r.pickupIdx, _route.length - 1));
       _atPickup.remove(r);
+      _pickupPoints.remove(r);
     });
     if (_hazardFor == r) _hideHazard();
     final id = _liveIds[r];
@@ -585,6 +606,7 @@ class _DriverHomeState extends State<DriverHome> {
     _gps = null;
     _liveIds.clear();
     _atPickup.clear();
+    _pickupPoints.clear();
     _previewRoute = false;
     if (live.enabled) _liveApi.goOffline(live.deviceId).ignore();
   }
@@ -618,14 +640,16 @@ class _DriverHomeState extends State<DriverHome> {
     const d = Distance();
     setState(() {
       _me = p;
-      // Avance sur l'itinéraire : point le plus proche parmi les 80 suivants (jamais en arrière).
+      // Avance sur l'itinéraire : point le plus proche dans les 300 m qui suivent (jamais en arrière). La limite
+      // en mètres évite de sauter à la fin quand l'itinéraire repasse près de l'endroit où se trouve le taxi
+      // (demi-tour, sens unique) : le tracé disparaissait et il ne restait que « 40 m ».
       if (_route.length > 1) {
-        final window = _route.sublist(_pos, min(_route.length, _pos + 80));
-        var best = 0;
-        for (var i = 1; i < window.length; i++) {
-          if (d(p, window[i]) < d(p, window[best])) best = i;
+        var best = _pos, along = 0.0;
+        for (var i = _pos + 1; i < _route.length && along <= 300; i++) {
+          along += d(_route[i - 1], _route[i]);
+          if (d(p, _route[i]) < d(p, _route[best])) best = i;
         }
-        _pos += best;
+        _pos = best;
       }
     });
     if (_follow) _moveCamera(p, null);
@@ -635,8 +659,8 @@ class _DriverHomeState extends State<DriverHome> {
       if (!r.onBoard) {
         final m = d(p, _route[min(r.pickupIdx, _route.length - 1)]);
         if (_pickupAlerts.check(r, m)) _showHazard(r);
-        // Près du point de prise en charge : le bouton « Démarrer la course » apparaît.
-        if (m <= 150 && _atPickup.add(r)) setState(() {});
+        // Près du passager : le bouton « Démarrer la course » apparaît.
+        if (!_atPickup.contains(r)) setState(_checkPickups);
       } else if (d(p, _route[min(r.dropIdx, _route.length - 1)]) <= 60) {
         setState(() => _shift.dropOff(r));
         _liveIds.remove(r);
@@ -726,10 +750,13 @@ class _DriverHomeState extends State<DriverHome> {
           dropIdx: min(dropIdx, _route.length - 1),
           fare: o.fare,
           seats: o.seats,
+          destination: o.destinationName,
         ),
         o.destinationName,
         5,
-      )..liveId = o.id;
+      )
+        ..liveId = o.id
+        ..pickup = o.pickup;
     });
     _chime.onRequest(
       _request,
@@ -752,6 +779,8 @@ class _DriverHomeState extends State<DriverHome> {
     setState(() {
       _shift.accept(r.rider);
       _liveIds[r.rider] = r.liveId!;
+      if (r.pickup != null) _pickupPoints[r.rider] = r.pickup!;
+      _checkPickups();
       _previewRoute = false;
       _request = null;
     });
@@ -775,7 +804,7 @@ class _DriverHomeState extends State<DriverHome> {
       _notified = null;
       _notifications.cancel(DriverNotifications.requestId);
     }
-    setState(() {});
+    setState(_checkPickups);
   }
 
   void _toast(IconData icon, String text) {
@@ -1133,13 +1162,23 @@ class _DriverHomeState extends State<DriverHome> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                '${st.pickup ? s.t('pickUp') : s.t('dropAt')} ${st.rider.name}'
-                '${st.rider.seats > 1 ? ' (${st.rider.seats})' : ''}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  '${st.pickup ? s.t('pickUp') : s.t('dropAt')} ${st.rider.name}'
+                  '${st.rider.seats > 1 ? ' (${st.rider.seats})' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                // Test réel : destination et prix au compteur annoncé au passager.
+                if (st.rider.destination.isNotEmpty)
+                  Text(
+                    '→ ${st.rider.destination}${st.rider.fare > 0 ? ' · ${dh(st.rider.fare)}' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600),
+                  ),
+              ]),
             ),
             Text(distanceText(_exactMetersTo(st.idx)), style: const TextStyle(fontWeight: FontWeight.w700)),
             if (identical(st, stops.first)) ...[
