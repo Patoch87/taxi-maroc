@@ -156,6 +156,17 @@ export class AdminService {
           depuisS: Math.round((t - Date.parse(d.creeLe)) / 1000),
           taxisPrevenus: d.proposeeA.length,
         })),
+      nonValides: this.rides.nonValidesEnLigne().map((x) => {
+        const dossier = this.drivers.get(x.id);
+        return {
+          id: x.id,
+          nom: dossier ? `${dossier.prenom} ${dossier.nom}` : (x.nom ?? 'Chauffeur'),
+          statut: dossier?.statut ?? 'sans_dossier',
+          type: x.type ?? dossier?.taxiType ?? 'petit',
+          position: x.position,
+          vuIlYaS: Math.round((t - x.majLe) / 1000),
+        };
+      }),
       sos: [...alertesSos.values()]
         .filter((a) => a.statut === 'en_direct')
         .map((a) => ({ id: a.id, nom: a.nom, taxiId: a.taxiId, position: a.positions.at(-1), depuis: a.creeLe })),

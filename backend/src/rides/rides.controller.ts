@@ -23,6 +23,8 @@ export class RidesController {
     // alors le nom, la plaque, la photo et les langues du dossier, pas ce que le téléphone envoie.
     const d = this.drivers?.get(id);
     if (validationRequise() && d?.statut !== 'valide') {
+      // Visible sur la console d'administration (gris « dossier non validé »), sans recevoir de course.
+      this.rides.noterNonValide(id, body.position ?? body.itineraire[0], d ? `${d.prenom} ${d.nom}` : body.nom, body.type);
       throw new ForbiddenException('Dossier chauffeur non validé par Bab Taxi');
     }
     const profil =

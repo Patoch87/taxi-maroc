@@ -62,6 +62,8 @@ tr.cliquable{cursor:pointer} tr.cliquable:hover td{background:#fbf8f1}
 .filtres button{border:1.5px solid var(--ligne);background:#fff;border-radius:99px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px}
 .filtres button.actif{background:var(--encre);color:#fff;border-color:var(--encre)}
 #carteTR{height:calc(100vh - 210px);min-height:420px;border-radius:16px}
+.enteteTR{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.enteteTR .outils{margin:0}
 .trGrille{display:grid;grid-template-columns:1fr 300px;gap:16px}
 .liste{max-height:calc(100vh - 210px);overflow:auto}
 .ligneTaxi{padding:10px;border-bottom:1px solid #f0e9d8;cursor:pointer;font-size:14px}
@@ -144,7 +146,7 @@ const MOTIFS = { refus: 'Refus de course', prix_abusif: 'Prix abusif', conduite_
 const MODES = { partage: 'Partagé', seul: 'Seul', premium: 'Premium' };
 let CLE = '';
 try { CLE = localStorage.getItem('babCleAdmin') || ''; } catch (e) {}
-let sos = null, minuteur = null, carteTR = null, couches = null, premiereVue = true, graphiques = [];
+let sos = null, minuteur = null, carteTR = null, premiereVue = true, graphiques = [];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const tag = (s) => '<span class="tag t-' + esc(s) + '">' + esc(STATUTS[s] || s) + '</span>';
@@ -177,6 +179,7 @@ function deconnexion() {
 async function demarrer() {
   const s = await api('session');
   sos = s.sosCentre;
+  cleCarte = s.cleCarte || '';
   try { localStorage.setItem('babCleAdmin', CLE); } catch (e) {}
   document.getElementById('connexion').style.display = 'none';
   document.getElementById('app').style.display = 'block';
@@ -194,7 +197,7 @@ function route() {
   document.querySelectorAll('[data-m]').forEach((a) => a.classList.toggle('actif', a.dataset.m === m));
   clearInterval(minuteur);
   graphiques.forEach((g) => g.destroy()); graphiques = [];
-  if (carteTR) { carteTR.remove(); carteTR = null; premiereVue = true; }
+  if (carteTR) { carteTR.retirer(); carteTR = null; premiereVue = true; }
   fermerTiroir();
   const f = { tableau, 'temps-reel': tempsReel, chauffeurs, passagers, courses, reporting, plaintes }[m] || tableau;
   f().catch((e) => { document.getElementById('contenu').innerHTML = '<p class="vide">Erreur : ' + esc(e.message) + '</p>'; });
@@ -234,46 +237,163 @@ async function tableau() {
 }
 
 // ---------------- Temps réel ----------------
-async function tempsReel() {
-  C().innerHTML = '<h2>Suivi des taxis en temps réel</h2><p class="sous" id="trInfo">Chargement…</p>' +
-    '<div class="legende"><span><i class="point" style="background:#006233"></i>Libre</span><span><i class="point" style="background:#b8892b"></i>Vers le client</span>' +
-    '<span><i class="point" style="background:#c1272d"></i>En course</span><span><i class="point" style="background:#2563eb"></i>Demande sans taxi</span><span>■ Grand taxi</span><span>🚨 SOS</span></div>' +
-    '<div class="trGrille"><div id="carteTR"></div><div class="carte liste" style="padding:0" id="trListe"></div></div>';
-  carteTR = L.map('carteTR', { zoomControl: true }).setView([33.5731, -7.5898], 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(carteTR);
-  couches = L.layerGroup().addTo(carteTR);
-  const couleur = { libre: '#006233', vers_client: '#b8892b', en_course: '#c1272d' };
-  const charger = async () => {
-    const r = await api('temps-reel');
-    couches.clearLayers();
-    const points = [];
-    for (const t of r.taxis) {
-      const ll = [t.position.lat, t.position.lng]; points.push(ll);
-      if (t.itineraire.length > 1 && t.etat !== 'libre') L.polyline(t.itineraire.map((p) => [p.lat, p.lng]), { color: couleur[t.etat], weight: 3, opacity: .6 }).addTo(couches);
-      L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="mk ' + (t.type === 'grand' ? 'grand' : '') + '" style="background:' + couleur[t.etat] + '"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }) })
-        .bindPopup('<b>' + esc(t.nom) + '</b><br>' + (t.type === 'grand' ? 'Grand' : 'Petit') + ' taxi ' + esc(t.numero) + ' · ' + esc(t.plaque) + '<br>' + tag(t.etat) + ' · ' + t.passagers + ' passager(s)' +
-          (t.courses.length ? '<br>→ ' + t.courses.map((c) => esc(c.destination || '')).join(', ') : '') + '<br><span class="note">position il y a ' + t.vuIlYaS + ' s</span>')
-        .addTo(couches);
+// Carte Google Maps aux couleurs de Bab Taxi quand le serveur a une clé (GOOGLE_MAPS_API_KEY ou MAPS_API_KEY),
+// sinon OpenStreetMap. Même interface pour les deux : marqueur HTML, ligne, cadrage.
+const STYLE_BAB = [
+  {elementType:'geometry',stylers:[{color:'#f7f1e3'}]},
+  {elementType:'labels.icon',stylers:[{saturation:-60},{lightness:15}]},
+  {elementType:'labels.text.fill',stylers:[{color:'#575e6e'}]},
+  {elementType:'labels.text.stroke',stylers:[{color:'#fffaf0'},{weight:3}]},
+  {featureType:'administrative.land_parcel',stylers:[{visibility:'off'}]},
+  {featureType:'administrative.neighborhood',elementType:'labels.text.fill',stylers:[{color:'#006233'}]},
+  {featureType:'administrative.locality',elementType:'labels.text.fill',stylers:[{color:'#0f2a1e'}]},
+  {featureType:'poi',elementType:'geometry',stylers:[{color:'#efe5cf'}]},
+  {featureType:'poi.business',stylers:[{visibility:'off'}]},
+  {featureType:'poi.park',elementType:'geometry',stylers:[{color:'#d6eadb'}]},
+  {featureType:'road',elementType:'geometry.fill',stylers:[{color:'#ffffff'}]},
+  {featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#e5dac2'}]},
+  {featureType:'road',elementType:'labels.icon',stylers:[{visibility:'off'}]},
+  {featureType:'road.highway',elementType:'geometry.fill',stylers:[{color:'#f6d9d3'}]},
+  {featureType:'road.highway',elementType:'geometry.stroke',stylers:[{color:'#e9b9b0'}]},
+  {featureType:'road.local',elementType:'labels.text.fill',stylers:[{color:'#8a8576'}]},
+  {featureType:'transit.line',stylers:[{visibility:'simplified'},{color:'#e2d6bd'}]},
+  {featureType:'water',elementType:'geometry',stylers:[{color:'#cfe4e4'}]},
+  {featureType:'water',elementType:'labels.text.fill',stylers:[{color:'#5d8f8f'}]},
+];
+let cleCarte = '', googleCharge = null, carteRefusee = false;
+function chargerGoogle() {
+  if (!cleCarte) return Promise.reject(new Error('pas de clé'));
+  if (!googleCharge) googleCharge = new Promise((ok, ko) => {
+    window.__babGoogle = () => ok(window.google);
+    // Clé refusée par Google (API non activée, domaine non autorisé…) : on repasse sur OpenStreetMap.
+    window.gm_authFailure = () => { ko(new Error('Clé Google Maps refusée')); cleCarte = ''; carteRefusee = true; if (carteTR && carteTR.nom === 'Google Maps') route(); };
+    const sc = document.createElement('script');
+    sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(cleCarte) + '&callback=__babGoogle&language=fr&region=MA';
+    sc.async = true; sc.onerror = () => ko(new Error('Google Maps injoignable'));
+    document.head.appendChild(sc);
+    setTimeout(() => ko(new Error('Google Maps trop lent')), 10000);
+  });
+  return googleCharge;
+}
+
+function carteGoogle(el, g) {
+  const map = new g.maps.Map(el, { center: { lat: 33.5731, lng: -7.5898 }, zoom: 12, styles: STYLE_BAB,
+    mapTypeControl: false, streetViewControl: false, fullscreenControl: true, clickableIcons: false });
+  const info = new g.maps.InfoWindow();
+  let objets = [];
+  class Html extends g.maps.OverlayView {
+    constructor(pos, html, taille, z, popup) { super(); this.pos = pos; this.html = html; this.taille = taille; this.z = z; this.popup = popup; }
+    onAdd() {
+      const d = document.createElement('div');
+      d.style.cssText = 'position:absolute;cursor:pointer;z-index:' + this.z;
+      d.innerHTML = this.html; this.div = d;
+      d.onclick = (e) => { e.stopPropagation(); info.setContent(this.popup); info.setPosition(this.pos); info.open({ map }); };
+      this.getPanes().overlayMouseTarget.appendChild(d);
     }
-    for (const d of r.demandes) {
-      L.marker([d.depart.lat, d.depart.lng], { icon: L.divIcon({ className: '', html: '<div class="mk demande"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }) })
-        .bindPopup('<b>Demande en attente</b><br>→ ' + esc(d.destinationNom || '') + '<br>' + (d.source === 'whatsapp' ? 'WhatsApp' : 'Application') + ' · depuis ' + Math.round(d.depuisS / 60) + ' min<br>' + d.taxisPrevenus + ' taxi(s) prévenu(s)')
-        .addTo(couches);
+    draw() {
+      const p = this.getProjection().fromLatLngToDivPixel(new g.maps.LatLng(this.pos));
+      if (p && this.div) { this.div.style.left = (p.x - this.taille / 2) + 'px'; this.div.style.top = (p.y - this.taille / 2) + 'px'; }
     }
-    for (const a of r.sos) if (a.position) {
-      L.marker([a.position.lat, a.position.lng], { icon: L.divIcon({ className: '', html: '<div class="mk sos"></div>', iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 1000 })
-        .bindPopup('<b style="color:#c1272d">SOS en direct</b><br>' + esc(a.nom || '') + (sos ? '<br><a href="' + sos + '" target="_blank">Centre de sécurité</a>' : '')).addTo(couches);
-    }
-    if (premiereVue && points.length) { carteTR.fitBounds(points, { maxZoom: 14, padding: [40, 40] }); premiereVue = false; }
-    const n = (e) => r.taxis.filter((t) => t.etat === e).length;
-    document.getElementById('trInfo').textContent = r.taxis.length + ' taxis en ligne (' + n('libre') + ' libres, ' + n('vers_client') + ' vers un client, ' + n('en_course') + ' en course) · ' +
-      r.demandes.length + ' demande(s) en attente · actualisé ' + new Date(r.heure).toLocaleTimeString('fr-FR');
-    document.getElementById('trListe').innerHTML = r.taxis.length ? r.taxis.map((t, i) =>
-      '<div class="ligneTaxi" data-i="' + i + '"><b>' + esc(t.nom) + '</b> ' + tag(t.etat) + '<br><span class="note">' + (t.type === 'grand' ? 'Grand' : 'Petit') + ' taxi ' + esc(t.numero) + ' · ' + esc(t.plaque) + ' · ' + t.passagers + ' passager(s)</span></div>').join('')
-      : '<p class="vide">Aucun taxi en ligne.</p>';
-    document.querySelectorAll('.ligneTaxi').forEach((el) => el.onclick = () => { const t = r.taxis[+el.dataset.i]; carteTR.setView([t.position.lat, t.position.lng], 16); });
+    onRemove() { this.div && this.div.remove(); this.div = null; }
+  }
+  return {
+    nom: 'Google Maps',
+    vider() { objets.forEach((o) => o.setMap(null)); objets = []; },
+    marqueur(ll, html, taille, popup, z) { const m = new Html({ lat: ll[0], lng: ll[1] }, html, taille, z || 1, popup); m.setMap(map); objets.push(m); },
+    ligne(pts, couleur) { objets.push(new g.maps.Polyline({ map, path: pts.map((p) => ({ lat: p[0], lng: p[1] })), strokeColor: couleur, strokeOpacity: .7, strokeWeight: 4 })); },
+    cadrer(pts) {
+      if (pts.length === 1) { map.setCenter({ lat: pts[0][0], lng: pts[0][1] }); map.setZoom(15); return; }
+      const b = new g.maps.LatLngBounds(); pts.forEach((p) => b.extend({ lat: p[0], lng: p[1] })); map.fitBounds(b, 60);
+      g.maps.event.addListenerOnce(map, 'idle', () => { if (map.getZoom() > 15) map.setZoom(15); });
+    },
+    centrer(ll, z) { map.setCenter({ lat: ll[0], lng: ll[1] }); map.setZoom(z); },
+    retirer() { this.vider(); el.innerHTML = ''; },
   };
+}
+
+function carteOsm(el) {
+  const map = L.map(el, { zoomControl: true }).setView([33.5731, -7.5898], 12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+  const couche = L.layerGroup().addTo(map);
+  return {
+    nom: 'OpenStreetMap',
+    vider() { couche.clearLayers(); },
+    marqueur(ll, html, taille, popup, z) { L.marker(ll, { icon: L.divIcon({ className: '', html, iconSize: [taille, taille], iconAnchor: [taille / 2, taille / 2] }), zIndexOffset: (z || 0) * 100 }).bindPopup(popup).addTo(couche); },
+    ligne(pts, couleur) { L.polyline(pts, { color: couleur, weight: 3, opacity: .6 }).addTo(couche); },
+    cadrer(pts) { map.fitBounds(pts, { maxZoom: 15, padding: [40, 40] }); },
+    centrer(ll, z) { map.setView(ll, z); },
+    retirer() { map.remove(); },
+  };
+}
+
+let dernierTR = null;
+async function tempsReel() {
+  C().innerHTML = '<div class="enteteTR"><div><h2>Suivi des taxis en temps réel</h2><p class="sous" id="trInfo">Chargement…</p></div>' +
+    '<div class="outils"><button class="btn" id="trMaj">↻ Rafraîchir</button><button class="btn sec" id="trCadrer">Recentrer</button></div></div>' +
+    '<div class="legende"><span><i class="point" style="background:#006233"></i>Libre</span><span><i class="point" style="background:#b8892b"></i>Vers le client</span>' +
+    '<span><i class="point" style="background:#c1272d"></i>En course</span><span><i class="point" style="background:#2563eb"></i>Demande sans taxi</span>' +
+    '<span><i class="point" style="background:#9aa0ab"></i>Dossier non validé</span><span>■ Grand taxi</span><span>🚨 SOS</span></div>' +
+    '<div class="trGrille"><div id="carteTR"></div><div class="carte liste" style="padding:0" id="trListe"></div></div>';
+  const el = document.getElementById('carteTR');
+  try { carteTR = carteGoogle(el, await chargerGoogle()); }
+  catch (e) { el.innerHTML = ''; carteTR = carteOsm(el); }
+  const couleur = { libre: '#006233', vers_client: '#b8892b', en_course: '#c1272d' };
+  const pastille = (fond, grand, cls) => '<div class="mk ' + (grand ? 'grand ' : '') + (cls || '') + '" style="background:' + fond + '"></div>';
+  let points = [];
+  const charger = async () => {
+    const bouton = document.getElementById('trMaj');
+    if (bouton) { bouton.disabled = true; bouton.textContent = '↻ Actualisation…'; }
+    try {
+      const r = await api('temps-reel');
+      dernierTR = r;
+      const carte = carteTR; if (!carte) return;
+      carte.vider();
+      points = [];
+      for (const t of r.taxis) {
+        const ll = [t.position.lat, t.position.lng]; points.push(ll);
+        if (t.itineraire.length > 1 && t.etat !== 'libre') carte.ligne(t.itineraire.map((p) => [p.lat, p.lng]), couleur[t.etat]);
+        carte.marqueur(ll, pastille(couleur[t.etat], t.type === 'grand'), 22,
+          '<b>' + esc(t.nom) + '</b><br>' + (t.type === 'grand' ? 'Grand' : 'Petit') + ' taxi ' + esc(t.numero) + ' · ' + esc(t.plaque) + '<br>' + tag(t.etat) + ' · ' + t.passagers + ' passager(s)' +
+          (t.courses.length ? '<br>→ ' + t.courses.map((c) => esc(c.destination || '')).join(', ') : '') + '<br><span class="note">position il y a ' + t.vuIlYaS + ' s</span>', 2);
+      }
+      for (const t of (r.nonValides || [])) {
+        const ll = [t.position.lat, t.position.lng]; points.push(ll);
+        carte.marqueur(ll, pastille('#9aa0ab', t.type === 'grand'), 22,
+          '<b>' + esc(t.nom) + '</b><br>' + (t.statut === 'sans_dossier' ? 'Aucun dossier chauffeur envoyé' : 'Dossier ' + esc(STATUTS[t.statut] || t.statut)) +
+          '<br>Ne reçoit pas de course tant que le dossier n\'est pas validé (module Chauffeurs).<br><span class="note">position il y a ' + t.vuIlYaS + ' s</span>', 1);
+      }
+      for (const d of r.demandes) {
+        points.push([d.depart.lat, d.depart.lng]);
+        carte.marqueur([d.depart.lat, d.depart.lng], '<div class="mk demande"></div>', 22,
+          '<b>Demande en attente</b><br>→ ' + esc(d.destinationNom || '') + '<br>' + (d.source === 'whatsapp' ? 'WhatsApp' : 'Application') + ' · depuis ' + Math.round(d.depuisS / 60) + ' min<br>' + d.taxisPrevenus + ' taxi(s) prévenu(s)', 3);
+      }
+      for (const a of r.sos) if (a.position) {
+        points.push([a.position.lat, a.position.lng]);
+        carte.marqueur([a.position.lat, a.position.lng], '<div class="mk sos"></div>', 28,
+          '<b style="color:#c1272d">SOS en direct</b><br>' + esc(a.nom || '') + (sos ? '<br><a href="' + sos + '" target="_blank">Centre de sécurité</a>' : ''), 9);
+      }
+      if (premiereVue && points.length) { carte.cadrer(points); premiereVue = false; }
+      const n = (e) => r.taxis.filter((t) => t.etat === e).length;
+      const nv = (r.nonValides || []).length;
+      document.getElementById('trInfo').textContent = r.taxis.length + ' taxis en ligne (' + n('libre') + ' libres, ' + n('vers_client') + ' vers un client, ' + n('en_course') + ' en course)' +
+        (nv ? ' · ' + nv + ' non validé(s)' : '') + ' · ' + r.demandes.length + ' demande(s) en attente · actualisé ' + new Date(r.heure).toLocaleTimeString('fr-FR') + ' · ' + carte.nom + (carteRefusee ? ' (clé Google Maps refusée)' : '');
+      const lignes = r.taxis.map((t, i) =>
+        '<div class="ligneTaxi" data-k="t' + i + '"><b>' + esc(t.nom) + '</b> ' + tag(t.etat) + '<br><span class="note">' + (t.type === 'grand' ? 'Grand' : 'Petit') + ' taxi ' + esc(t.numero) + ' · ' + esc(t.plaque) + ' · ' + t.passagers + ' passager(s)</span></div>')
+        .concat((r.nonValides || []).map((t, i) =>
+        '<div class="ligneTaxi" data-k="n' + i + '"><b>' + esc(t.nom) + '</b> <span class="tag">Non validé</span><br><span class="note">En ligne dans l\'application, mais le dossier n\'est pas validé</span></div>'));
+      document.getElementById('trListe').innerHTML = lignes.length ? lignes.join('')
+        : '<div class="vide" style="text-align:left;padding:18px"><b>Aucun taxi en ligne.</b><br><br>Un taxi apparaît ici quand un chauffeur ouvre l\'application <b>Bab Taxi Chauffeur</b> et appuie sur <b>Commencer le service</b>, avec la localisation activée.<br><br>Son dossier doit être validé dans le module Chauffeurs pour recevoir des courses. La position se met à jour toutes les 5 secondes.</div>';
+      document.querySelectorAll('.ligneTaxi').forEach((el2) => el2.onclick = () => {
+        const k = el2.dataset.k; const t = k[0] === 't' ? r.taxis[+k.slice(1)] : r.nonValides[+k.slice(1)];
+        carte.centrer([t.position.lat, t.position.lng], 16);
+      });
+    } finally {
+      const b2 = document.getElementById('trMaj');
+      if (b2) { b2.disabled = false; b2.textContent = '↻ Rafraîchir'; }
+    }
+  };
+  document.getElementById('trMaj').onclick = () => charger().catch((e) => { document.getElementById('trInfo').textContent = 'Erreur : ' + e.message; });
+  document.getElementById('trCadrer').onclick = () => { if (points.length) carteTR.cadrer(points); else carteTR.centrer([33.5731, -7.5898], 12); };
   await charger();
   minuteur = setInterval(() => charger().catch(() => {}), 5000);
 }

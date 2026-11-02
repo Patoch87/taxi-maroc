@@ -78,6 +78,20 @@ export class RidesService {
 
   removeTaxi(id: string) {
     this.taxis.delete(id);
+    this.nonValides.delete(id);
+  }
+
+  /** Chauffeurs en ligne dont le dossier n'est pas encore validé : visibles sur la console, sans recevoir de course. */
+  private nonValides = new Map<string, { id: string; nom?: string; type?: string; position: { lat: number; lng: number }; majLe: number }>();
+
+  noterNonValide(id: string, position: { lat: number; lng: number } | undefined, nom?: string, type?: string) {
+    if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return;
+    this.nonValides.set(id, { id, nom, type, position, majLe: this.now() });
+  }
+
+  nonValidesEnLigne() {
+    const limite = this.now() - TAXI_HORS_LIGNE_MS;
+    return [...this.nonValides.values()].filter((t) => t.majLe >= limite);
   }
 
   private actifs(): TaxiEnRoute[] {

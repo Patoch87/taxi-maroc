@@ -60,7 +60,9 @@ export class AdminController {
   session(@Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
     this.verifier(h, q);
     const sos = process.env.SOS_CENTRE_TOKEN;
-    return { ok: true, sosCentre: sos ? `/sos/centre?cle=${encodeURIComponent(sos)}` : null };
+    // Clé Google Maps (navigateur) pour la carte en temps réel ; sans clé, la console utilise OpenStreetMap.
+    const carte = process.env.GOOGLE_MAPS_API_KEY || process.env.MAPS_API_KEY || '';
+    return { ok: true, sosCentre: sos ? `/sos/centre?cle=${encodeURIComponent(sos)}` : null, cleCarte: carte };
   }
 
   @Get('api/resume')
