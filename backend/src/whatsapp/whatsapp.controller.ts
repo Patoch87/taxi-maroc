@@ -58,8 +58,8 @@ export class WhatsappController {
   /** Vérification de l'adresse du webhook par Meta (une fois, à l'enregistrement). */
   @Get('webhook')
   verifier(@Query('hub.mode') mode: string, @Query('hub.verify_token') jeton: string, @Query('hub.challenge') defi: string, @Res() res: ServerResponse) {
-    const attendu = process.env.WHATSAPP_VERIFY_TOKEN;
-    if (mode === 'subscribe' && attendu && jeton === attendu) {
+    const attendu = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
+    if (mode === 'subscribe' && attendu && jeton?.trim() === attendu) {
       res.setHeader('Content-Type', 'text/plain');
       res.end(defi);
       return;
