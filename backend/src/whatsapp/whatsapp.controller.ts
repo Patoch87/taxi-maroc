@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Logger,
   Body,
   Controller,
   ForbiddenException,
@@ -50,6 +51,8 @@ const versJson = (r: Reponse) => ({
  */
 @Controller('whatsapp')
 export class WhatsappController {
+  private readonly log = new Logger('WhatsApp');
+
   constructor(
     private readonly whatsapp: WhatsappService,
     private readonly rides: RidesService,
@@ -72,7 +75,12 @@ export class WhatsappController {
   @Post('webhook')
   @HttpCode(200)
   recevoir(@Req() req: RawBodyRequest<IncomingMessage>, @Body() corps: unknown, @Headers('x-hub-signature-256') signature?: string) {
-    if (!signatureValide(req.rawBody, signature)) throw new ForbiddenException('Signature invalide');
+    if (!signatureValide(req.rawBody, signature)) {
+      // Cause n° 1 d'un agent muet : WHATSAPP_APP_SECRET différent de la « Clé secrète » de l'app Meta.
+      this.log.warn('Webhook refusé : signature invalide (vérifiez WHATSAPP_APP_SECRET = clé secrète de l\'app Meta)');
+      throw new ForbiddenException('Signature invalide');
+    }
+    this.log.log('Webhook reçu de Meta');
     void this.whatsapp.webhook(corps);
     return { ok: true };
   }
