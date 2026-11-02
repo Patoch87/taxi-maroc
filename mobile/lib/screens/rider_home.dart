@@ -643,7 +643,8 @@ class _RiderHomeState extends State<RiderHome> {
     setState(() => _selected = o);
 
     // Paiement : espèces ou carte.
-    bool? cash;
+    // Test réel sans paiement par carte : espèces d'office, pas de question.
+    bool? cash = cardPaymentAvailable ? null : true;
     for (var i = 0; i < 2 && cash == null; i++) {
       final pay = await _vjAsk(s.t('vjPayHow'), [
         VoiceChoice(s.t('cash'), 'cash', icon: Icons.payments_outlined),
@@ -758,7 +759,9 @@ class _RiderHomeState extends State<RiderHome> {
     final amount = voiceIntents(tip).contains(VoiceIntent.skip) ? null : spokenNumber(tip);
     final tipped = amount != null && amount > 0 && amount <= 500;
     if (tipped) setState(() => _tip = amount.toDouble());
-    final thanks = tipped ? '${s.t('vjTipPaid')} ${_vjPrice(_tip)}. ${s.t('vjThanks')}' : s.t('vjThanks');
+    final thanks = tipped
+        ? '${s.t(cardPaymentAvailable ? 'vjTipPaid' : 'tipInCash')} ${_vjPrice(_tip)}. ${s.t('vjThanks')}'
+        : s.t('vjThanks');
     // Mode lancé pour une course : il s'arrête ; mode réglé au démarrage : « Où voulez-vous aller ? » à nouveau.
     if (_vjOnce) {
       _stopVoiceJourney(bye: false);
@@ -1712,11 +1715,19 @@ class _RiderHomeState extends State<RiderHome> {
         padding: EdgeInsets.only(top: 70, bottom: _collapsed ? 160 : 400),
         taxiKind: _selected?.kind ?? TaxiKind.petit,
         nearbyTaxis: showAmbient ? _ambient : const [],
+        // Heure d'arrivée dans une bulle : au point de prise en charge (taxi en approche), puis à la destination.
+        etaLabel: (_step == RiderStep.arriving || _step == RiderStep.onTrip) && showTaxi
+            ? '${max(1, (_remaining.inSeconds / 60).ceil())} min'
+            : null,
+        etaAt: _step == RiderStep.onTrip && _dest != null ? LatLng(_dest!.lat, _dest!.lng) : _me,
         pins: [
-          if (_step == RiderStep.idle) GooglePin('me', _me, s.t('myPosition'), gm.BitmapDescriptor.hueAzure),
+          if (_step == RiderStep.idle)
+            GooglePin('me', _me, s.t('myPosition'), gm.BitmapDescriptor.hueAzure, style: PinStyle.me),
           if (_dest != null && _step != RiderStep.idle) ...[
-            if (_step != RiderStep.onTrip) GooglePin('pickup', _me, s.t('pickupPoint'), gm.BitmapDescriptor.hueGreen),
-            GooglePin('dest', LatLng(_dest!.lat, _dest!.lng), _dest!.name, gm.BitmapDescriptor.hueRed),
+            if (_step != RiderStep.onTrip)
+              GooglePin('pickup', _me, s.t('pickupPoint'), gm.BitmapDescriptor.hueGreen, style: PinStyle.pickup),
+            GooglePin('dest', LatLng(_dest!.lat, _dest!.lng), _dest!.name, gm.BitmapDescriptor.hueRed,
+                style: PinStyle.dest),
           ],
         ],
         onCreated: (c) {
@@ -1797,6 +1808,17 @@ class _RiderHomeState extends State<RiderHome> {
         ),
       );
 
+  /// Ouvre WhatsApp sur la conversation Bab Taxi (le numéro doit être celui du compte de l'application).
+  void _openWhatsapp() {
+    final link = whatsappOrderLink(s.t('whatsappHello'));
+    if (link == null) return;
+    if (accountStore.account == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('whatsappNeedsAccount'))));
+      return;
+    }
+    launchUrl(link, mode: LaunchMode.externalApplication).catchError((_) => false);
+  }
+
   Widget _idlePanel() {
     final recent = {for (final t in tripHistory.where((t) => !t.scheduled)) t.destination}.take(3).toList();
     final suggestions = [
@@ -1830,6 +1852,27 @@ class _RiderHomeState extends State<RiderHome> {
             icon: const Icon(Icons.record_voice_over, size: 26),
             label: Text(s.t('vjStart'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
+        ),
+        // Commande par WhatsApp (écrit ou vocal) avec le numéro du compte : visible dès que le serveur donne le numéro.
+        ValueListenableBuilder<ServerConfig>(
+          valueListenable: serverConfig,
+          builder: (_, __, ___) => whatsappOrderLink('') == null
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('whatsappOrder'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF128C7E),
+                      side: const BorderSide(color: Color(0xFF25D366), width: 1.5),
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: _openWhatsapp,
+                    icon: const Icon(Icons.chat, size: 22),
+                    label: Text(s.t('orderOnWhatsapp'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                  ),
+                ),
         ),
         const SizedBox(height: 12),
         Row(children: [
@@ -1937,7 +1980,14 @@ class _RiderHomeState extends State<RiderHome> {
               icon: _cash ? Icons.payments_outlined : Icons.credit_card,
               label: _cash ? s.t('cash') : s.t('card'),
               semantics: '${s.t('payment')} : ${_cash ? s.t('cash') : s.t('card')}',
-              onTap: () => setState(() => _cash = !_cash),
+              onTap: () {
+                if (!cardPaymentAvailable) {
+                  setState(() => _cash = true);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('cardSoon'))));
+                  return;
+                }
+                setState(() => _cash = !_cash);
+              },
             ),
             _pill(
               icon: _scheduledAt == null ? Icons.schedule : Icons.event_available,
@@ -2503,7 +2553,9 @@ class _RiderHomeState extends State<RiderHome> {
   /// dans l'historique de la course.
   Future<void> _send() async {
     final tip = _tip;
-    if (tip > 0) {
+    // Sans paiement par carte (test réel), le pourboire se donne en espèces au chauffeur.
+    final byCard = cardPaymentAvailable;
+    if (tip > 0 && byCard) {
       final ok = await showCardPaymentSheet(context, amount: tip);
       if (ok != true || !mounted) return;
     }
@@ -2514,7 +2566,9 @@ class _RiderHomeState extends State<RiderHome> {
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.check_circle, color: AppColors.moroccoGreen, size: 48),
         title: Text(s.t('thanksSent'), textAlign: TextAlign.center),
-        content: tip > 0 ? Text('${s.t('tipPaid')} : ${dh(tip)}', textAlign: TextAlign.center) : null,
+        content: tip > 0
+            ? Text(byCard ? '${s.t('tipPaid')} : ${dh(tip)}' : '${s.t('tipInCash')} : ${dh(tip)}', textAlign: TextAlign.center)
+            : null,
         actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
       ),
     );
@@ -2642,10 +2696,11 @@ class _RiderHomeState extends State<RiderHome> {
           _tipChip(other ? dh(_tip) : s.t('otherAmount'), other, _otherTip),
         ]),
         Row(children: [
-          const Icon(Icons.credit_card, size: 16, color: AppColors.muted),
+          Icon(cardPaymentAvailable ? Icons.credit_card : Icons.payments_outlined, size: 16, color: AppColors.muted),
           const SizedBox(width: 6),
           Expanded(
-            child: Text(s.t('tipByCard'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            child: Text(s.t(cardPaymentAvailable ? 'tipByCard' : 'tipInCash'),
+                style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ),
         ]),
         // « Envoyer » juste sous le pourboire, avant les restaurants.
@@ -2707,6 +2762,17 @@ class _RiderHomeState extends State<RiderHome> {
             _menuItem(Icons.receipt_long, s.t('history'), () => const HistoryScreen()),
             _menuItem(Icons.local_offer_outlined, s.t('myOffers'), () => const MyOffersScreen()),
             _menuItem(Icons.people_alt_outlined, s.t('trustedContacts'), () => const TrustedContactsScreen()),
+            if (whatsappOrderLink('') != null)
+              ListTile(
+                key: const ValueKey('drawerWhatsapp'),
+                leading: const Icon(Icons.chat, color: Color(0xFF128C7E)),
+                title: Text(s.t('orderOnWhatsapp')),
+                subtitle: Text(s.t('orderOnWhatsappHint'), style: const TextStyle(color: AppColors.muted)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openWhatsapp();
+                },
+              ),
             _menuItem(Icons.drive_eta_outlined, s.t('driverMode'), () => const DriverHome()),
             ListTile(
               leading: const Icon(Icons.shield_outlined),

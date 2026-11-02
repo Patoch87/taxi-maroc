@@ -809,10 +809,11 @@ class _DriverHomeState extends State<DriverHome> {
         pins: [
           for (final r in _shift.riders)
             GooglePin('drop-${r.name}', _route[min(r.dropIdx, _route.length - 1)], '${s.t('dropAt')} ${r.name}',
-                gm.BitmapDescriptor.hueRed),
+                gm.BitmapDescriptor.hueRed, style: PinStyle.dest),
           for (final r in pending)
             GooglePin(
-                'pick-${r.name}', _route[r.pickupIdx], '${s.t('pickUp')} ${r.name}', gm.BitmapDescriptor.hueGreen),
+                'pick-${r.name}', _route[r.pickupIdx], '${s.t('pickUp')} ${r.name}', gm.BitmapDescriptor.hueGreen,
+                style: PinStyle.pickup),
           if (req != null) GooglePin('req-${req.name}', _route[req.pickupIdx], req.name, gm.BitmapDescriptor.hueYellow),
         ],
         onCreated: (c) {

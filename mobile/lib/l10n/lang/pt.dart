@@ -519,4 +519,13 @@ const Map<String, String> pt = {
   'bioFailed': 'Não reconhecido, tente novamente',
   'bioUnavailable': 'Nenhuma impressão digital nem rosto registado neste telemóvel',
   'bioEnabled': 'Acesso por impressão digital ou rosto ativado',
+  'codeSentSms': "Código enviado por SMS para",
+  'resendCode': "Reenviar o código",
+  'smsFailed': "Não foi possível enviar o SMS. Tente novamente daqui a pouco.",
+  'orderOnWhatsapp': "Pedir pelo WhatsApp",
+  'orderOnWhatsappHint': "Com o número da sua conta, por texto ou voz",
+  'whatsappHello': "Olá Bab Taxi, queria um táxi.",
+  'whatsappNeedsAccount': "Crie primeiro a sua conta: o WhatsApp reconhece o seu número.",
+  'cardSoon': "Pagamento com cartão em breve: dinheiro por agora.",
+  'tipInCash': "Gorjeta a dar em dinheiro ao motorista",
 };

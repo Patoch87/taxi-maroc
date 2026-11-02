@@ -516,4 +516,13 @@ const Map<String, String> ko = {
   'bioFailed': '인식되지 않았습니다. 다시 시도하세요',
   'bioUnavailable': '이 휴대폰에 등록된 지문이나 얼굴이 없습니다',
   'bioEnabled': '지문 또는 얼굴 로그인이 켜졌습니다',
+  'codeSentSms': "SMS로 코드를 보냈습니다:",
+  'resendCode': "코드 다시 보내기",
+  'smsFailed': "SMS를 보내지 못했습니다. 잠시 후 다시 시도하세요.",
+  'orderOnWhatsapp': "WhatsApp으로 호출",
+  'orderOnWhatsappHint': "계정 번호로, 문자 또는 음성으로",
+  'whatsappHello': "안녕하세요 Bab Taxi, 택시를 부르고 싶어요.",
+  'whatsappNeedsAccount': "먼저 계정을 만드세요. WhatsApp이 번호를 인식합니다.",
+  'cardSoon': "카드 결제는 곧 지원됩니다. 지금은 현금만 가능합니다.",
+  'tipInCash': "팁은 기사님께 현금으로 주세요",
 };

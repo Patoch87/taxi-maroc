@@ -519,4 +519,13 @@ const Map<String, String> es = {
   'bioFailed': 'No reconocido, inténtelo de nuevo',
   'bioUnavailable': 'No hay huella ni rostro registrado en este teléfono',
   'bioEnabled': 'Acceso con huella o rostro activado',
+  'codeSentSms': "Código enviado por SMS al",
+  'resendCode': "Reenviar el código",
+  'smsFailed': "No se pudo enviar el SMS. Inténtalo de nuevo en un momento.",
+  'orderOnWhatsapp': "Pedir por WhatsApp",
+  'orderOnWhatsappHint': "Con el número de tu cuenta, por escrito o por voz",
+  'whatsappHello': "Hola Bab Taxi, quisiera un taxi.",
+  'whatsappNeedsAccount': "Crea primero tu cuenta: WhatsApp reconoce tu número.",
+  'cardSoon': "Pago con tarjeta disponible pronto: efectivo por ahora.",
+  'tipInCash': "Propina para dar en efectivo al conductor",
 };

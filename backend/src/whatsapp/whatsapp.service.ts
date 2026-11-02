@@ -1,4 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { lienApplication } from '../accounts/accounts.controller';
+import { AccountsService } from '../accounts/accounts.service';
 import { haversine, Point } from '../domain/geo';
 import { RidesService, StatutCourse } from '../rides/rides.service';
 import { AgentDemo, detecterLangue } from './agent-demo';
@@ -53,6 +55,18 @@ function annonce(statut: StatutCourse, langue: Langue, taxi?: { nom?: string; pl
   }
 }
 
+/** Réponse à un numéro qui n'a pas encore de compte dans l'application. */
+export function sansCompte(texte?: string): string {
+  const lien = lienApplication();
+  const fr =
+    `Bonjour ! Pour commander un taxi sur WhatsApp, installez d'abord l'application Bab Taxi et créez votre compte avec ce même numéro : ${lien}\n` +
+    'Ensuite, envoyez-moi simplement votre destination, par écrit ou en vocal.';
+  const dr =
+    `السلام! باش تطلب طاكسي فواتساب، خاصك تيليشارجي التطبيق ديال باب طاكسي وتصاوب الحساب بهاد النمرة: ${lien}\n` +
+    'من بعد، صيفط ليا غير فين غادي، بالكتابة ولا بالفوكال.';
+  return texte && arabe(texte) ? `${dr}\n\n${fr}` : `${fr}\n\n${dr}`;
+}
+
 /**
  * Agent WhatsApp de Bab Taxi : reçoit les messages (vocaux, écrits, position), fait répondre l'agent IA
  * (ou l'agent de démonstration sans clé Claude), répond en vocal à qui parle en vocal, et prévient le passager
@@ -70,7 +84,10 @@ export class WhatsappService implements OnModuleDestroy {
   private ia?: AgentIA;
   private readonly minuterie: NodeJS.Timeout;
 
-  constructor(private readonly rides: RidesService) {
+  constructor(
+    private readonly rides: RidesService,
+    private readonly comptes: AccountsService,
+  ) {
     if (process.env.ANTHROPIC_API_KEY) this.ia = new AgentIA();
     this.minuterie = setInterval(() => this.suivreCourses().catch((e) => this.log.error(e)), SUIVI_MS);
     this.minuterie.unref();
@@ -202,7 +219,13 @@ export class WhatsappService implements OnModuleDestroy {
 
   /** Comprend le message et prépare la réponse (texte, et voix si le passager a parlé). */
   async traiter(m: MessageEntrant): Promise<Reponse[]> {
-    const conv = this.conversation(m.de, m.nom);
+    // Commande WhatsApp réservée aux passagers qui ont l'application : le numéro WhatsApp doit être celui du compte.
+    // Le simulateur (numéros « demo-… ») et BAB_WHATSAPP_OUVERT=oui (essais) laissent passer tout le monde.
+    const compte = m.de.startsWith('demo-') ? undefined : this.comptes.parNumero(m.de);
+    if (!compte && !m.de.startsWith('demo-') && process.env.BAB_WHATSAPP_OUVERT !== 'oui') {
+      return [{ texte: sansCompte(m.texte) }];
+    }
+    const conv = this.conversation(m.de, compte?.prenom || m.nom);
     const cmd = new Commande(this.rides, conv);
     let texte = (m.texte ?? '').trim();
 

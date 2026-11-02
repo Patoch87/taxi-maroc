@@ -125,6 +125,14 @@ void main() {
     expect(find.text('🇪🇸  Español'), findsOneWidget);
     // L'indicatif suit la nationalité tant qu'il n'a pas été choisi à la main.
     expect(find.text('+34'), findsOneWidget);
+    // Le code vaut pour un numéro : avec le nouvel indicatif, il faut un nouveau code.
+    expect(find.text('Numéro vérifié'), findsNothing);
+    await tester.ensureVisible(find.text('Recevoir le code par SMS'));
+    await tester.tap(find.text('Recevoir le code par SMS'));
+    await tester.pump();
+    await tester.enterText(find.byKey(const ValueKey('smsCode')), demoSmsCode);
+    await tester.pump();
+    expect(find.text('Numéro vérifié'), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const ValueKey('saveAccount')));
     await tester.tap(find.byKey(const ValueKey('saveAccount')));

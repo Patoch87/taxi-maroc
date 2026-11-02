@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/account.dart';
 import '../services/biometric_auth.dart';
+import '../services/phone_code.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import 'sos_screen.dart';
@@ -24,7 +25,25 @@ class _LockScreenState extends State<LockScreen> {
   bool _busy = false;
   bool _useCode = false;
   bool _codeSent = false;
+  bool _sending = false;
+  bool _sendFailed = false;
+  final _verifier = PhoneCodeVerifier();
   final _code = TextEditingController();
+
+  Future<void> _sendCode(String phone) async {
+    setState(() {
+      _sending = true;
+      _sendFailed = false;
+    });
+    try {
+      await _verifier.send(phone);
+      if (mounted) setState(() => _codeSent = true);
+    } catch (_) {
+      if (mounted) setState(() => _sendFailed = true);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
 
   @override
   void initState() {
@@ -116,15 +135,24 @@ class _LockScreenState extends State<LockScreen> {
                 label: Text(s.t('bioUseCode')),
               )
             else ...[
-              if (!_codeSent)
+              if (!_codeSent) ...[
                 OutlinedButton.icon(
-                  onPressed: () => setState(() => _codeSent = true),
-                  icon: const Icon(Icons.sms_outlined),
+                  onPressed: _sending || a == null ? null : () => _sendCode(a.phone),
+                  icon: _sending
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.sms_outlined),
                   label: Text('${s.t('sendCode')} · ${a?.phone ?? ''}'),
-                )
-              else ...[
-                // Démo : aucun SMS n'est envoyé, le code est affiché ici.
-                Text('${s.t('codeSentDemo')} $demoSmsCode',
+                ),
+                if (_sendFailed)
+                  Text(s.t('smsFailed'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w700)),
+              ] else ...[
+                // Vrai SMS envoyé ; sinon (démo, ou serveur sans SMS) le code est affiché ici.
+                Text(
+                    _verifier.sent?.testCode == null
+                        ? '${s.t('codeSentSms')} ${a?.phone ?? ''}'
+                        : '${s.t('codeSentDemo')} ${_verifier.sent!.testCode}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
@@ -132,13 +160,15 @@ class _LockScreenState extends State<LockScreen> {
                   key: const ValueKey('lockSmsCode'),
                   controller: _code,
                   keyboardType: TextInputType.number,
-                  onChanged: (v) {
-                    if (v.trim() == demoSmsCode) biometricLock.unlocked();
+                  autofillHints: const [AutofillHints.oneTimeCode],
+                  onChanged: (v) async {
                     setState(() {});
+                    if (await _verifier.check(v)) biometricLock.unlocked();
+                    if (mounted) setState(() {});
                   },
                   decoration: InputDecoration(
                     labelText: s.t('smsCode'),
-                    errorText: _code.text.length >= 4 && _code.text.trim() != demoSmsCode ? s.t('wrongCode') : null,
+                    errorText: _verifier.wrong ? s.t('wrongCode') : null,
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),

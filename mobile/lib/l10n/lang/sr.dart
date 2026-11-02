@@ -519,4 +519,13 @@ const Map<String, String> sr = {
   'bioFailed': 'Nije prepoznato, pokušajte ponovo',
   'bioUnavailable': 'Na ovom telefonu nema sačuvanog otiska ni lica',
   'bioEnabled': 'Prijava otiskom prsta ili licem uključena',
+  'codeSentSms': "Kod poslat SMS-om na",
+  'resendCode': "Ponovo pošalji kod",
+  'smsFailed': "SMS nije poslat. Pokušajte ponovo za trenutak.",
+  'orderOnWhatsapp': "Naruči preko WhatsAppa",
+  'orderOnWhatsappHint': "Sa brojem vašeg naloga, tekstom ili glasom",
+  'whatsappHello': "Zdravo Bab Taxi, treba mi taksi.",
+  'whatsappNeedsAccount': "Prvo napravite nalog: WhatsApp prepoznaje vaš broj.",
+  'cardSoon': "Plaćanje karticom uskoro: zasad gotovina.",
+  'tipInCash': "Bakšiš dajte vozaču u gotovini",
 };

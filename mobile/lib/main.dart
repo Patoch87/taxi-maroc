@@ -47,7 +47,14 @@ Future<void> main() async {
 Future<void> connectToServer() async {
   if (!live.enabled) return;
   if (await live.warmUp()) {
-    await adCatalog.refresh();
+    final api = LiveApi();
+    await Future.wait([
+      adCatalog.refresh(),
+      api.config().then((c) => serverConfig.value = c).catchError((_) => serverConfig.value),
+      // Le compte est (ré)enregistré à chaque lancement : la commande WhatsApp le retrouve par son numéro.
+      if (accountStore.account != null)
+        api.registerAccount(accountStore.account!, langNotifier.value).catchError((_) {}),
+    ]);
   } else {
     Future.delayed(const Duration(seconds: 12), live.dismissFallback);
   }

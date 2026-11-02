@@ -519,4 +519,13 @@ const Map<String, String> nl = {
   'bioFailed': 'Niet herkend, probeer opnieuw',
   'bioUnavailable': 'Geen vingerafdruk of gezicht geregistreerd op deze telefoon',
   'bioEnabled': 'Inloggen met vingerafdruk of gezicht ingeschakeld',
+  'codeSentSms': "Code per sms verstuurd naar",
+  'resendCode': "Code opnieuw versturen",
+  'smsFailed': "De sms kon niet worden verstuurd. Probeer het zo opnieuw.",
+  'orderOnWhatsapp': "Bestellen via WhatsApp",
+  'orderOnWhatsappHint': "Met het nummer van je account, via tekst of spraak",
+  'whatsappHello': "Hallo Bab Taxi, ik wil graag een taxi.",
+  'whatsappNeedsAccount': "Maak eerst je account aan: WhatsApp herkent je nummer.",
+  'cardSoon': "Betalen met kaart komt binnenkort: voorlopig contant.",
+  'tipInCash': "Fooi contant aan de chauffeur geven",
 };

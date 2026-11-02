@@ -95,6 +95,52 @@ class LiveConfig extends ChangeNotifier {
 
 final live = LiveConfig();
 
+/// Réglages publics donnés par le serveur au lancement.
+class ServerConfig {
+  const ServerConfig({this.whatsapp, this.realSms = false, this.card = false});
+  factory ServerConfig.fromJson(Map<String, dynamic> j) => ServerConfig(
+        whatsapp: (j['whatsapp'] as String?)?.replaceAll(RegExp(r'\D'), ''),
+        realSms: j['sms'] == 'sms',
+        card: j['carte'] == true,
+      );
+
+  /// Numéro WhatsApp public de Bab Taxi (chiffres avec l'indicatif), absent tant qu'il n'est pas branché.
+  final String? whatsapp;
+  final bool realSms;
+
+  /// Paiement par carte réel (prestataire branché sur le serveur).
+  final bool card;
+}
+
+/// Dernière configuration reçue du serveur ([ServerConfig] vide tant qu'il n'a pas répondu).
+final serverConfig = ValueNotifier<ServerConfig>(const ServerConfig());
+
+/// Carte bancaire proposée : toujours en démo (paiement simulé), en test réel seulement si le serveur
+/// a un vrai prestataire de paiement. Sinon, espèces uniquement.
+bool get cardPaymentAvailable => !live.enabled || serverConfig.value.card;
+
+/// Lien « Commander sur WhatsApp » (null tant que le numéro n'est pas configuré sur le serveur).
+Uri? whatsappOrderLink(String text) {
+  final n = serverConfig.value.whatsapp;
+  if (!live.enabled || n == null || n.isEmpty) return null;
+  return Uri.parse('https://wa.me/$n?text=${Uri.encodeComponent(text)}');
+}
+
+/// Réponse à une demande de code SMS.
+class SmsCode {
+  const SmsCode({required this.realSms, required this.length, this.testCode});
+  factory SmsCode.fromJson(Map<String, dynamic> j) => SmsCode(
+        realSms: j['mode'] == 'sms',
+        length: (j['longueur'] as num?)?.toInt() ?? 6,
+        testCode: j['codeTest'] as String?,
+      );
+  final bool realSms;
+  final int length;
+
+  /// Code à afficher quand aucun SMS n'est envoyé (serveur sans Twilio).
+  final String? testCode;
+}
+
 Map<String, double> _pt(LatLng p) => {'lat': p.latitude, 'lng': p.longitude};
 LatLng _ll(dynamic m) => LatLng((m['lat'] as num).toDouble(), (m['lng'] as num).toDouble());
 
@@ -189,6 +235,27 @@ class LiveApi {
     if (res.statusCode >= 400) throw Exception('HTTP ${res.statusCode}');
     return res.body.isEmpty ? null : jsonDecode(res.body);
   }
+
+  /// Réglages publics du serveur (numéro WhatsApp, SMS réels, paiement par carte).
+  Future<ServerConfig> config() async => ServerConfig.fromJson(await _send('GET', '/config') as Map<String, dynamic>);
+
+  /// Compte enregistré sur le serveur : son numéro relie la commande WhatsApp à l'application.
+  Future<void> registerAccount(Account a, String lang) => _send('POST', '/accounts', {
+        'id': a.id,
+        'phone': a.phone,
+        'firstName': a.firstName,
+        'lastName': a.lastName,
+        'email': a.email,
+        'nationality': a.nationality,
+        'lang': lang,
+      });
+
+  /// Envoie un code de vérification par SMS (ou renvoie le code de test quand le serveur n'a pas de SMS).
+  Future<SmsCode> sendCode(String phone) async =>
+      SmsCode.fromJson(await _send('POST', '/auth/code', {'phone': phone}) as Map<String, dynamic>);
+
+  Future<bool> checkCode(String phone, String code) async =>
+      ((await _send('POST', '/auth/verify', {'phone': phone, 'code': code}) as Map)['ok']) == true;
 
   Future<bool> ping() async {
     try {

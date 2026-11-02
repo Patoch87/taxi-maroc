@@ -1,7 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { haversine, Point } from '../domain/geo';
 import { Correspondance, DemandePassager, TaxiEnRoute, trouverTaxis } from '../domain/matching';
+import { StoreService } from '../store/store.service';
 
 export type StatutCourse = 'en_attente' | 'acceptee' | 'a_bord' | 'terminee' | 'annulee' | 'expiree';
 
@@ -32,13 +33,31 @@ export const TAXI_HORS_LIGNE_MS = 90_000;
 export const DEMANDE_EXPIRE_MS = 3 * 60_000;
 
 /**
- * Stockage en mémoire pour la première version (un seul serveur, test réel).
- * À remplacer par PostgreSQL + PostGIS et des WebSockets pour les positions en direct.
+ * Positions des taxis en mémoire (elles changent toutes les quelques secondes) ; chaque course est aussi
+ * enregistrée dans la base (PostgreSQL quand DATABASE_URL existe) : historique, et reprise des courses
+ * en cours après un redémarrage du serveur.
  */
 @Injectable()
 export class RidesService {
   private readonly taxis = new Map<string, TaxiEnRoute & { majLe: number }>();
   private readonly demandes = new Map<string, DemandeCourse>();
+  private repris = false;
+
+  constructor(@Optional() private readonly store?: StoreService) {}
+
+  /** Courses encore ouvertes reprises de la base au premier appel (après un redémarrage). */
+  private reprendre() {
+    if (this.repris || !this.store) return;
+    this.repris = true;
+    for (const d of this.store.list<DemandeCourse>('courses')) {
+      if (['en_attente', 'acceptee', 'a_bord'].includes(d.statut) && !this.demandes.has(d.id)) this.demandes.set(d.id, d);
+    }
+  }
+
+  private garder(d: DemandeCourse) {
+    this.store?.put('courses', d.id, d);
+    return d;
+  }
 
   /** Horloge remplaçable dans les tests. */
   now = () => Date.now();
@@ -81,15 +100,20 @@ export class RidesService {
       creeLe: new Date(this.now()).toISOString(),
       refuseePar: [],
     };
+    this.reprendre();
     this.demandes.set(d.id, d);
-    return d;
+    return this.garder(d);
   }
 
   private expirer(d: DemandeCourse) {
-    if (d.statut === 'en_attente' && this.now() - Date.parse(d.creeLe) > DEMANDE_EXPIRE_MS) d.statut = 'expiree';
+    if (d.statut === 'en_attente' && this.now() - Date.parse(d.creeLe) > DEMANDE_EXPIRE_MS) {
+      d.statut = 'expiree';
+      this.garder(d);
+    }
   }
 
   private find(id: string): DemandeCourse {
+    this.reprendre();
     const d = this.demandes.get(id);
     if (!d) throw new NotFoundException('Demande introuvable');
     this.expirer(d);
@@ -108,6 +132,7 @@ export class RidesService {
    * qui passe en ligne après la demande la reçoit aussi s'il passe sur la route du passager.
    */
   offersFor(taxiId: string): DemandeCourse[] {
+    this.reprendre();
     const taxi = this.actifs().find((t) => t.id === taxiId);
     return [...this.demandes.values()].filter((d) => {
       this.expirer(d);
@@ -119,6 +144,7 @@ export class RidesService {
 
   /** Courses acceptées et pas encore terminées d'un taxi (reprise après redémarrage de l'appli). */
   ridesOf(taxiId: string): DemandeCourse[] {
+    this.reprendre();
     return [...this.demandes.values()].filter(
       (d) => d.accepteePar === taxiId && (d.statut === 'acceptee' || d.statut === 'a_bord'),
     );
@@ -139,13 +165,13 @@ export class RidesService {
     }
     d.statut = 'acceptee';
     d.accepteePar = taxiId;
-    return d;
+    return this.garder(d);
   }
 
   decline(id: string, taxiId: string): DemandeCourse {
     const d = this.find(id);
     if (!d.refuseePar.includes(taxiId)) d.refuseePar.push(taxiId);
-    return d;
+    return this.garder(d);
   }
 
   /** Le chauffeur a pris le passager, puis l'a déposé. */
@@ -154,12 +180,12 @@ export class RidesService {
     if (d.accepteePar !== taxiId) throw new ConflictException("Cette course n'est pas à ce taxi");
     if (d.statut === 'annulee') throw new ConflictException('Course annulée par le passager');
     d.statut = statut;
-    return d;
+    return this.garder(d);
   }
 
   cancel(id: string): DemandeCourse {
     const d = this.find(id);
     if (d.statut === 'en_attente' || d.statut === 'acceptee') d.statut = 'annulee';
-    return d;
+    return this.garder(d);
   }
 }

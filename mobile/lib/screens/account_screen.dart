@@ -5,6 +5,8 @@ import '../main.dart';
 import '../services/account.dart';
 import '../services/biometric_auth.dart';
 import '../services/dial_codes.dart';
+import '../services/live.dart';
+import '../services/phone_code.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 
@@ -182,6 +184,11 @@ class _AccountScreenState extends State<AccountScreen> {
   late String _lang = langNotifier.value;
   bool _langTouched = false;
   bool _codeSent = false;
+  bool _sending = false;
+  bool _sendFailed = false;
+  final _verifier = PhoneCodeVerifier();
+  /// Numéro auquel le code a été envoyé (un autre numéro demande un nouveau code).
+  String? _codePhone;
   bool _nationalityMissing = false;
   bool _phoneUnverified = false;
 
@@ -209,7 +216,31 @@ class _AccountScreenState extends State<AccountScreen> {
 
   /// Le numéro est vérifié s'il n'a pas changé, ou si le bon code SMS a été saisi.
   bool get _verified =>
-      (_existing != null && _normPhone(_fullPhone) == _normPhone(_existing.phone)) || _code.text.trim() == demoSmsCode;
+      (_existing != null && _normPhone(_fullPhone) == _normPhone(_existing.phone)) ||
+      (_verifier.verified && _codePhone == _normPhone(_fullPhone));
+
+  Future<void> _sendCode() async {
+    setState(() {
+      _sending = true;
+      _sendFailed = false;
+    });
+    try {
+      await _verifier.send(_fullPhone);
+      _codePhone = _normPhone(_fullPhone);
+      _code.clear();
+      if (mounted) setState(() => _codeSent = true);
+    } catch (_) {
+      if (mounted) setState(() => _sendFailed = true);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _codeChanged(String v) async {
+    setState(() {});
+    await _verifier.check(v);
+    if (mounted) setState(() {});
+  }
 
   Future<void> _pickCountry() async {
     final c = await showNationalitySheet(context);
@@ -241,7 +272,7 @@ class _AccountScreenState extends State<AccountScreen> {
     });
     if (!ok || _country == null || !_verified) return;
     final created = _existing == null;
-    accountStore.save(Account(
+    final account = Account(
       id: _existing?.id ?? newAccountId(),
       firstName: _first.text.trim(),
       lastName: _last.text.trim(),
@@ -249,7 +280,10 @@ class _AccountScreenState extends State<AccountScreen> {
       phoneCountry: _dial.iso,
       email: _email.text.trim(),
       nationality: _country!.code,
-    ));
+    );
+    accountStore.save(account);
+    // Test réel : le compte part aussi sur le serveur, ce qui ouvre la commande par WhatsApp avec ce numéro.
+    if (live.enabled) LiveApi().registerAccount(account, _lang).catchError((_) {});
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (!widget.firstLaunch && Navigator.canPop(context)) Navigator.pop(context);
     messenger?.showSnackBar(SnackBar(content: Text(s.t(created ? 'accountCreated' : 'accountSaved'))));
@@ -409,25 +443,33 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
             if (!_verified) ...[
               const SizedBox(height: 8),
-              if (!_codeSent)
+              if (!_codeSent || _codePhone != _normPhone(_fullPhone)) ...[
                 OutlinedButton.icon(
-                  onPressed: validLocalNumber(_phone.text) ? () => setState(() => _codeSent = true) : null,
-                  icon: const Icon(Icons.sms_outlined),
+                  onPressed: validLocalNumber(_phone.text) && !_sending ? _sendCode : null,
+                  icon: _sending
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.sms_outlined),
                   label: Text(s.t('sendCode')),
-                )
-              else ...[
-                // Démo : aucun SMS n'est envoyé, le code est affiché ici.
-                Text('${s.t('codeSentDemo')} $demoSmsCode',
+                ),
+                if (_sendFailed)
+                  Text(s.t('smsFailed'), style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w700)),
+              ] else ...[
+                // Vrai SMS envoyé ; sinon (démo, ou serveur sans SMS) le code est affiché ici.
+                Text(
+                    _verifier.sent?.testCode == null
+                        ? '${s.t('codeSentSms')} $_fullPhone'
+                        : '${s.t('codeSentDemo')} ${_verifier.sent!.testCode}',
                     style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 TextField(
                   key: const ValueKey('smsCode'),
                   controller: _code,
                   keyboardType: TextInputType.number,
-                  onChanged: (_) => setState(() {}),
-                  decoration:
-                      _deco(s.t('smsCode'), error: _code.text.length >= 4 && !_verified ? s.t('wrongCode') : null),
+                  autofillHints: const [AutofillHints.oneTimeCode],
+                  onChanged: _codeChanged,
+                  decoration: _deco(s.t('smsCode'), error: _verifier.wrong ? s.t('wrongCode') : null),
                 ),
+                TextButton(onPressed: _sending ? null : _sendCode, child: Text(s.t('resendCode'))),
               ],
             ] else if (_existing == null || _normPhone(_fullPhone) != _normPhone(_existing.phone)) ...[
               const SizedBox(height: 4),

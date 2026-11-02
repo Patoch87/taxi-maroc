@@ -1,5 +1,8 @@
 import { Controller, Get, Module } from '@nestjs/common';
+import { AccountsController } from './accounts/accounts.controller';
+import { AccountsService } from './accounts/accounts.service';
 import { AdsController } from './ads/ads.controller';
+import { StoreService } from './store/store.service';
 import { ComplaintsController } from './complaints/complaints.controller';
 import { FaresController } from './fares/fares.controller';
 import { RidesController } from './rides/rides.controller';
@@ -18,6 +21,9 @@ class HealthController {
       status: 'ok',
       routes: [
         'GET /health',
+        'GET /config',
+        'POST /accounts',
+        'POST /auth/(code|verify)',
         'POST /fares/petit-taxi',
         'POST /fares/grand-taxi',
         'PUT|DELETE /taxis/:id/route',
@@ -48,7 +54,7 @@ class HealthController {
 }
 
 @Module({
-  controllers: [HealthController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController],
-  providers: [RidesService, WhatsappService],
+  controllers: [HealthController, AccountsController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController],
+  providers: [StoreService, AccountsService, RidesService, WhatsappService],
 })
 export class AppModule {}

@@ -47,7 +47,31 @@ describe('Agent WhatsApp', () => {
     await http().get('/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=faux&hub.challenge=1234').expect(403);
   });
 
+  const webhook = async (de: string, texte: string, msgId: string) => {
+    process.env.WHATSAPP_APP_SECRET = 'cle-app';
+    const corps = JSON.stringify({
+      entry: [{ changes: [{ value: { messages: [{ id: msgId, from: de, type: 'text', text: { body: texte } }] } }] }],
+    });
+    const signe = 'sha256=' + createHmac('sha256', 'cle-app').update(corps).digest('hex');
+    await http().post('/whatsapp/webhook').set('content-type', 'application/json').set('x-hub-signature-256', signe).send(corps).expect(200);
+    await new Promise((r) => setTimeout(r, 50));
+    return service.relever(de);
+  };
+
+  it("répond avec le lien de l'application à un numéro sans compte, puis commande une fois le compte créé", async () => {
+    const avant = await webhook('212611223344', 'Je vais au Maârif', 'wamid.sans-compte');
+    expect(avant[0].texte).toContain('installez');
+    expect(avant[0].texte).toContain('taxi-maroc.apk');
+    // Compte créé dans l'application avec le numéro écrit à la marocaine.
+    await http().post('/accounts').send({ id: 'UABCDE', phone: '06 11 22 33 44', firstName: 'Karim', lastName: 'B' }).expect(201);
+    const apres = await webhook('212611223344', 'Je vais au Maârif', 'wamid.avec-compte');
+    expect(apres[0].texte).not.toContain('installez');
+    expect(apres[0].texte).toContain('Maârif');
+    expect(service.conversation('212611223344').nom).toBe('Karim');
+  });
+
   it('refuse un webhook mal signé et traite une seule fois un message renvoyé par Meta', async () => {
+    await http().post('/accounts').send({ id: 'USALMA', phone: '+212 600000001', firstName: 'Salma', lastName: 'K' }).expect(201);
     process.env.WHATSAPP_APP_SECRET = 'cle-app';
     const corps = JSON.stringify({
       entry: [{ changes: [{ value: {

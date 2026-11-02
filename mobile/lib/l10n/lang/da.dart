@@ -519,4 +519,13 @@ const Map<String, String> da = {
   'bioFailed': 'Ikke genkendt, prøv igen',
   'bioUnavailable': 'Intet fingeraftryk eller ansigt registreret på denne telefon',
   'bioEnabled': 'Log ind med fingeraftryk eller ansigt slået til',
+  'codeSentSms': "Kode sendt via sms til",
+  'resendCode': "Send koden igen",
+  'smsFailed': "Sms'en kunne ikke sendes. Prøv igen om lidt.",
+  'orderOnWhatsapp': "Bestil på WhatsApp",
+  'orderOnWhatsappHint': "Med din kontos nummer, som tekst eller stemme",
+  'whatsappHello': "Hej Bab Taxi, jeg vil gerne have en taxa.",
+  'whatsappNeedsAccount': "Opret først din konto: WhatsApp genkender dit nummer.",
+  'cardSoon': "Kortbetaling kommer snart: kontant indtil videre.",
+  'tipInCash': "Drikkepenge gives kontant til chaufføren",
 };

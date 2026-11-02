@@ -516,4 +516,13 @@ const Map<String, String> ja = {
   'bioFailed': '認識できません。もう一度お試しください',
   'bioUnavailable': 'この電話には指紋も顔も登録されていません',
   'bioEnabled': '指紋または顔でのログインを有効にしました',
+  'codeSentSms': "SMSでコードを送信しました：",
+  'resendCode': "コードを再送信",
+  'smsFailed': "SMSを送信できませんでした。少し後でもう一度お試しください。",
+  'orderOnWhatsapp': "WhatsAppで注文",
+  'orderOnWhatsappHint': "アカウントの番号から、文字または音声で",
+  'whatsappHello': "こんにちは、Bab Taxiです。タクシーをお願いします。",
+  'whatsappNeedsAccount': "まずアカウントを作成してください。WhatsAppが番号を認識します。",
+  'cardSoon': "カード払いは近日対応：現在は現金のみです。",
+  'tipInCash': "チップは運転手に現金で渡してください",
 };

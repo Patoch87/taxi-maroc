@@ -33,6 +33,17 @@ services:
         sync: false
       - key: WHATSAPP_APP_SECRET
         sync: false
+      # Numéro WhatsApp public de Bab Taxi (ex. 212522000000) : affiche « Commander sur WhatsApp » dans l'application.
+      # Seuls les numéros qui ont un compte dans l'application peuvent commander (BAB_WHATSAPP_OUVERT=oui pour tout ouvrir).
+      - key: WHATSAPP_NUMERO_PUBLIC
+        sync: false
+      # Vrais codes SMS (Twilio Verify). Sans ces trois clés, le code de test BAB_CODE_TEST (1234) est affiché à l'écran.
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_VERIFY_SID
+        sync: false
   # Site web (iPhone, Safari), construit par GitHub Actions sur la branche « web ».
   - type: web
     name: bab-taxi-web
