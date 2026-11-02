@@ -42,7 +42,7 @@ open(concat, 'w').write('\n'.join(lines) + '\n')
 
 fc = (f'[0:v]scale={W}:{APP},fps=30,setsar=1[app];'
       f'[1:v]scale={W}:{ST},setsar=1[st];[2:v]scale={W}:{NAV},setsar=1[nav];'
-      '[st][app][nav]vstack=inputs=3,format=yuv420p[v]')
+      '[st][app][nav]vstack=inputs=3:shortest=1,format=yuv420p[v]')
 cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', concat,
        '-loop', '1', '-i', os.path.join(here, 'samsung', 'status.png'),
        '-loop', '1', '-i', os.path.join(here, 'samsung', 'nav.png'),
