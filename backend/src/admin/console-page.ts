@@ -240,8 +240,8 @@ async function tempsReel() {
     '<span><i class="point" style="background:#c1272d"></i>En course</span><span><i class="point" style="background:#2563eb"></i>Demande sans taxi</span><span>■ Grand taxi</span><span>🚨 SOS</span></div>' +
     '<div class="trGrille"><div id="carteTR"></div><div class="carte liste" style="padding:0" id="trListe"></div></div>';
   carteTR = L.map('carteTR', { zoomControl: true }).setView([33.5731, -7.5898], 12);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap, &copy; CARTO' }).addTo(carteTR);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(carteTR);
   couches = L.layerGroup().addTo(carteTR);
   const couleur = { libre: '#006233', vers_client: '#b8892b', en_course: '#c1272d' };
   const charger = async () => {
