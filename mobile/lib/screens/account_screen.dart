@@ -211,6 +211,13 @@ class _AccountScreenState extends State<AccountScreen> {
     return a.phone.startsWith(code) ? a.phone.substring(code.length).trim() : a.phone;
   }
 
+  /// Numéro visiblement faux une fois assez de chiffres tapés (pas pendant la saisie de « 06 12 34 56 7… »).
+  bool get _phoneLooksWrong {
+    final d = _phone.text.replaceAll(RegExp(r'\D'), '');
+    final typing = d.length < 9 || (d.length == 9 && d.startsWith('0'));
+    return !typing && !validLocalNumber(_phone.text, dial: _dial.code);
+  }
+
   /// Numéro complet : « +212 612345678 ».
   String get _fullPhone => '${_dial.code} ${_phone.text.trim()}';
 
@@ -432,11 +439,14 @@ class _AccountScreenState extends State<AccountScreen> {
                     onChanged: (_) => setState(() {}),
                     decoration: _deco(s.t('localNumber'),
                         hint: '612345678',
-                        error: _phoneUnverified && validLocalNumber(_phone.text) && !_verified
-                            ? s.t('verifyPhoneFirst')
-                            : null,
+                        // Numéro trop court ou trop long signalé dès la saisie (au Maroc : 9 chiffres après +212).
+                        error: _phoneLooksWrong
+                            ? s.t('invalidPhone')
+                            : _phoneUnverified && validLocalNumber(_phone.text, dial: _dial.code) && !_verified
+                                ? s.t('verifyPhoneFirst')
+                                : null,
                         suffix: _verified ? const Icon(Icons.verified, color: AppColors.moroccoGreen) : null),
-                    validator: (v) => validLocalNumber(v ?? '') ? null : s.t('invalidPhone'),
+                    validator: (v) => validLocalNumber(v ?? '', dial: _dial.code) ? null : s.t('invalidPhone'),
                   ),
                 ),
               ]),
@@ -445,7 +455,7 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(height: 8),
               if (!_codeSent || _codePhone != _normPhone(_fullPhone)) ...[
                 OutlinedButton.icon(
-                  onPressed: validLocalNumber(_phone.text) && !_sending ? _sendCode : null,
+                  onPressed: validLocalNumber(_phone.text, dial: _dial.code) && !_sending ? _sendCode : null,
                   icon: _sending
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.sms_outlined),

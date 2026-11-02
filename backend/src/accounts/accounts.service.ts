@@ -20,6 +20,12 @@ export interface Compte {
  * Numéro réduit à ses chiffres, avec l'indicatif : « +212 6 12 34 56 78 », « 0612345678 » et « 00212612345678 »
  * donnent tous « 212612345678 », la forme utilisée par WhatsApp.
  */
+/** Numéro plausible : 8 à 15 chiffres ; au Maroc (212), exactement 9 chiffres après l'indicatif (5, 6 ou 7). */
+export function telephoneValide(t: string): boolean {
+  if (t.startsWith('212')) return /^212[5-7]\d{8}$/.test(t);
+  return /^\d{8,15}$/.test(t);
+}
+
 export function normaliserTelephone(v: string | undefined): string {
   let d = (v ?? '').replace(/\D/g, '');
   if (d.startsWith('00')) d = d.slice(2);
@@ -67,7 +73,7 @@ export class AccountsService {
     const id = (corps?.id ?? '').trim();
     const telephone = normaliserTelephone(corps?.phone);
     if (!/^[A-Za-z0-9_-]{3,40}$/.test(id)) throw new BadRequestException('id invalide');
-    if (!/^\d{8,15}$/.test(telephone)) throw new BadRequestException('numéro de téléphone invalide');
+    if (!telephoneValide(telephone)) throw new BadRequestException('numéro de téléphone invalide');
     const ancien = this.store.get<Compte>(COMPTES, id);
     const maintenant = new Date().toISOString();
     const compte: Compte = {
@@ -141,7 +147,7 @@ export class AccountsService {
   /** Envoie un code au numéro. Sans Twilio, renvoie le code de test à afficher. */
   async envoyerCode(phone: string): Promise<{ mode: 'sms' | 'test'; longueur: number; codeTest?: string }> {
     const telephone = normaliserTelephone(phone);
-    if (!/^\d{8,15}$/.test(telephone)) throw new BadRequestException('numéro de téléphone invalide');
+    if (!telephoneValide(telephone)) throw new BadRequestException('numéro de téléphone invalide');
     const t = Date.now();
     const recents = (this.envois.get(telephone) ?? []).filter((x) => t - x < FENETRE_MS);
     if (recents.length >= ESSAIS_MAX) {

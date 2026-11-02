@@ -144,7 +144,12 @@ const demoSmsCode = '1234';
 bool validPhone(String v) => RegExp(r'^\+\d{8,15}$').hasMatch(v.replaceAll(RegExp(r'[\s.-]'), ''));
 
 /// Numéro local (sans l'indicatif) : 6 à 12 chiffres, espaces, points et tirets permis.
-bool validLocalNumber(String v) => RegExp(r'^\d{6,12}$').hasMatch(v.replaceAll(RegExp(r'[\s.-]'), ''));
+/// Avec l'indicatif du Maroc (+212) : exactement 9 chiffres (06…, 07…, 05… : le 0 de tête est permis).
+bool validLocalNumber(String v, {String? dial}) {
+  final d = v.replaceAll(RegExp(r'[\s.-]'), '');
+  if (dial == '+212') return RegExp(r'^0?[5-7]\d{8}$').hasMatch(d);
+  return RegExp(r'^\d{6,12}$').hasMatch(d);
+}
 
 bool validEmail(String v) => v.trim().isEmpty || RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
 

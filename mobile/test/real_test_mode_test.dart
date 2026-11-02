@@ -53,6 +53,16 @@ void main() {
     expect(appels.where((a) => a.startsWith('/auth/verify')), hasLength(2));
   });
 
+  test('numéro marocain : 9 chiffres après +212, avec ou sans le 0', () {
+    for (final ok in ['612345678', '0612345678', '06 61 39 26 81', '0522-000000']) {
+      expect(validLocalNumber(ok, dial: '+212'), isTrue, reason: ok);
+    }
+    for (final ko in ['066784787', '66784787', '06123456789', '0812345678']) {
+      expect(validLocalNumber(ko, dial: '+212'), isFalse, reason: ko);
+    }
+    expect(validLocalNumber('612345678', dial: '+34'), isTrue);
+  });
+
   test('configuration : bouton WhatsApp et carte bancaire', () {
     // Démo : carte simulée proposée, pas de WhatsApp.
     live.enabled = false;

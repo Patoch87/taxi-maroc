@@ -81,3 +81,13 @@ describe('Connexion à la base', () => {
     expect(sslPour('postgresql://u:p@dpg-abc123-a.frankfurt-postgres.render.com/babtaxi')).toEqual({ rejectUnauthorized: false });
   });
 });
+
+describe('Numéros marocains', () => {
+  it('refuse un numéro marocain incomplet avant de solliciter Twilio', async () => {
+    const { telephoneValide } = await import('../src/accounts/accounts.service');
+    expect(telephoneValide('212661392681')).toBe(true);
+    expect(telephoneValide('21266784787')).toBe(false);
+    expect(telephoneValide('2126613926811')).toBe(false);
+    expect(telephoneValide('33612345678')).toBe(true);
+  });
+});
