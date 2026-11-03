@@ -466,7 +466,7 @@ const SCENARIOS = {
         await o.expectScreen('demande de course', 'Accepter', 90);
         r.skip(false);
         const from = r.now();
-        r.caption('Nouvelle demande : où, combien de passagers, le prix. Il accepte ou refuse');
+        r.caption('Nouvelle demande : la destination, les places et le prix estimé. Il accepte ou refuse');
         await hold(4500, () => o.present('Accepter'));
         if (await o.present('Accepter')) {
           await o.tap('Accepter');
@@ -475,7 +475,7 @@ const SCENARIOS = {
       }
       if (!accepted) throw new Error('aucune demande acceptée');
       await o.expectScreen('prochains arrêts', 'Prochains arrêts', 10);
-      r.caption('Le premier qui accepte a la course. Ses prochains arrêts s’affichent');
+      r.caption('Le premier qui accepte a la course : le trajet vers le passager s’affiche');
       await hold(4000, async () => !(await o.present('Accepter')));
       r.caption(null);
       let hazardShown = false;
@@ -484,7 +484,7 @@ const SCENARIOS = {
         let hazard = false;
         for (let i = 0; i < 600 && !hazard; i++) {
           hazard = (await o.present('Allumez vos feux')) && !(await o.present('Accepter'));
-          if (!hazard && (await o.present('Accepter'))) await o.tap('Accepter').catch(() => {});
+          if (!hazard && (await o.present('Refuser'))) await o.tap('Refuser').catch(() => {});
           if (!hazard) await o.wait(300);
         }
         if (!hazard) break;
@@ -499,7 +499,7 @@ const SCENARIOS = {
       if (await o.present('Allumez vos feux')) await o.tap('OK').catch(() => {});
       r.caption(null);
       for (let i = 0; i < 600 && !(await o.present('Démarrer la course')); i++) {
-        if (await o.present('Accepter')) await o.tap('Accepter').catch(() => {});
+        if (await o.present('Refuser')) await o.tap('Refuser').catch(() => {});
         await o.wait(300);
       }
       r.skip(false);
@@ -514,12 +514,12 @@ const SCENARIOS = {
       for (let i = 0; i < 600 && !dropped; i++) {
         dropped = await o.present('Passager déposé');
         if (!dropped && (await o.present('Démarrer la course'))) await o.tap('Démarrer la course').catch(() => {});
-        if (!dropped && (await o.present('Accepter'))) await o.tap('Accepter').catch(() => {});
+        if (!dropped && (await o.present('Refuser'))) await o.tap('Refuser').catch(() => {});
         if (!dropped) await o.wait(250);
       }
       r.skip(false);
       await o.expectScreen('dépose', 'Passager déposé', 2);
-      r.caption('Passager déposé : le prix du compteur reste au chauffeur');
+      r.caption('Arrivée : le passager est déposé, la course est enregistrée');
       await o.wait(5000);
     },
   },

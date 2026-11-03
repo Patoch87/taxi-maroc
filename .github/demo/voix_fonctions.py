@@ -8,9 +8,12 @@ python3 voix_fonctions.py phrase <voix> <sortie.mp3> "<texte>"
     Une phrase avec une autre voix (passagère du WhatsApp : « passagere »).
 Sans clé ou en cas d'erreur : rien n'est créé, les vidéos sont montées avec les légendes seules.
 """
+import array
 import hashlib
 import json
+import math
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -23,19 +26,60 @@ VOIX = {
 
 
 def cle(texte):
-    return hashlib.sha1(texte.strip().encode()).hexdigest()[:16]
+    # « v2 » : voix refaites phrase par phrase (les premières, liées au texte voisin, étaient coupées).
+    return hashlib.sha1(('v2|' + texte.strip()).encode()).hexdigest()[:16]
 
 
-def tts(voix, texte, sortie, precedent='', suivant=''):
+def a_dire(texte):
+    # Une phrase qui se termine par un point est dite en entier, avec une fin posée.
+    t = texte.strip()
+    return t if t[-1] in '.?!…' else t + '.'
+
+
+def enveloppe(fichier):
+    brut = subprocess.run(['ffmpeg', '-v', 'error', '-i', fichier, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'],
+                          capture_output=True).stdout
+    a = array.array('h', brut)
+    w = 800  # 50 ms
+    return [math.sqrt(sum(x * x for x in a[i:i + w]) / w) for i in range(0, len(a) - w + 1, w)]
+
+
+def defaut(fichier, texte):
+    # Voix coupée : elle commence ou finit en pleine parole, ou elle est trop courte pour le texte.
+    e = enveloppe(fichier)
+    if len(e) < 6:
+        return 'vide'
+    duree = len(e) * 0.05
+    if max(e[:2]) > 900:
+        return 'début coupé'
+    if max(e[-3:]) > 500:
+        return 'fin coupée'
+    if duree < 0.045 * len(texte):
+        return f'trop courte ({duree:.1f} s)'
+    return None
+
+
+def tts(voix, texte, sortie, essais=4):
     vid, modele = VOIX[voix]
-    corps = dict(text=texte, model_id=modele, previous_text=precedent, next_text=suivant,
-                 voice_settings=dict(stability=0.5, similarity_boost=0.8, style=0.25, use_speaker_boost=True, speed=1.0))
-    req = urllib.request.Request(f'https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128',
-                                 data=json.dumps(corps).encode(), method='POST',
-                                 headers={'xi-api-key': KEY, 'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        donnees = r.read()
-    open(sortie, 'wb').write(donnees)
+    dit = a_dire(texte)
+    for n in range(essais):
+        corps = dict(text=dit, model_id=modele,
+                     voice_settings=dict(stability=0.6, similarity_boost=0.8, style=0.15, use_speaker_boost=True,
+                                         speed=0.97))
+        req = urllib.request.Request(f'https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128',
+                                     data=json.dumps(corps).encode(), method='POST',
+                                     headers={'xi-api-key': KEY, 'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            donnees = r.read()
+        essai = sortie + '.essai.mp3'
+        open(essai, 'wb').write(donnees)
+        souci = defaut(essai, dit)
+        if not souci or n == essais - 1:
+            os.replace(essai, sortie)
+            if souci:
+                print(f'::warning::voix imparfaite après {essais} essais ({souci}) : {texte}')
+            return
+        print(f'voix refaite ({souci}) : {texte}')
 
 
 def main():
@@ -59,12 +103,12 @@ def main():
         if marks.get('sansNarration'):
             continue
         textes = [c['text'] for c in marks['captions'] if c.get('text')]
-        for i, t in enumerate(textes):
+        for t in textes:
             sortie = os.path.join(dossier, cle(t) + '.mp3')
             if os.path.exists(sortie):
                 continue
             try:
-                tts('nicolas', t, sortie, textes[i - 1] if i else '', textes[i + 1] if i + 1 < len(textes) else '')
+                tts('nicolas', t, sortie)
                 nouvelles += 1
             except urllib.error.HTTPError as e:
                 print('ElevenLabs :', e.code, e.read()[:300].decode(errors='replace'))

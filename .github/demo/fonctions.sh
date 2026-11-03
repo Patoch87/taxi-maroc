@@ -21,8 +21,8 @@ if [ ${#APPLI[@]} -gt 0 ]; then
   FAUSSE_CAMERA=$BRUT/camera.y4m APP_CHAUFFEUR=$APPCH node "$ICI/record_fonctions.js" "$APP" "$BRUT" "${APPLI[@]}" || true
 fi
 if veut p8-whatsapp; then
-  python3 "$ICI/voix_fonctions.py" phrase passagere "$VOIX/passagere-whatsapp.mp3" "Bonjour, je voudrais aller au Twin Center, s'il vous plaît." || true
-  node "$ICI/whatsapp.js" "$SERVEUR" "$APP" "$BRUT/p8-whatsapp" "$VOIX/passagere-whatsapp.mp3" || true
+  python3 "$ICI/voix_fonctions.py" phrase passagere "$VOIX/passagere-whatsapp-v2.mp3" "Bonjour, je voudrais aller au Twin Center, s'il vous plaît." || true
+  node "$ICI/whatsapp.js" "$SERVEUR" "$APP" "$BRUT/p8-whatsapp" "$VOIX/passagere-whatsapp-v2.mp3" || true
 fi
 CONSOLE=()
 for s in visite publicites; do veut "k-$s" && CONSOLE+=("$s"); done

@@ -34,7 +34,8 @@ sous_titre = marks.get('sousTitre', '')
 
 
 def cle_voix(texte):
-    return hashlib.sha1(texte.strip().encode()).hexdigest()[:16]
+    # Même clé que voix_fonctions.py (« v2 » : voix refaites phrase par phrase).
+    return hashlib.sha1(('v2|' + texte.strip()).encode()).hexdigest()[:16]
 
 
 def duree(p):
@@ -75,7 +76,9 @@ for c in marks['captions']:
     if not idx:
         continue
     voix = None
-    if A.voix and not marks.get('sansNarration'):
+    # Pas de narration sur une légende pendant laquelle un vocal (WhatsApp) est joué : les deux voix se couvriraient.
+    son_dedans = any(a <= so['t'] < b for so in marks.get('sons', []))
+    if A.voix and not marks.get('sansNarration') and not son_dedans:
         p = os.path.join(A.voix, cle_voix(c['text']) + '.mp3')
         if os.path.exists(p):
             voix = p
@@ -83,7 +86,7 @@ for c in marks['captions']:
 
 debut = lambda i: sum(durs[:i])  # noqa: E731
 for c in caps:
-    besoin = c['dv'] + 0.5 if c['voix'] else 2.2  # temps de lecture minimal d'une légende
+    besoin = c['dv'] + 0.8 if c['voix'] else 2.2  # temps de lecture minimal d'une légende
     dispo = debut(c['i1'] + 1) - debut(c['i0'])
     if besoin > dispo:
         durs[c['i1']] += besoin - dispo
@@ -218,7 +221,11 @@ for f, _ in voix:
 if voix:
     for k, (_, t) in enumerate(voix):
         ms = int((base + t) * 1000)
-        fc += f';[{3 + k}:a]aresample=44100,adelay={ms}|{ms},apad[a{k}]'
+        f = voix[k][0]
+        d = duree(f)
+        # Fondus très courts aux bords : jamais de claquement à l'entrée ou à la sortie d'une phrase.
+        fc += (f';[{3 + k}:a]aresample=44100,afade=t=in:d=0.03,afade=t=out:st={max(0, d - 0.06):.3f}:d=0.06,'
+               f'adelay={ms}|{ms},apad[a{k}]')
     fc += ';' + ''.join(f'[a{k}]' for k in range(len(voix))) + f'amix=inputs={len(voix)}:normalize=0,atrim=duration={total - 1:.3f}[a]'
     carte_audio = ['-map', '[a]', '-c:a', 'aac', '-b:a', '160k']
 else:

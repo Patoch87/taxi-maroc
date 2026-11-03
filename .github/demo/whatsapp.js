@@ -208,7 +208,6 @@ async function api(chemin, corps, type = 'application/json') {
       titre: 'Commander sur WhatsApp',
       sousTitre: 'Un vocal, deux boutons, le taxi arrive',
       fin: 'Sur WhatsApp ou dans l’application',
-      sansNarration: true,
     });
     console.log(`whatsapp : ${r.marks.duration.toFixed(1)} s, ${r.marks.frames.length} images, ${sons.length} sons`);
   } catch (e) {
