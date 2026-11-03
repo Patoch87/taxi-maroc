@@ -46,6 +46,9 @@ class _Request {
   /// Test réel : point où attend le passager.
   LatLng? pickup;
 
+  /// Test réel : destination du passager.
+  LatLng? drop;
+
   /// Passager malvoyant : le chauffeur se présente et le guide jusqu'à la portière.
   final bool lowVision;
 
@@ -482,6 +485,63 @@ class _DriverHomeState extends State<DriverHome> {
   /// Test réel : point exact où attend chaque passager (le point de l'itinéraire peut en être loin).
   final _pickupPoints = <ShiftRider, LatLng>{};
 
+  /// Test réel : destination exacte de chaque passager ; elle peut changer pendant la course.
+  final _dropPoints = <ShiftRider, LatLng>{};
+  bool _destBusy = false;
+
+  /// Toutes les 4 s : le passager a-t-il changé de destination ? Le tracé et le point de dépôt suivent.
+  Future<void> _pollDestinations() async {
+    if (_destBusy || !_liveOn || _liveIds.isEmpty) return;
+    _destBusy = true;
+    try {
+      for (final e in _liveIds.entries.toList()) {
+        final ride = await _liveApi.ride(e.value);
+        final rider = e.key;
+        final drop = ride.drop;
+        if (!mounted || !_liveOn || _liveIds[rider] != e.value || drop == null) continue;
+        final known = _dropPoints[rider];
+        final renamed = ride.destinationName.isNotEmpty && ride.destinationName != rider.destination;
+        if (!renamed && known != null && const Distance()(known, drop) < 30) continue;
+        if (known == null && !renamed) {
+          _dropPoints[rider] = drop;
+          continue;
+        }
+        await _applyNewDestination(rider, drop, ride.destinationName, ride.fare);
+      }
+    } catch (_) {
+      // Réseau coupé : nouvel essai dans 4 secondes.
+    } finally {
+      _destBusy = false;
+    }
+  }
+
+  Future<void> _applyNewDestination(ShiftRider rider, LatLng drop, String name, double fare) async {
+    _dropPoints[rider] = drop;
+    if (_myDest == null && _shift.riders.length == 1) {
+      // Un seul passager : nouvel itinéraire depuis la position du taxi (par le passager s'il attend encore).
+      final pick = _pickupPoints[rider] ?? (_route.isEmpty ? _me : _route[min(rider.pickupIdx, _route.length - 1)]);
+      final toPickup = rider.onBoard ? <LatLng>[_me] : await fetchRoute(_me, pick);
+      final toDrop = await fetchRoute(rider.onBoard ? _me : pick, drop);
+      if (!mounted || !_shift.riders.contains(rider)) return;
+      setState(() {
+        _route = [...toPickup, ...toDrop.skip(1)];
+        _pos = 0;
+        rider.pickupIdx = rider.onBoard ? 0 : toPickup.length - 1;
+        rider.dropIdx = _route.length - 1;
+      });
+    } else {
+      setState(() => rider.dropIdx = min(_route.length - 1,
+          max(rider.pickupIdx + 1, _nearestIndex(drop, from: max(_pos, rider.pickupIdx)))));
+    }
+    setState(() {
+      if (name.isNotEmpty) rider.destination = name;
+      if (fare > 0) rider.fare = fare;
+    });
+    _publish();
+    HapticFeedback.heavyImpact();
+    _toast(Icons.edit_location_alt, '${s.t('destChangedBy')} ${rider.name} : ${name.isEmpty ? '?' : name}');
+  }
+
   /// Le bouton « Démarrer la course » apparaît à 150 m du passager. Vérifié à chaque position GPS, à
   /// l'acceptation et toutes les 500 ms : un taxi déjà garé près du passager ne bouge pas, le GPS ne
   /// donne alors aucune nouvelle position.
@@ -608,6 +668,7 @@ class _DriverHomeState extends State<DriverHome> {
     _liveTimers
       ..add(Timer.periodic(const Duration(seconds: 3), (_) => _publish()))
       ..add(Timer.periodic(const Duration(seconds: 2), (_) => _pollOffers()))
+      ..add(Timer.periodic(const Duration(seconds: 4), (_) => _pollDestinations()))
       ..add(Timer.periodic(const Duration(milliseconds: 500), (_) => _liveTick()));
     _publish();
   }
@@ -645,6 +706,7 @@ class _DriverHomeState extends State<DriverHome> {
     _liveIds.clear();
     _atPickup.clear();
     _pickupPoints.clear();
+    _dropPoints.clear();
     _previewRoute = false;
     if (live.enabled) _liveApi.goOffline(live.deviceId).ignore();
   }
@@ -699,7 +761,8 @@ class _DriverHomeState extends State<DriverHome> {
         if (_pickupAlerts.check(r, m)) _showHazard(r);
         // Près du passager : le bouton « Démarrer la course » apparaît.
         if (!_atPickup.contains(r)) setState(_checkPickups);
-      } else if (d(p, _route[min(r.dropIdx, _route.length - 1)]) <= 60) {
+      } else if (d(p, _route[min(r.dropIdx, _route.length - 1)]) <= 60 ||
+          (_dropPoints[r] != null && d(p, _dropPoints[r]!) <= 60)) {
         setState(() => _shift.dropOff(r));
         _liveIds.remove(r);
         if (id != null) _liveApi.droppedOff(id, live.deviceId).ignore();
@@ -794,7 +857,8 @@ class _DriverHomeState extends State<DriverHome> {
         5,
       )
         ..liveId = o.id
-        ..pickup = o.pickup;
+        ..pickup = o.pickup
+        ..drop = o.drop;
     });
     _chime.onRequest(
       _request,
@@ -818,6 +882,7 @@ class _DriverHomeState extends State<DriverHome> {
       _shift.accept(r.rider);
       _liveIds[r.rider] = r.liveId!;
       if (r.pickup != null) _pickupPoints[r.rider] = r.pickup!;
+      if (r.drop != null) _dropPoints[r.rider] = r.drop!;
       _checkPickups();
       _previewRoute = false;
       _request = null;

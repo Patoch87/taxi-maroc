@@ -21,6 +21,8 @@ export interface DemandeCourse {
   aBordLe?: string;
   termineeLe?: string;
   annuleeLe?: string;
+  /** Dernier changement de destination demandé par le passager. */
+  destinationModifieeLe?: string;
 }
 
 /** Taxi en ligne vu par la console d'administration. */
@@ -241,6 +243,25 @@ export class RidesService {
       d.statut = 'annulee';
       d.annuleeLe = this.iso();
     }
+    return this.garder(d);
+  }
+
+  /**
+   * Le passager change de destination (avant la prise en charge ou pendant la course). Le chauffeur la voit
+   * à son prochain rafraîchissement ; le nouveau prix vient de l'application, comme à la commande.
+   */
+  changerDestination(id: string, destination: Point, destinationNom?: string, prixMad?: number): DemandeCourse {
+    const d = this.find(id);
+    if (!['en_attente', 'acceptee', 'a_bord'].includes(d.statut)) {
+      throw new ConflictException('La course est terminée ou annulée : la destination ne peut plus changer');
+    }
+    d.demande = {
+      ...d.demande,
+      destination,
+      destinationNom: destinationNom ?? d.demande.destinationNom,
+      prixMad: prixMad ?? d.demande.prixMad,
+    };
+    d.destinationModifieeLe = this.iso();
     return this.garder(d);
   }
 

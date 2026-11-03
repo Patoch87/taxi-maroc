@@ -13,12 +13,12 @@ class ShiftRider {
   final String name;
 
   /// Test réel : nom de la destination du passager, affiché au chauffeur.
-  final String destination;
+  String destination;
 
   /// Positions sur l'itinéraire du taxi (indices des points).
-  final int pickupIdx;
-  final int dropIdx;
-  final double fare;
+  int pickupIdx;
+  int dropIdx;
+  double fare;
 
   /// Pourboire laissé par carte à la fin de la course (démo).
   final double tip;

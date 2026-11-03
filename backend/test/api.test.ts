@@ -136,6 +136,16 @@ describe('Test réel : un chauffeur, deux passagers', () => {
     await request(http).post(`/rides/requests/${d.body.id}/pickup`).send({ taxiId: 'T2' }).expect(409);
     await request(http).post(`/rides/requests/${d.body.id}/pickup`).send({ taxiId: 'T1' }).expect(201);
     expect((await request(http).get(`/rides/requests/${d.body.id}`)).body.statut).toBe('a_bord');
+    // Le passager change de destination pendant la course : le chauffeur la voit à son prochain rafraîchissement.
+    await request(http).post(`/rides/requests/${d.body.id}/destination`).send({}).expect(400);
+    await request(http)
+      .post(`/rides/requests/${d.body.id}/destination`)
+      .send({ destination: { lat: 33.59, lng: -7.62 }, destinationNom: 'Morocco Mall', prixMad: 30 })
+      .expect(201);
+    const change = (await request(http).get(`/rides/requests/${d.body.id}`)).body;
+    expect(change.demande.destinationNom).toBe('Morocco Mall');
+    expect(change.demande.destination).toEqual({ lat: 33.59, lng: -7.62 });
+    expect(change.demande.prixMad).toBe(30);
     await request(http).post(`/rides/requests/${d.body.id}/dropoff`).send({ taxiId: 'T1' }).expect(201);
     expect((await request(http).get(`/rides/requests/${d.body.id}`)).body.statut).toBe('terminee');
     expect((await request(http).get('/taxis/T1/rides').expect(200)).body).toHaveLength(0);

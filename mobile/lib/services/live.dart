@@ -339,6 +339,14 @@ class LiveApi {
         'prixMad': fare,
       }) as Map<String, dynamic>);
 
+  /// Le passager change de destination (avant la prise en charge ou pendant la course).
+  Future<void> changeDestination(String id, {required LatLng to, required String destinationName, required double fare}) =>
+      _send('POST', '/rides/requests/$id/destination', {
+        'destination': _pt(to),
+        'destinationNom': destinationName,
+        'prixMad': fare,
+      });
+
   Future<LiveRide> ride(String id) async =>
       LiveRide.fromJson(await _send('GET', '/rides/requests/$id') as Map<String, dynamic>);
 

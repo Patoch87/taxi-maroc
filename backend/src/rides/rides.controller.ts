@@ -93,6 +93,15 @@ export class RidesController {
     return this.rides.cancel(id);
   }
 
+  /** Le passager change de destination ; le chauffeur la reçoit à son prochain rafraîchissement. */
+  @Post('rides/requests/:id/destination')
+  changeDestination(@Param('id') id: string, @Body() body: { destination?: { lat: number; lng: number }; destinationNom?: string; prixMad?: number }) {
+    const p = body?.destination;
+    if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) throw new BadRequestException('destination est requise');
+    const prix = typeof body.prixMad === 'number' && Number.isFinite(body.prixMad) ? body.prixMad : undefined;
+    return this.rides.changerDestination(id, { lat: p.lat, lng: p.lng }, body.destinationNom?.slice(0, 120), prix);
+  }
+
   /** Demandes ouvertes pour un chauffeur. */
   @Get('taxis/:id/offers')
   offers(@Param('id') id: string) {

@@ -220,6 +220,34 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('le passager change de destination pendant que le taxi arrive', (tester) async {
+    phone(tester);
+    await tester.pumpWidget(const TaxiMarocApp(locate: false, onboarding: false));
+    await tester.pump();
+    await tester.tap(find.text('Gare Casa Voyageurs'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.textContaining('Commander ·'));
+    await tester.tap(find.textContaining('Commander ·'));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+    expect(find.text('Votre taxi arrive dans'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const ValueKey('changeDestination')));
+    await tester.tap(find.byKey(const ValueKey('changeDestination')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'twin');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Twin Center').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Changer de destination ?'), findsOneWidget);
+    expect(find.byKey(const ValueKey('newPrice')), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Confirmer')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Nouvelle destination : Twin Center'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('touriste (application en anglais) : 3 restaurants avec « Take a taxi there »', (tester) async {
     phone(tester);
     langNotifier.value = 'en';

@@ -1378,8 +1378,18 @@ class _RiderHomeState extends State<RiderHome> {
 
   /// « Y aller en taxi » : fenêtre de confirmation avec le nouveau prix (depuis la position actuelle,
   /// même type de taxi) et la nouvelle heure d'arrivée, comparés au prix actuel. Rien ne change sans « Confirmer ».
-  Future<void> _confirmRestaurant(Restaurant r) async {
-    final p = r.place;
+  Future<void> _confirmRestaurant(Restaurant r) => _confirmNewDestination(r.place, title: r.name, icon: Icons.restaurant);
+
+  /// « Changer de destination » (taxi en approche, arrivé ou pendant la course) : le passager choisit un
+  /// nouveau lieu, voit le nouveau prix et la nouvelle heure d'arrivée, puis confirme. Le chauffeur est prévenu.
+  Future<void> _changeDestination() async {
+    final place = await Navigator.push<Place>(context,
+        MaterialPageRoute(builder: (_) => SearchScreen(senior: settings.senior, near: _taxiPos ?? _me)));
+    if (place == null || !mounted || !_inTrip) return;
+    await _confirmNewDestination(place);
+  }
+
+  Future<void> _confirmNewDestination(Place p, {String? title, IconData icon = Icons.place}) async {
     final from = _step == RiderStep.onTrip ? (_taxiPos ?? _me) : _me;
     final route = await fetchRoute(from, LatLng(p.lat, p.lng));
     if (!mounted) return;
@@ -1397,9 +1407,9 @@ class _RiderHomeState extends State<RiderHome> {
         title: Text(s.t('changeDestTitle')),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Icon(Icons.restaurant, color: AppColors.taxiRed),
+            Icon(icon, color: AppColors.taxiRed),
             const SizedBox(width: 8),
-            Expanded(child: Text(r.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
+            Expanded(child: Text(title ?? p.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
           ]),
           Text('${s.t('newDestination')} : ${p.name} · ${distanceText(routeM)}',
               style: const TextStyle(color: AppColors.muted)),
@@ -1458,7 +1468,21 @@ class _RiderHomeState extends State<RiderHome> {
       _options = options;
       _selected = options.firstWhere((o) => o.id == _selected?.id, orElse: () => options.first);
     });
-    if (_step == RiderStep.onTrip) {
+    // Test réel : le serveur enregistre la nouvelle destination et le chauffeur la reçoit.
+    final rideId = _liveRideId;
+    if (live.enabled && rideId != null) {
+      _liveApi
+          .changeDestination(rideId, to: LatLng(p.lat, p.lng), destinationName: p.name, fare: _selected!.priceMad)
+          .catchError((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('changeDestFailed'))));
+        }
+      });
+      if (_step == RiderStep.onTrip) {
+        setState(() => _setPath(route));
+        _fit(route);
+      }
+    } else if (_step == RiderStep.onTrip) {
       final speed = _speed;
       _startLeg(route, Duration(seconds: (routeM / _cityMps).round()), RiderStep.onTrip,
           onEnd: () => setState(() => _step = RiderStep.done));
@@ -2504,15 +2528,20 @@ class _RiderHomeState extends State<RiderHome> {
           ]),
         ),
         if (_dest != null)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
+          Wrap(spacing: 4, children: [
+            TextButton.icon(
+              key: const ValueKey('changeDestination'),
+              onPressed: _changeDestination,
+              icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+              label: Text(s.t('changeDestination')),
+            ),
+            TextButton.icon(
               key: const ValueKey('seeInGoogleMaps'),
               onPressed: () => urlOpener(googleMapsPlaceUri(LatLng(_dest!.lat, _dest!.lng)), appOnly: false),
               icon: const Icon(Icons.map_outlined, size: 18),
               label: Text(s.t('seeInGoogleMaps')),
             ),
-          ),
+          ]),
         if (_step == RiderStep.arrived) ...[
           const SizedBox(height: 10),
           _waitDriverStart(),

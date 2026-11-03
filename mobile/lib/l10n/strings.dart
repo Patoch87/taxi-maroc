@@ -735,6 +735,9 @@ class S {
     'accountCreated': ['Compte créé', 'تم إنشاء الحساب', 'الحساب تصايب', 'Account created'],
     'accountSaved': ['Compte mis à jour', 'تم تحديث الحساب', 'الحساب تبدل', 'Account updated'],
     'accountId': ['Identifiant du compte', 'معرف الحساب', 'الرقم ديال الحساب', 'Account ID'],
+    'changeDestination': ["Changer de destination", "تغيير الوجهة", "بدّل البلاصة", "Change destination"],
+    'changeDestFailed': ["La nouvelle destination n'a pas été envoyée au chauffeur. Réessayez.", "لم تُرسل الوجهة الجديدة إلى السائق. حاول مرة أخرى.", "البلاصة الجديدة ما وصلاتش للشيفور. عاود جرّب.", "The new destination was not sent to the driver. Please try again."],
+    'destChangedBy': ["Nouvelle destination demandée par", "وجهة جديدة طلبها", "بلاصة جديدة طلبها", "New destination requested by"],
     'changeDestTitle': ['Changer de destination ?', 'تغيير الوجهة؟', 'نبدلو البلاصة؟', 'Change destination?'],
     'fromCurrentPosition': [
       'Depuis votre position actuelle, même type de taxi',
