@@ -144,6 +144,11 @@ describe('Agent WhatsApp', () => {
     expect(page.text).toContain('ma.taxi.taxi_maroc');
   });
 
+  it('darija : le bouton « Envoyer ma position » est proposé comme en français', async () => {
+    const r = (await http().post('/whatsapp/demo/message').send({ id: 'test-pos-dr', texte: 'بغيت نمشي للمعاريف' }).expect(201)).body.reponses[0];
+    expect(r.demandePosition).toBe(true);
+  });
+
   it('répond en darija à un passager qui parle darija', async () => {
     const id = 'test-darija';
     expect(await dire(id, { texte: 'Salam, bghit nmchi l Maarif 3afak' })).toBe('غادي للمعاريف، ياك؟');

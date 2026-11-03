@@ -219,21 +219,10 @@ export class WhatsappService implements OnModuleDestroy {
   }
 
   private async traiterEtEnvoyer(m: MessageEntrant) {
-    // Vrai WhatsApp : le texte part dès qu'il est prêt, le vocal suit (la voix ne retarde plus la réponse).
-    const reel = !m.de.startsWith('demo-') && wa.whatsappActif() && process.env.WHATSAPP_TEXTE_AVEC_VOCAL !== 'non';
-    const reponses = await this.traiter(m, !reel);
+    // Le vocal part d'abord, puis le texte avec ses boutons (position, offres, « Suivre mon taxi ») en dernier,
+    // pour que les boutons restent en bas de la conversation.
+    const reponses = await this.traiter(m, true);
     for (const r of reponses) await this.envoyer(m.de, r);
-    const conv = this.conversations.get(m.de);
-    if (!reel || !conv?.vocal || !voixActive()) return;
-    for (const r of reponses) {
-      if (!r.texte) continue;
-      try {
-        const audio = await synthetiser(r.texte, arabe(r.texte));
-        await wa.envoyerAudio(m.de, audio.donnees, audio.type);
-      } catch (e) {
-        this.log.error(e);
-      }
-    }
   }
 
   /** Envoie au passager : sur WhatsApp si c'est un vrai numéro, sinon dans la boîte du simulateur. */
@@ -350,8 +339,10 @@ export class WhatsappService implements OnModuleDestroy {
     }
     const enCours = conv.courseId && ['en_attente', 'acceptee', 'a_bord'].includes(conv.dernierStatut ?? '');
     if (enCours) return { lien: { libelle: libelleOuvrir(conv.langue), url: lienOuvrirApp(conv.courseId) } };
-    if (!conv.destination) return {};
+    // Départ inconnu : bouton « Envoyer ma position » à chaque réponse (en français comme en darija),
+    // même avant la destination, pour que la course puisse partir dès le choix de l'offre.
     if (!conv.depart) return { demandePosition: true };
+    if (!conv.destination) return {};
     const prixNouveaux = conv.prixAuTour !== undefined && (conv.prixAuTour !== avant.prix || positionRecue);
     if (!prixNouveaux) return {};
     return { boutons: prixOffres(conv).map((o) => ({ id: `offre:${o.offre}`, titre: titreOffre(o.offre, conv.langue) })) };
