@@ -26,12 +26,18 @@ export async function transcrire(audio: Buffer, type: string): Promise<{ texte: 
   return { texte: (r.text ?? '').trim(), langue: r.language_code };
 }
 
+/** Voix ElevenLabs des films de présentation Bab Taxi. */
+export const VOIX_FRANCAIS_FILMS = 'aQROLel5sQbj1vuIVi6B'; // Nicolas - Narrator
+export const VOIX_DARIJA_FILMS = 'A9ATTqUUQ6GHu0coCz8t'; // Hamid - Friendly, Natural and Positive
+
 /** Réponse lue à voix haute, en mp3 (accepté par WhatsApp comme message audio). */
 export async function synthetiser(texte: string, arabe: boolean): Promise<{ donnees: Buffer; type: string }> {
   if (!cle()) throw new Error('ELEVENLABS_API_KEY manquante : voix impossible');
-  // Une voix par langue si besoin (ex. une voix marocaine pour la darija), sinon la même voix multilingue.
-  const voix =
-    (arabe ? process.env.ELEVENLABS_VOIX_DARIJA : undefined) || process.env.ELEVENLABS_VOIX || 'JBFqnCBsd6RMkjVDRZzb';
+  // Mêmes voix que les films de présentation : « Hamid » pour la darija (et l'arabe), « Nicolas » pour le
+  // français et les autres langues. Réglables sur Render (ELEVENLABS_VOIX_DARIJA, ELEVENLABS_VOIX).
+  const voix = arabe
+    ? process.env.ELEVENLABS_VOIX_DARIJA || VOIX_DARIJA_FILMS
+    : process.env.ELEVENLABS_VOIX || VOIX_FRANCAIS_FILMS;
   // Format léger (voix au téléphone) : envoi plus rapide à WhatsApp.
   const format = process.env.ELEVENLABS_FORMAT || 'mp3_22050_32';
   const res = await fetch(`${API}/text-to-speech/${voix}?output_format=${format}`, {
@@ -39,9 +45,10 @@ export async function synthetiser(texte: string, arabe: boolean): Promise<{ donn
     headers: { 'xi-api-key': cle()!, 'content-type': 'application/json' },
     body: JSON.stringify({
       text: texte,
-      // Turbo : voix générée en une fraction de seconde (multilingual_v2 prenait plusieurs secondes).
-      model_id: process.env.ELEVENLABS_TTS_MODELE || 'eleven_turbo_v2_5',
-      voice_settings: { stability: 0.5, similarity_boost: 0.8 },
+      // Flash : le modèle ElevenLabs le plus rapide (voix prête en moins d'une demi-seconde), même voix.
+      model_id: process.env.ELEVENLABS_TTS_MODELE || 'eleven_flash_v2_5',
+      // Même réglage que les films (stabilité 0,5, ressemblance 0,8), débit un peu plus rapide au téléphone.
+      voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1.05 },
     }),
     signal: AbortSignal.timeout(30_000),
   });

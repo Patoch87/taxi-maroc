@@ -69,4 +69,29 @@ describe("Console d'administration", () => {
       .send({ depart: { lat: 33.571, lng: -7.629 }, destination: { lat: 33.589, lng: -7.611 }, passager: { nom: 'Salma', id: 'pass-1' } })
       .expect(403);
   });
+  it('annule d’un coup toutes les courses en cours, pas les terminées', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/admin/api/courses/annuler-en-cours').expect(403);
+    await request(http)
+      .put('/taxis/taxi-z/route')
+      .send({ type: 'petit', categorie: 'standard', passagersABord: 0, reserveSeul: false, itineraire: [{ lat: 33.57, lng: -7.63 }, { lat: 33.59, lng: -7.61 }] })
+      .expect(200);
+    const nouvelle = () =>
+      request(http)
+        .post('/rides/requests')
+        .send({ depart: { lat: 33.571, lng: -7.629 }, destination: { lat: 33.589, lng: -7.611 }, passager: { nom: 'Test' }, source: 'app' })
+        .expect(201);
+    const enAttente = (await nouvelle()).body.id;
+    const aBord = (await nouvelle()).body.id;
+    await request(http).post(`/rides/requests/${aBord}/accept`).send({ taxiId: 'taxi-z' }).expect(201);
+    await request(http).post(`/rides/requests/${aBord}/pickup`).send({ taxiId: 'taxi-z' }).expect(201);
+    const r = await request(http).post('/admin/api/courses/annuler-en-cours').set(cle).expect(201);
+    expect(r.body.annulees).toBeGreaterThanOrEqual(2);
+    expect(r.body.ids).toEqual(expect.arrayContaining([enAttente, aBord]));
+    for (const id of [enAttente, aBord]) {
+      expect((await request(http).get(`/rides/requests/${id}`).expect(200)).body.statut).toBe('annulee');
+    }
+    expect((await request(http).post('/admin/api/courses/annuler-en-cours').set(cle).expect(201)).body.annulees).toBe(0);
+  });
+
 });

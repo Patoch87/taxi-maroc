@@ -119,7 +119,7 @@ export class Commande {
     const lieu = this.lieu(lieuId);
     this.conv.destination = { lieu, tour: this.conv.tour };
     this.conv.prixAuTour = undefined;
-    return { destination: vueLieu(lieu), a_faire: 'Répétez la destination au passager et demandez-lui de confirmer.' };
+    return { destination: vueLieu(lieu), a_faire: 'Dans ce même tour, appelez estimer_prix, puis répétez la destination avec les fourchettes de prix et demandez quelle offre il veut.' };
   }
 
   definirDepart(lieuId: string) {

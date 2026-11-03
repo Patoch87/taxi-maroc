@@ -155,9 +155,28 @@ describe('Agent WhatsApp', () => {
       expect(resultats[0].content).toContain('Morocco Mall');
       expect(resultats[1].is_error).toBe(true);
       expect(resultats[1].content).toMatch(/pas encore confirmé/);
-      expect(appels[0].messages[0].content).toMatch(/message écrit/);
+      expect(JSON.stringify(appels[0].messages[0].content)).toMatch(/message écrit/);
     } finally {
       service.utiliserAgentIA(undefined);
     }
+  });
+});
+
+describe('Agent WhatsApp : rapidité et voix', () => {
+  it('cache sur le dernier message sans modifier l’historique', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { avecCache } = require('../src/whatsapp/agent-ia');
+    const h = [{ role: 'user', content: 'bonjour' }, { role: 'assistant', content: [{ type: 'text', text: 'Où allez-vous ?' }] }];
+    const c = avecCache(h);
+    expect(c[1].content[0].cache_control).toEqual({ type: 'ephemeral' });
+    expect((h[1].content as { cache_control?: unknown }[])[0].cache_control).toBeUndefined();
+    expect(c[0]).toBe(h[0]);
+  });
+
+  it('mêmes voix que les films : Nicolas (français), Hamid (darija)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const v = require('../src/whatsapp/voix');
+    expect(v.VOIX_FRANCAIS_FILMS).toBe('aQROLel5sQbj1vuIVi6B');
+    expect(v.VOIX_DARIJA_FILMS).toBe('A9ATTqUUQ6GHu0coCz8t');
   });
 });

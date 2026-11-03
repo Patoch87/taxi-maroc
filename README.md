@@ -65,7 +65,7 @@ Les chauffeurs installent **Bab Taxi Chauffeur** : https://github.com/Patoch87/t
 Le serveur contient un agent qui prend les commandes sur WhatsApp, par messages vocaux ou écrits, en français et en darija (`backend/src/whatsapp`). Il répète la destination et attend le « oui » du passager, donne seulement les prix totaux, puis crée la course comme l'application et prévient le passager quand un chauffeur accepte, démarre et termine la course.
 
 - Compréhension et dialogue : Claude (`ANTHROPIC_API_KEY`, modèle réglable avec `BAB_AGENT_MODELE`). Sans clé, un agent de démonstration par mots-clés prend le relais.
-- Voix : ElevenLabs pour écouter les vocaux et répondre en vocal (`ELEVENLABS_API_KEY`, voix `ELEVENLABS_VOIX`, voix darija `ELEVENLABS_VOIX_DARIJA`).
+- Voix : ElevenLabs pour écouter les vocaux et répondre en vocal (`ELEVENLABS_API_KEY`, par défaut les voix des films : Nicolas en français, Hamid en darija, modèle rapide eleven_flash_v2_5 ; réglables avec `ELEVENLABS_VOIX`, `ELEVENLABS_VOIX_DARIJA`, `ELEVENLABS_TTS_MODELE`).
 - WhatsApp : API WhatsApp Business Cloud de Meta (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`). Adresse du webhook : `https://bab-taxi-eu.onrender.com/whatsapp/webhook`, champ `messages`.
 - Simulateur sans numéro WhatsApp : `https://bab-taxi-eu.onrender.com/whatsapp/demo?cle=<WHATSAPP_DEMO_CLE>` (bouton « Simuler le chauffeur » pour voir les alertes). État : `/whatsapp/etat`.
 

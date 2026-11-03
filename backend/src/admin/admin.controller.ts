@@ -122,6 +122,13 @@ export class AdminController {
     return this.admin.courses();
   }
 
+  /** Annule d'un coup toutes les courses en cours (essais, incident). */
+  @Post('api/courses/annuler-en-cours')
+  annulerEnCours(@Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    return this.admin.annulerCoursesEnCours();
+  }
+
   /** Export Excel (CSV) : lien direct avec ?cle=… */
   @Get('api/courses.csv')
   csv(@Res() res: ServerResponse, @Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {

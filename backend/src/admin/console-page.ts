@@ -497,10 +497,21 @@ async function courses() {
   C().innerHTML = '<h2>Courses</h2><p class="sous">' + liste.length + ' dernières courses · prix = estimation annoncée (le compteur fait foi)</p>' +
     '<div class="outils"><div class="filtres">' + [['toutes', 'Toutes'], ['en_cours', 'En cours (' + n(filtres.en_cours) + ')'], ['terminee', 'Terminées'], ['annulee', 'Annulées'], ['expiree', 'Sans taxi'], ['whatsapp', 'WhatsApp']]
       .map(([k, t]) => '<button data-f="' + k + '" class="' + (k === filtreCo ? 'actif' : '') + '">' + t + '</button>').join('') + '</div>' +
-    '<a class="btn sec" style="margin-left:auto;text-decoration:none" href="/admin/api/courses.csv?cle=' + encodeURIComponent(CLE) + '">⬇ Export Excel (CSV)</a></div>' +
+    (n(filtres.en_cours) ? '<button class="btn" id="annulerTout" style="margin-left:auto;background:var(--rouge)">✖ Annuler les ' + n(filtres.en_cours) + ' courses en cours</button>' : '') +
+    '<a class="btn sec" style="' + (n(filtres.en_cours) ? 'margin-left:8px' : 'margin-left:auto') + ';text-decoration:none" href="/admin/api/courses.csv?cle=' + encodeURIComponent(CLE) + '">⬇ Export Excel (CSV)</a></div>' +
     '<div class="carte tableau">' + (l.length ? '<table><tr><th>Date</th><th>Statut</th><th>Passager</th><th>Destination</th><th>Offre</th><th>Prix estimé</th><th>Chauffeur</th><th>Taxis prévenus</th><th>Acceptée en</th><th>Durée</th></tr>' +
       l.map((c) => '<tr><td>' + date(c.creeLe) + '</td><td>' + tag(c.statut) + '</td><td>' + esc(c.passager) + (c.source === 'whatsapp' ? ' <span class="note">WA</span>' : '') + '</td><td>' + esc(c.destination) + '<br><span class="note">' + c.distanceKm + ' km</span></td><td>' + (MODES[c.mode] || c.mode) + ' · ' + c.personnes + ' pers.</td><td>' + dh(c.prixMad) + '</td><td>' + esc(c.chauffeur) + '<br><span class="note">' + esc(c.plaque) + '</span></td><td>' + c.taxisPrevenus + '</td><td>' + (c.delaiAcceptationMin === undefined || c.delaiAcceptationMin === null ? '–' : c.delaiAcceptationMin.toFixed(1) + ' min') + '</td><td>' + (c.dureeMin === undefined || c.dureeMin === null ? '–' : Math.round(c.dureeMin) + ' min') + '</td></tr>').join('') + '</table>' : '<p class="vide">Aucune course.</p>') + '</div>';
   document.querySelectorAll('.filtres button').forEach((b) => b.onclick = () => { filtreCo = b.dataset.f; courses(); });
+  const tout = document.getElementById('annulerTout');
+  if (tout) tout.onclick = async () => {
+    if (!confirm('Annuler les ' + n(filtres.en_cours) + ' courses en cours ? Passagers et chauffeurs verront la course annulée.')) return;
+    tout.disabled = true;
+    try {
+      const r = await api('courses/annuler-en-cours', { method: 'POST' });
+      alert(r.annulees + ' course(s) annulée(s).');
+    } catch (e) { alert('Échec : ' + e.message); }
+    courses();
+  };
 }
 
 // ---------------- Reporting ----------------

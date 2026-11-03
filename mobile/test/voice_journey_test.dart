@@ -84,8 +84,8 @@ void main() {
     expect(find.text('Micro indisponible : touchez une réponse'), findsOneWidget);
 
     await answer(tester, 'Maison');
-    expect(prompt(tester), 'Vous allez à Maison. C\'est bien ça ?');
-    await answer(tester, 'oui');
+    // Plus de « c'est bien ça ? » : la destination est répétée avec les prix.
+    expect(prompt(tester), contains('Maison'));
 
     // Choix du taxi : les trois prix sont lus, seulement le total.
     expect(prompt(tester), contains('Taxi premium : '));

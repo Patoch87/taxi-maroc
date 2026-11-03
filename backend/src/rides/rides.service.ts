@@ -21,6 +21,8 @@ export interface DemandeCourse {
   aBordLe?: string;
   termineeLe?: string;
   annuleeLe?: string;
+  /** Annulée depuis la console d'administration (et non par le passager). */
+  annuleeParConsole?: boolean;
   /** Dernier changement de destination demandé par le passager. */
   destinationModifieeLe?: string;
 }
@@ -244,6 +246,20 @@ export class RidesService {
       d.annuleeLe = this.iso();
     }
     return this.garder(d);
+  }
+
+  /** Console : annule toutes les courses en cours (en attente, acceptées ou passager à bord). */
+  annulerToutesEnCours(): { annulees: number; ids: string[] } {
+    const ids: string[] = [];
+    for (const d of this.toutes()) {
+      if (!['en_attente', 'acceptee', 'a_bord'].includes(d.statut)) continue;
+      d.statut = 'annulee';
+      d.annuleeLe = this.iso();
+      d.annuleeParConsole = true;
+      this.garder(d);
+      ids.push(d.id);
+    }
+    return { annulees: ids.length, ids };
   }
 
   /**

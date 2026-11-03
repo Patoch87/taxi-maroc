@@ -615,9 +615,10 @@ class _RiderHomeState extends State<RiderHome> {
       await _vjSay('${s.t('vjNoPlace')} : $heard.');
       return _vjDestination();
     }
-    final ok = await _vjConfirm('${s.t('vjGoingTo')} ${_vjPlaceName(place)}. ${s.t('vjIsThatRight')}');
-    if (ok == null) return;
-    if (!ok) return _vjDestination();
+    // Plus rapide : pas de « c'est bien ça ? » ici. La question suivante répète la destination avec les prix,
+    // et propose « Autre destination » ; le résumé final la répète encore avant d'envoyer la commande.
+    // Taxi déjà dit dans la même phrase (« à la gare en partagé ») : il est choisi sans le redemander.
+    _vjPreOption = heard;
     await _chooseDestination(place);
   }
 
@@ -643,8 +644,15 @@ class _RiderHomeState extends State<RiderHome> {
     return _options.where((o) => n.contains(normalizeQuartier(o.title))).firstOrNull;
   }
 
+  /// Phrase de la destination : elle peut déjà nommer le taxi voulu (« partagé », « seul », « premium »).
+  String? _vjPreOption;
+
   Future<void> _vjChoose() async {
     final dest = _vjPlaceName(_dest!);
+    final pre = _vjPreOption;
+    _vjPreOption = null;
+    final preOption = pre == null ? null : _vjOptionByIntent(pre);
+    if (preOption != null) return _vjPayAndConfirm(preOption, dest);
     final minutes = (_routeM / _cityMps / 60).ceil();
     final list = [for (final o in _options) '${o.title} : ${_vjPrice(o.priceMad)}'].join('. ');
     final heard = await _vjAsk(
@@ -661,6 +669,20 @@ class _RiderHomeState extends State<RiderHome> {
       await _vjSay(s.t('vjNotUnderstood'));
       return _vjChoose();
     }
+    return _vjPayAndConfirm(o, dest);
+  }
+
+  /// Taxi nommé par un mot clé (pas par le nom d'un lieu), pour la phrase de destination.
+  RideOption? _vjOptionByIntent(String said) {
+    final it = voiceIntents(said);
+    if (!it.any((i) => const [VoiceIntent.premium, VoiceIntent.alone, VoiceIntent.grandWhole, VoiceIntent.shared,
+            VoiceIntent.grandSeat].contains(i))) {
+      return null;
+    }
+    return _vjOption(said);
+  }
+
+  Future<void> _vjPayAndConfirm(RideOption o, String dest) async {
     setState(() => _selected = o);
 
     // Paiement : espèces ou carte.

@@ -30,10 +30,17 @@ class Voice {
     return _ready;
   }
 
+  String? _ttsLocale;
+
   Future<void> say(String text) async {
     try {
-      await _tts.setLanguage(s.speechLocale);
-      await _tts.awaitSpeakCompletion(true);
+      // Langue et débit réglés une seule fois (chaque réglage retarde la parole sur Android).
+      if (_ttsLocale != s.speechLocale) {
+        await _tts.setLanguage(s.speechLocale);
+        await _tts.setSpeechRate(0.55);
+        await _tts.awaitSpeakCompletion(true);
+        _ttsLocale = s.speechLocale;
+      }
       await _tts.speak(text);
     } catch (_) {}
   }
@@ -68,7 +75,8 @@ class Voice {
         listenOptions: SpeechListenOptions(
           localeId: s.speechLocale.replaceAll('-', '_'),
           listenFor: const Duration(seconds: 12),
-          pauseFor: const Duration(seconds: 3),
+          // Fin de phrase après 2 secondes de silence (3 auparavant) : réponse plus rapide.
+          pauseFor: const Duration(seconds: 2),
         ),
         onResult: (r) {
           _heard = r.recognizedWords;

@@ -253,6 +253,11 @@ export class AdminService {
 
   // ---------- Courses ----------
 
+  /** Annule toutes les courses en cours (bouton de la console). */
+  annulerCoursesEnCours() {
+    return this.rides.annulerToutesEnCours();
+  }
+
   courses(limite = 300) {
     const dossiers = new Map(this.drivers.liste().map((d) => [d.id, d]));
     return this.rides
