@@ -5,7 +5,8 @@ import { haversine, Point } from '../domain/geo';
 import { RidesService, StatutCourse } from '../rides/rides.service';
 import { AgentDemo, detecterLangue } from './agent-demo';
 import { AgentIA } from './agent-ia';
-import { Commande, Conversation, distanceParlee, Langue, prixOffres } from './commande';
+import { Commande, Conversation, distanceParlee, fourchette, Langue, prixOffres } from './commande';
+import { chercherCatalogueNotes } from './lieux';
 import { synthetiser, transcrire, voixActive } from './voix';
 import * as wa from './whatsapp-api';
 
@@ -289,6 +290,12 @@ export class WhatsappService implements OnModuleDestroy {
 
     if (m.position) {
       cmd.definirPositionGps({ lat: m.position.lat, lng: m.position.lng }, m.position.nom);
+      // Destination déjà connue : les prix (recalculés depuis la position) partent tout de suite, sans l'agent.
+      const rapide = this.ia && process.env.BAB_WHATSAPP_RAPIDE !== 'non' ? this.prixDirects(cmd, 'position') : undefined;
+      if (rapide) {
+        const plus = this.boutonsApres(conv, avant, true);
+        return [voix ? await this.habiller(conv, rapide, plus) : { texte: rapide, ...plus }];
+      }
       const r = this.ia
         ? await this.repondreIA(cmd, 'Je vous envoie ma position.', true)
         : await this.demo.positionRecue(cmd);
@@ -322,7 +329,9 @@ export class WhatsappService implements OnModuleDestroy {
     conv.langue = detecterLangue(texte, conv.langue);
 
     const debut = Date.now();
-    const r = this.ia ? await this.repondreIA(cmd, texte, false) : await this.demo.repondre(cmd, texte);
+    // Destination claire (lieu connu du catalogue) : réponse immédiate avec les prix, sans attendre l'agent.
+    const rapide = this.ia && process.env.BAB_WHATSAPP_RAPIDE !== 'non' ? this.destinationDirecte(cmd, texte) : undefined;
+    const r = rapide ?? (this.ia ? await this.repondreIA(cmd, texte, false) : await this.demo.repondre(cmd, texte));
     this.log.log(`Réponse de l'agent en ${Date.now() - debut} ms`);
     const plus = this.boutonsApres(conv, avant, false);
     return [voix ? await this.habiller(conv, r, plus) : { texte: r, ...plus }];
@@ -346,6 +355,49 @@ export class WhatsappService implements OnModuleDestroy {
     const prixNouveaux = conv.prixAuTour !== undefined && (conv.prixAuTour !== avant.prix || positionRecue);
     if (!prixNouveaux) return {};
     return { boutons: prixOffres(conv).map((o) => ({ id: `offre:${o.offre}`, titre: titreOffre(o.offre, conv.langue) })) };
+  }
+
+  /**
+   * Chemin rapide : le message nomme clairement un lieu du catalogue (« Gare Casa Voyageurs », « المعاريف »).
+   * La destination et les prix sont donnés tout de suite (pas d'appel à l'IA, réponse en quelques millisecondes).
+   * Seulement en français et en darija, sans course en cours ; sinon l'agent IA répond.
+   */
+  private destinationDirecte(cmd: Commande, texte: string): string | undefined {
+    const c = cmd.conv;
+    if (c.langue !== 'fr' && c.langue !== 'darija' && c.langue !== 'ar') return undefined;
+    if (c.courseId && ['en_attente', 'acceptee', 'a_bord'].includes(c.dernierStatut ?? '')) return undefined;
+    if (texte.split(/\s+/).length > 14) return undefined;
+    if (/annul|où est|ou est|réclam|reclam|urgence|police|plainte|depuis|départ|depart|je suis à|je suis au|الغي|لغي|فين هو|شكاية|انا ف|أنا ف/i.test(texte)) return undefined;
+    const notes = chercherCatalogueNotes(texte);
+    const [premier, second] = notes;
+    if (!premier || premier.note < 4 || (second && premier.note - second.note < 1)) return undefined;
+    cmd.choisirDestination(premier.lieu.id);
+    const r = this.prixDirects(cmd, 'destination');
+    if (r) this.ia?.noter(c.id, texte, r);
+    return r;
+  }
+
+  /** Destination (et position si connue) répétées avec la fourchette de prix de chaque offre. */
+  private prixDirects(cmd: Commande, raison: 'destination' | 'position'): string | undefined {
+    const c = cmd.conv;
+    if (!c.destination || (c.langue !== 'fr' && c.langue !== 'darija' && c.langue !== 'ar')) return undefined;
+    if (raison === 'position' && c.courseId && ['en_attente', 'acceptee', 'a_bord'].includes(c.dernierStatut ?? '')) return undefined;
+    cmd.estimerPrix();
+    const d = darijaOuArabe(c.langue);
+    const l = c.destination.lieu;
+    const offres = prixOffres(c).map((o) => {
+      const f = fourchette(o.totalMad);
+      const nom = o.offre === 'grand_taxi' ? (d ? 'طاكسي كبير' : 'grand taxi') : o.offre === 'seul' && o.fixe ? (d ? 'الطاكسي كامل' : 'taxi entier') : titreOffre(o.offre, c.langue);
+      const prix = o.fixe ? `${o.totalMad}` : d ? `بين ${f.min} و ${f.max}` : `entre ${f.min} et ${f.max}`;
+      return `${d ? nom : nom.toLowerCase()} ${prix} ${d ? 'درهم' : 'dirhams'}`;
+    });
+    const liste = offres.join(d ? '، ' : ', ');
+    const lieu = d ? l.ar || l.nom : l.nom;
+    const position = !c.depart ? (d ? ' صيفط ليا البلاصة ديالك بالبوطونة باش يجي عندك الطاكسي.' : ' Touchez « Envoyer ma position » pour que le taxi vienne vous chercher.') : '';
+    const debut = raison === 'position' ? (d ? 'توصلت بالبلاصة ديالك. ' : 'Position reçue. ') : '';
+    return d
+      ? `${debut}${lieu}. ${liste}. شنو بغيتي؟${position}`
+      : `${debut}${lieu}. ${liste[0].toUpperCase()}${liste.slice(1)}. Lequel voulez-vous ?${position}`;
   }
 
   /** Commande lancée par un bouton d'offre ; undefined si elle ne peut pas partir (l'agent prend le relais). */

@@ -102,6 +102,11 @@ function distanceEdition(a: string, b: string): number {
 
 /** Lieux du catalogue reconnus dans une phrase (« je vais au Maarif », « لمطار »), les plus sûrs d'abord. */
 export function chercherCatalogue(texte: string): Lieu[] {
+  return chercherCatalogueNotes(texte).map((x) => x.lieu);
+}
+
+/** Lieux du catalogue avec leur note (plus elle est haute, plus le nom dit correspond). */
+export function chercherCatalogueNotes(texte: string): { lieu: Lieu; note: number }[] {
   const mots = normaliser(texte).split(' ').filter((w) => w);
   const scores = new Map<Lieu, number>();
   for (const lieu of CATALOGUE) {
@@ -122,7 +127,7 @@ export function chercherCatalogue(texte: string): Lieu[] {
       }
     }
   }
-  return [...scores.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l);
+  return [...scores.entries()].sort((a, b) => b[1] - a[1]).map(([lieu, note]) => ({ lieu, note }));
 }
 
 export function trouverParId(id: string, extra: Lieu[] = []): Lieu | undefined {

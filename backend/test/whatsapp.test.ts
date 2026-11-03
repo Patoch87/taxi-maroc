@@ -169,6 +169,33 @@ describe('Agent WhatsApp', () => {
     expect(cmd.commander('partage').course_id).toBeDefined();
   });
 
+  it('chemin rapide : destination claire et position -> prix et boutons tout de suite, sans appeler l’IA', async () => {
+    const appels: unknown[] = [];
+    const faux = { beta: { messages: { create: async (p: unknown) => { appels.push(p); return { stop_reason: 'end_turn', content: [{ type: 'text', text: 'IA' }] }; } } } };
+    service.utiliserAgentIA(new AgentIA(faux as any));
+    try {
+      const envoyer = async (id: string, corps: object) =>
+        (await http().post('/whatsapp/demo/message').send({ id, ...corps }).expect(201)).body.reponses[0];
+      const debut = Date.now();
+      const r = await envoyer('rapide-fr', { texte: 'Je vais au Maarif' });
+      expect(Date.now() - debut).toBeLessThan(1000);
+      expect(r.texte).toMatch(/^Maârif\. Partagé entre \d+ et \d+ dirhams, seul entre \d+ et \d+ dirhams, premium entre \d+ et \d+ dirhams\. Lequel voulez-vous \? Touchez « Envoyer ma position »/);
+      expect(r.demandePosition).toBe(true);
+      const p = await envoyer('rapide-fr', { position: { lat: 33.5897, lng: -7.5906 } });
+      expect(p.texte).toMatch(/^Position reçue\. Maârif\./);
+      expect(p.boutons).toHaveLength(3);
+      const dr = await envoyer('rapide-dr', { texte: 'بغيت نمشي للمعاريف' });
+      expect(dr.texte).toMatch(/مشارك بين \d+ و \d+ درهم/);
+      expect(dr.demandePosition).toBe(true);
+      expect(appels).toHaveLength(0);
+      // Phrase sans lieu clair : l'agent IA répond.
+      await envoyer('rapide-fr2', { texte: 'Bonjour, je voudrais un taxi' });
+      expect(appels).toHaveLength(1);
+    } finally {
+      service.utiliserAgentIA(undefined);
+    }
+  });
+
   it("l'agent IA appelle les outils et renvoie l'erreur au modèle quand il va trop vite", async () => {
     const appels: any[] = [];
     const reponses = [
@@ -179,7 +206,9 @@ describe('Agent WhatsApp', () => {
     const faux = { beta: { messages: { create: async (p: any) => { appels.push(JSON.parse(JSON.stringify(p))); return reponses.shift(); } } } };
     service.utiliserAgentIA(new AgentIA(faux as any));
     try {
+      process.env.BAB_WHATSAPP_RAPIDE = 'non';
       const r = await dire('test-ia', { texte: 'Morocco Mall stp' });
+      delete process.env.BAB_WHATSAPP_RAPIDE;
       expect(r).toContain('Morocco Mall');
       expect(appels[0].model).toBe('claude-sonnet-5-5');
       const resultats = appels[2].messages.at(-1).content;
