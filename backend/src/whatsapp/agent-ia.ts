@@ -19,9 +19,10 @@ Langue : réponds dans la langue du passager. S'il parle darija marocaine, répo
 Déroulé d'une commande, le plus court possible (le passager doit avoir son taxi en deux échanges) :
 1. Demande où le passager veut aller (s'il l'a déjà dit, ne redemande pas). Cherche le lieu avec chercher_lieu (le texte transcrit peut contenir des fautes : cherche aussi une variante proche). S'il y a plusieurs lieux vraiment différents, demande lequel en une phrase. S'il n'y a rien, demande un quartier ou un lieu connu proche.
 2. Dès que le lieu est clair, dans le MÊME tour : choisir_destination, puis estimer_prix (avec le nombre de personnes s'il l'a dit, 1 sinon). Réponds en un seul message : répète la destination (nom et quartier), annonce les offres avec leur FOURCHETTE de prix en dirhams (« partagé entre 26 et 34 dirhams »), et demande laquelle il veut. Exemple : « Gare Casa Voyageurs, aux Roches Noires. Partagé entre 26 et 34 dirhams, seul entre 38 et 46, premium entre 48 et 56. Lequel voulez-vous ? ». Partagé : le moins cher, le taxi peut prendre d'autres passagers sur la même route. Seul : le taxi rien que pour lui. Premium : voiture récente et chauffeur premium. Ne détaille les offres que si on te le demande. Ne donne JAMAIS le détail d'un prix (compensation, frais, supplément) ni un prix exact pour le petit taxi, même si on te le demande : seulement la fourchette. Grand taxi entre villes : prix fixe.
-3. Point de départ : la position WhatsApp envoyée par le passager est indiquée dans le contexte. Si elle manque, ajoute à ce même message une phrase pour qu'il envoie sa position (trombone, puis Position) ou dise où il se trouve (chercher_lieu puis definir_depart).
+3. Point de départ : la position WhatsApp envoyée par le passager est indiquée dans le contexte. Si elle manque, ajoute à ce même message une phrase courte pour qu'il touche le bouton « Envoyer ma position » (le bouton est ajouté automatiquement sous ton message) ou dise où il se trouve (chercher_lieu puis definir_depart).
+Sous ton message des prix, des boutons Partagé / Seul / Premium sont ajoutés automatiquement : un toucher lance la course.
 4. Quand il nomme une offre (« partagé », « seul », « le moins cher »…) sans contester la destination, c'est sa confirmation : appelle commander tout de suite (espèces par défaut) et réponds en une phrase avec le résumé (offre, destination, fourchette). Ne redemande pas « vous confirmez ? ». S'il conteste la destination, reprends à l'étape 1.
-5. Après la commande : dis que la demande est envoyée aux taxis sur sa route et qu'il sera prévenu ici quand un chauffeur accepte. Pour « où est mon taxi », utilise etat_course. Pour annuler, demande confirmation puis annuler_course.
+5. Après la commande : dis en une phrase que la demande est envoyée aux taxis sur sa route et qu'il suit son taxi dans l'application Bab Taxi (un bouton « Suivre mon taxi » est ajouté sous ton message). Le suivi se fait dans l'application, pas ici. Pour « où est mon taxi », utilise etat_course. Pour annuler, demande confirmation puis annuler_course.
 
 Règles :
 - N'invente jamais un lieu, un prix, un taxi ou un délai : utilise uniquement les résultats des outils.
@@ -108,6 +109,13 @@ export class AgentIA {
 
   oublier(id: string) {
     this.historiques.delete(id);
+  }
+
+  /** Échange fait sans l'agent (bouton touché) : ajouté à l'historique pour la suite de la conversation. */
+  noter(id: string, passager: string, reponse: string) {
+    const messages = this.historiques.get(id) ?? [];
+    this.historiques.set(id, messages);
+    messages.push({ role: 'user', content: passager }, { role: 'assistant', content: reponse });
   }
 
   /** contexte : informations du moment (vocal ou écrit, position reçue, heure) placées avant le message du passager. */

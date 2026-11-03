@@ -188,7 +188,7 @@ export class Commande {
       taxis_prevenus: d.proposeeA.length,
       ...(prix.fixe ? { prix_fixe_mad: prix.totalMad } : { fourchette_mad: fourchette(prix.totalMad) }),
       paiement,
-      a_faire: 'Dites au passager que la demande est envoyée aux taxis sur sa route et qu’il sera prévenu ici dès qu’un chauffeur accepte.',
+      a_faire: 'Dites en une phrase que la demande est envoyée aux taxis sur sa route et qu’il suit son taxi dans l’application Bab Taxi (bouton « Suivre mon taxi » ajouté sous votre message).',
     };
   }
 

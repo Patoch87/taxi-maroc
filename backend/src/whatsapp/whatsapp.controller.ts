@@ -42,6 +42,9 @@ function lireCorps(req: IncomingMessage, max: number): Promise<Buffer> {
 const versJson = (r: Reponse) => ({
   texte: r.texte,
   audio: r.audio ? `data:${r.audio.type};base64,${r.audio.donnees.toString('base64')}` : undefined,
+  boutons: r.boutons,
+  demandePosition: r.demandePosition || undefined,
+  lien: r.lien,
 });
 
 /**
@@ -113,13 +116,14 @@ export class WhatsappController {
   @Post('demo/message')
   async message(
     @Query('cle') cle: string | undefined,
-    @Body() body: { id?: string; nom?: string; texte?: string; position?: { lat: number; lng: number; nom?: string } },
+    @Body() body: { id?: string; nom?: string; texte?: string; bouton?: string; position?: { lat: number; lng: number; nom?: string } },
   ) {
     this.verifierCle(cle);
     const de = this.idDemo(body?.id);
     const pos = body?.position;
     if (pos && (!Number.isFinite(pos.lat) || !Number.isFinite(pos.lng))) throw new BadRequestException('position invalide');
-    const r = await this.whatsapp.simuler({ de, nom: body.nom, texte: body.texte, position: pos });
+    const bouton = typeof body?.bouton === 'string' ? body.bouton.slice(0, 40) : undefined;
+    const r = await this.whatsapp.simuler({ de, nom: body.nom, texte: body.texte, bouton, position: pos });
     return { reponses: r.reponses.map(versJson) };
   }
 

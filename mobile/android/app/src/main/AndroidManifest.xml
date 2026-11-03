@@ -48,6 +48,16 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Le lien ouvre seulement l'application : pas de route Flutter à suivre. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
+            <!-- Bouton « Suivre mon taxi » de WhatsApp (page /ouvrir du serveur) : ouvre l'application,
+                 qui reprend d'elle-même la course en cours du passager. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="babtaxi"/>
+            </intent-filter>
         </activity>
         <!-- Clé Google Maps fournie à la compilation (secret MAPS_API_KEY), jamais dans le dépôt.
              Vide : l'application garde la carte OpenStreetMap. -->

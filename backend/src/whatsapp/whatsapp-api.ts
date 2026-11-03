@@ -42,6 +42,38 @@ async function envoyer(message: Record<string, unknown>) {
 
 export const envoyerTexte = (a: string, texte: string) => envoyer({ to: a, type: 'text', text: { body: texte } });
 
+/** Texte avec jusqu'à 3 boutons de réponse (titres de 20 caractères au plus). */
+export const envoyerBoutons = (a: string, texte: string, boutons: { id: string; titre: string }[]) =>
+  envoyer({
+    to: a,
+    type: 'interactive',
+    interactive: {
+      type: 'button',
+      body: { text: texte.slice(0, 1024) },
+      action: { buttons: boutons.slice(0, 3).map((b) => ({ type: 'reply', reply: { id: b.id, title: b.titre.slice(0, 20) } })) },
+    },
+  });
+
+/** Texte avec le bouton « Envoyer ma position » (position partagée en un toucher). */
+export const envoyerDemandePosition = (a: string, texte: string) =>
+  envoyer({
+    to: a,
+    type: 'interactive',
+    interactive: { type: 'location_request_message', body: { text: texte.slice(0, 1024) }, action: { name: 'send_location' } },
+  });
+
+/** Texte avec un bouton qui ouvre un lien (ici : l'application Bab Taxi sur le suivi de la course). */
+export const envoyerLien = (a: string, texte: string, libelle: string, url: string) =>
+  envoyer({
+    to: a,
+    type: 'interactive',
+    interactive: {
+      type: 'cta_url',
+      body: { text: texte.slice(0, 1024) },
+      action: { name: 'cta_url', parameters: { display_text: libelle.slice(0, 20), url } },
+    },
+  });
+
 export async function envoyerAudio(a: string, audio: Buffer, type: string) {
   // WhatsApp ne lit tout seul (sans « Télécharger ») que les notes vocales ogg/opus : on convertit le mp3.
   const vocal = await versNoteVocale(audio, type);

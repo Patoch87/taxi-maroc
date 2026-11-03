@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpCode, Post, Query } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 
 /** Lien de téléchargement donné à qui écrit sur WhatsApp sans avoir l'application. */
@@ -20,6 +20,22 @@ export class AccountsController {
       carte: process.env.BAB_PAIEMENT_CARTE === 'oui',
       lienApp: lienApplication(),
     };
+  }
+
+  /**
+   * Bouton « Suivre mon taxi » de WhatsApp : ouvre l'application Bab Taxi (Android : lien intent, l'application
+   * reprend d'elle-même la course en cours du passager) ; sans l'application, le téléchargement.
+   */
+  @Get('ouvrir')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  ouvrir(@Query('c') c?: string) {
+    const course = (c ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+    const paquet = process.env.BAB_PAQUET_ANDROID || 'ma.taxi.taxi_maroc';
+    const lien = lienApplication();
+    const intent = `intent://course/${course}#Intent;scheme=babtaxi;package=${paquet};S.browser_fallback_url=${encodeURIComponent(lien)};end`;
+    const web = process.env.BAB_LIEN_WEB || '';
+    return PAGE_OUVRIR.replace(/__INTENT__/g, intent).replace(/__LIEN__/g, lien).replace(/__WEB__/g, web);
   }
 
   @Post('accounts')
@@ -49,3 +65,19 @@ export class AccountsController {
     };
   }
 }
+
+const PAGE_OUVRIR = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Bab Taxi</title>
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#f6efe2;color:#0f2a1e;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}
+main{padding:24px;max-width:360px}.porte{width:72px;height:96px;margin:0 auto 16px;border-radius:36px 36px 6px 6px;background:#c1272d;box-shadow:inset 0 0 0 8px #006233}
+h1{font-size:22px;margin:0 0 8px}p{color:#5b6b62;margin:0 0 20px}a.btn{display:block;background:#006233;color:#fff;text-decoration:none;font-weight:700;padding:16px;border-radius:14px;font-size:18px}
+a.sec{display:block;margin-top:14px;color:#006233;font-weight:600}</style></head>
+<body><main><div class="porte"></div><h1>Votre taxi arrive</h1><p>Suivez votre course dans l’application Bab Taxi.<br>تبع الطاكسي ديالك فالتطبيق.</p>
+<a class="btn" id="ouvrir" href="__INTENT__">Ouvrir Bab Taxi</a>
+<a class="sec" href="__LIEN__">Installer l’application</a></main>
+<script>
+var android = /android/i.test(navigator.userAgent);
+var web = '__WEB__';
+if (!android) { var b = document.getElementById('ouvrir'); if (web) b.href = web; else b.style.display = 'none'; }
+else setTimeout(function () { location.href = document.getElementById('ouvrir').href; }, 150);
+</script></body></html>`;

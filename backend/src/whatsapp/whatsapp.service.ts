@@ -5,7 +5,7 @@ import { haversine, Point } from '../domain/geo';
 import { RidesService, StatutCourse } from '../rides/rides.service';
 import { AgentDemo, detecterLangue } from './agent-demo';
 import { AgentIA } from './agent-ia';
-import { Commande, Conversation, distanceParlee, Langue } from './commande';
+import { Commande, Conversation, distanceParlee, Langue, prixOffres } from './commande';
 import { synthetiser, transcrire, voixActive } from './voix';
 import * as wa from './whatsapp-api';
 
@@ -17,12 +17,46 @@ export interface MessageEntrant {
   texte?: string;
   audio?: { donnees: Buffer; type: string };
   position?: Point & { nom?: string };
+  /** Bouton de réponse touché (identifiant, ex. « offre:partage »). */
+  bouton?: string;
 }
 
 export interface Reponse {
   texte: string;
   audio?: { donnees: Buffer; type: string };
+  /** Boutons de réponse sous le texte (3 au plus). */
+  boutons?: { id: string; titre: string }[];
+  /** Bouton « Envoyer ma position ». */
+  demandePosition?: boolean;
+  /** Bouton qui ouvre l'application Bab Taxi (suivi de la course, avec ses publicités). */
+  lien?: { libelle: string; url: string };
 }
+
+/** Adresse publique du serveur (Render la donne dans RENDER_EXTERNAL_URL). */
+const urlPublique = () =>
+  (process.env.BAB_URL_PUBLIQUE || process.env.RENDER_EXTERNAL_URL || 'https://bab-taxi-eu.onrender.com').replace(/\/$/, '');
+
+/** Lien qui ouvre l'application sur la course (page /ouvrir : application si installée, sinon téléchargement). */
+export const lienOuvrirApp = (courseId?: string) => `${urlPublique()}/ouvrir${courseId ? `?c=${encodeURIComponent(courseId)}` : ''}`;
+
+const darijaOuArabe = (l: Langue) => l === 'darija' || l === 'ar';
+
+/** Titres des boutons d'offre (20 caractères au plus). */
+function titreOffre(offre: string, langue: Langue): string {
+  const d = darijaOuArabe(langue);
+  switch (offre) {
+    case 'partage':
+      return d ? 'مشارك' : 'Partagé';
+    case 'seul':
+      return d ? 'بوحدي' : 'Seul';
+    case 'premium':
+      return d ? 'بريميوم' : 'Premium';
+    default:
+      return d ? 'طاكسي كبير' : 'Grand taxi';
+  }
+}
+
+const libelleOuvrir = (l: Langue) => (darijaOuArabe(l) ? 'حل باب طاكسي' : 'Suivre mon taxi');
 
 /** Une conversation sans message depuis ce délai repart de zéro (s'il n'y a pas de course en cours). */
 const OUBLI_MS = 2 * 60 * 60_000;
@@ -142,7 +176,7 @@ export class WhatsappService implements OnModuleDestroy {
         text?: { body: string };
         audio?: { id: string };
         location?: { latitude: number; longitude: number; name?: string; address?: string };
-        interactive?: { button_reply?: { title: string } };
+        interactive?: { button_reply?: { id?: string; title: string } };
         button?: { text: string };
       }[];
     };
@@ -157,7 +191,10 @@ export class WhatsappService implements OnModuleDestroy {
           const nom = v?.contacts?.find((c) => c.wa_id === m.from)?.profile?.name;
           const entrant: MessageEntrant = { de: m.from, nom, messageId: m.id };
           if (m.type === 'text') entrant.texte = m.text?.body;
-          else if (m.type === 'interactive') entrant.texte = m.interactive?.button_reply?.title;
+          else if (m.type === 'interactive') {
+            entrant.texte = m.interactive?.button_reply?.title;
+            entrant.bouton = m.interactive?.button_reply?.id;
+          }
           else if (m.type === 'button') entrant.texte = m.button?.text;
           else if (m.type === 'location' && m.location) {
             entrant.position = { lat: m.location.latitude, lng: m.location.longitude, nom: m.location.name ?? m.location.address };
@@ -209,7 +246,16 @@ export class WhatsappService implements OnModuleDestroy {
     }
     if (r.audio) {
       await wa.envoyerAudio(a, r.audio.donnees, r.audio.type).catch((e) => this.log.error(e));
-      if (process.env.WHATSAPP_TEXTE_AVEC_VOCAL === 'non') return;
+      if (process.env.WHATSAPP_TEXTE_AVEC_VOCAL === 'non' && !r.lien && !r.boutons && !r.demandePosition) return;
+    }
+    // Boutons WhatsApp : en cas de refus de Meta (ancienne version de WhatsApp…), le texte part seul.
+    try {
+      if (r.lien) return await wa.envoyerLien(a, r.texte, r.lien.libelle, r.lien.url);
+      if (r.demandePosition) return await wa.envoyerDemandePosition(a, r.texte);
+      if (r.boutons?.length) return await wa.envoyerBoutons(a, r.texte, r.boutons);
+    } catch (e) {
+      this.log.error(e);
+      if (r.lien) return wa.envoyerTexte(a, `${r.texte}\n${r.lien.url}`);
     }
     await wa.envoyerTexte(a, r.texte);
   }
@@ -244,13 +290,21 @@ export class WhatsappService implements OnModuleDestroy {
     const conv = this.conversation(m.de, compte?.prenom || m.nom);
     const cmd = new Commande(this.rides, conv);
     let texte = (m.texte ?? '').trim();
+    const avant = { course: conv.courseId, prix: conv.prixAuTour };
+
+    // Bouton Partagé / Seul / Premium : la course part tout de suite, sans repasser par l'agent.
+    if (m.bouton?.startsWith('offre:')) {
+      const direct = this.commanderParBouton(cmd, m.bouton.slice(6), texte);
+      if (direct) return [voix ? await this.habiller(conv, direct.texte, direct) : direct];
+    }
 
     if (m.position) {
       cmd.definirPositionGps({ lat: m.position.lat, lng: m.position.lng }, m.position.nom);
       const r = this.ia
         ? await this.repondreIA(cmd, 'Je vous envoie ma position.', true)
         : await this.demo.positionRecue(cmd);
-      return [voix ? await this.habiller(conv, r) : { texte: r }];
+      const plus = this.boutonsApres(conv, avant, true);
+      return [voix ? await this.habiller(conv, r, plus) : { texte: r, ...plus }];
     }
 
     conv.vocal = !!m.audio;
@@ -281,7 +335,52 @@ export class WhatsappService implements OnModuleDestroy {
     const debut = Date.now();
     const r = this.ia ? await this.repondreIA(cmd, texte, false) : await this.demo.repondre(cmd, texte);
     this.log.log(`Réponse de l'agent en ${Date.now() - debut} ms`);
-    return [voix ? await this.habiller(conv, r) : { texte: r }];
+    const plus = this.boutonsApres(conv, avant, false);
+    return [voix ? await this.habiller(conv, r, plus) : { texte: r, ...plus }];
+  }
+
+  /**
+   * Boutons ajoutés sous la réponse, pour aller vite et finir dans l'application :
+   * course lancée -> « Suivre mon taxi » (ouvre l'application) ; départ inconnu -> « Envoyer ma position » ;
+   * prix annoncés -> Partagé / Seul / Premium.
+   */
+  private boutonsApres(conv: Conversation, avant: { course?: string; prix?: number }, positionRecue: boolean): Omit<Reponse, 'texte'> {
+    if (conv.courseId && conv.courseId !== avant.course) {
+      return { lien: { libelle: libelleOuvrir(conv.langue), url: lienOuvrirApp(conv.courseId) } };
+    }
+    const enCours = conv.courseId && ['en_attente', 'acceptee', 'a_bord'].includes(conv.dernierStatut ?? '');
+    if (enCours) return { lien: { libelle: libelleOuvrir(conv.langue), url: lienOuvrirApp(conv.courseId) } };
+    if (!conv.destination) return {};
+    if (!conv.depart) return { demandePosition: true };
+    const prixNouveaux = conv.prixAuTour !== undefined && (conv.prixAuTour !== avant.prix || positionRecue);
+    if (!prixNouveaux) return {};
+    return { boutons: prixOffres(conv).map((o) => ({ id: `offre:${o.offre}`, titre: titreOffre(o.offre, conv.langue) })) };
+  }
+
+  /** Commande lancée par un bouton d'offre ; undefined si elle ne peut pas partir (l'agent prend le relais). */
+  private commanderParBouton(cmd: Commande, offre: string, titre: string): Reponse | undefined {
+    const c = cmd.conv;
+    if (!['partage', 'seul', 'premium', 'grand_taxi'].includes(offre)) return undefined;
+    c.tour++;
+    try {
+      const r = cmd.commander(offre as 'partage', 'especes') as { fourchette_mad?: { min: number; max: number }; prix_fixe_mad?: number };
+      const d = darijaOuArabe(c.langue);
+      const dest = d ? c.destination?.lieu.ar || c.destination?.lieu.nom : c.destination?.lieu.nom;
+      const prix = r.prix_fixe_mad !== undefined
+        ? `${r.prix_fixe_mad} ${d ? 'درهم' : 'dirhams'}`
+        : r.fourchette_mad
+          ? d ? `بين ${r.fourchette_mad.min} و ${r.fourchette_mad.max} درهم` : `entre ${r.fourchette_mad.min} et ${r.fourchette_mad.max} dirhams`
+          : '';
+      const texte = d
+        ? `صافي! ${titreOffre(offre, c.langue)} ل${dest}، ${prix}. كنقلب ليك على طاكسي فطريقك. تبع الطاكسي ديالك فالتطبيق.`
+        : `C'est parti : ${titreOffre(offre, c.langue).toLowerCase()} vers ${dest}, ${prix}. Je cherche un taxi sur votre route. Suivez votre taxi dans l'application.`;
+      this.ia?.noter(c.id, `[bouton touché] ${titre}`, texte);
+      return { texte, lien: { libelle: libelleOuvrir(c.langue), url: lienOuvrirApp(c.courseId) } };
+    } catch (e) {
+      this.log.warn(`Bouton ${offre} : ${(e as Error).message}`);
+      c.tour--;
+      return undefined;
+    }
   }
 
   private async repondreIA(cmd: Commande, texte: string, position: boolean): Promise<string> {
@@ -309,13 +408,14 @@ export class WhatsappService implements OnModuleDestroy {
   }
 
   /** Ajoute la voix quand le passager a parlé. */
-  private async habiller(conv: Conversation, texte: string): Promise<Reponse> {
-    if (!conv.vocal || !voixActive()) return { texte };
+  private async habiller(conv: Conversation, texte: string, plus: Omit<Reponse, 'texte'> = {}): Promise<Reponse> {
+    const boutons = { boutons: plus.boutons, demandePosition: plus.demandePosition, lien: plus.lien };
+    if (!conv.vocal || !voixActive()) return { texte, ...boutons };
     try {
-      return { texte, audio: await synthetiser(texte, arabe(texte)) };
+      return { texte, ...boutons, audio: await synthetiser(texte, arabe(texte)) };
     } catch (e) {
       this.log.error(e);
-      return { texte };
+      return { texte, ...boutons };
     }
   }
 
@@ -328,13 +428,17 @@ export class WhatsappService implements OnModuleDestroy {
       c.dernierStatut = d.statut;
       const distanceM =
         d.taxi && c.depart ? Math.round(haversine(d.taxi.position, c.depart.point)) : undefined;
-      const texte = annonce(d.statut, c.langue, d.taxi ? { nom: d.taxi.nom, plaque: d.taxi.plaque, distanceM } : undefined);
+      // Après la commande, le suivi se fait dans l'application : WhatsApp ne prévient plus que du taxi trouvé
+      // (plaque, pour la sécurité) et de l'absence de taxi.
+      const utile = d.statut === 'acceptee' || d.statut === 'expiree';
+      const texte = utile ? annonce(d.statut, c.langue, d.taxi ? { nom: d.taxi.nom, plaque: d.taxi.plaque, distanceM } : undefined) : undefined;
+      const lien = d.statut === 'acceptee' ? { lien: { libelle: libelleOuvrir(c.langue), url: lienOuvrirApp(d.id) } } : {};
       if (d.statut === 'terminee' || d.statut === 'expiree' || d.statut === 'annulee') {
         // Course finie : la prochaine conversation repart de zéro (l'historique n'est pas réécrit, il est oublié).
         Object.assign(c, { destination: undefined, prixAuTour: undefined, etape: undefined, offre: undefined, passagers: 1, depart: undefined });
         this.ia?.oublier(c.id);
       }
-      if (texte) await this.enFile(c.id, async () => this.envoyer(c.id, await this.habiller(c, texte)));
+      if (texte) await this.enFile(c.id, async () => this.envoyer(c.id, await this.habiller(c, texte, lien)));
     }
   }
 }

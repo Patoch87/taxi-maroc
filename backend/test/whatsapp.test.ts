@@ -106,16 +106,42 @@ describe('Agent WhatsApp', () => {
     expect(course.demande.mode).toBe('seul');
     expect(course.demande.destinationNom).toBe('Maârif');
 
-    // Un chauffeur accepte, démarre puis termine : le passager est prévenu à chaque fois.
+    // Un chauffeur accepte : seul message de suivi (plaque, sécurité) avec le bouton vers l'application.
+    // Ensuite WhatsApp se tait : le suivi se fait dans l'application (publicités).
     await http().post('/whatsapp/demo/chauffeur').send({ id }).expect(201);
     await service.suivreCourses();
-    expect((await http().get(`/whatsapp/demo/boite?id=${id}`)).body[0].texte).toMatch(/Hamid, plaque 12345-A-6, à \d+ mètres/);
+    const accepte = (await http().get(`/whatsapp/demo/boite?id=${id}`)).body;
+    expect(accepte[0].texte).toMatch(/Hamid, plaque 12345-A-6, à \d+ mètres/);
+    expect(accepte[0].lien.url).toContain(`/ouvrir?c=${conv.courseId}`);
     await http().post('/whatsapp/demo/chauffeur').send({ id }).expect(201);
     await service.suivreCourses();
-    expect((await http().get(`/whatsapp/demo/boite?id=${id}`)).body[0].texte).toContain('démarré la course');
+    expect((await http().get(`/whatsapp/demo/boite?id=${id}`)).body).toEqual([]);
     await http().post('/whatsapp/demo/chauffeur').send({ id }).expect(201);
     await service.suivreCourses();
-    expect((await http().get(`/whatsapp/demo/boite?id=${id}`)).body[0].texte).toContain('Vous êtes arrivé');
+    expect((await http().get(`/whatsapp/demo/boite?id=${id}`)).body).toEqual([]);
+  });
+
+  it('parcours court : bouton de position, boutons Partagé/Seul/Premium, course lancée, bouton vers l’application', async () => {
+    const id = 'test-boutons';
+    const envoyer = async (corps: object) =>
+      (await http().post('/whatsapp/demo/message').send({ id, ...corps }).expect(201)).body.reponses[0];
+    await envoyer({ texte: 'Bonjour' });
+    await envoyer({ texte: 'Je vais au Maarif' });
+    const pos = await envoyer({ texte: 'oui' });
+    expect(pos.demandePosition).toBe(true);
+    const prix = await envoyer({ position: { lat: 33.5897, lng: -7.5906 } });
+    expect(prix.boutons.map((b: { titre: string }) => b.titre)).toEqual(['Partagé', 'Seul', 'Premium']);
+    expect(prix.boutons[0].id).toBe('offre:partage');
+    const lance = await envoyer({ texte: 'Partagé', bouton: 'offre:partage' });
+    expect(lance.texte).toMatch(/C'est parti : partagé vers Maârif, entre \d+ et \d+ dirhams/);
+    expect(lance.lien.libelle).toBe('Suivre mon taxi');
+    const conv = service.conversation(`demo-${id}`);
+    expect(lance.lien.url).toBe(`https://bab-taxi-eu.onrender.com/ouvrir?c=${conv.courseId}`);
+    expect(rides.getRequest(conv.courseId!).demande.mode).toBe('partage');
+    // Page /ouvrir : ouvre l'application (Android) ou le téléchargement.
+    const page = await http().get(`/ouvrir?c=${conv.courseId}`).expect(200);
+    expect(page.text).toContain('intent://');
+    expect(page.text).toContain('ma.taxi.taxi_maroc');
   });
 
   it('répond en darija à un passager qui parle darija', async () => {
