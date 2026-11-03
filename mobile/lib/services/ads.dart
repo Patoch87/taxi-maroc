@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'live.dart';
@@ -191,7 +193,14 @@ class AdCatalog extends ChangeNotifier {
     final image = j['image'] as String?;
     final link = j['lien'] as String?;
     final translated = j['titreCle'] is String && j['texteCle'] is String;
-    if (local != null && translated && image == null && link == null && j['couleur'] == null) {
+    // Pub d'exemple inchangée (même annonceur, même texte, sans logo ni lien ni couleur) : version traduite.
+    if (local != null &&
+        translated &&
+        image == null &&
+        link == null &&
+        j['couleur'] == null &&
+        (j['annonceur'] == null || brand == local.promo.brand) &&
+        (j['adresse'] == null || j['adresse'] == local.promo.address)) {
       return local;
     }
     final hex = int.tryParse(((j['couleur'] as String?) ?? '').replaceFirst('#', ''), radix: 16);
@@ -228,8 +237,23 @@ class AdCatalog extends ChangeNotifier {
     if (live.enabled) LiveApi().adEvent(ad.id, type).catchError((_) {});
   }
 
+  Timer? _timer;
+  AppLifecycleListener? _lifecycle;
+
+  /// Les changements faits dans la console arrivent sans relancer l'application : nouvelle lecture toutes
+  /// les 2 minutes, et dès que l'application revient au premier plan.
+  void keepFresh({Duration every = const Duration(minutes: 2)}) {
+    _timer?.cancel();
+    _timer = Timer.periodic(every, (_) => refresh());
+    _lifecycle ??= AppLifecycleListener(onResume: refresh);
+  }
+
   @visibleForTesting
   void reset() {
+    _timer?.cancel();
+    _timer = null;
+    _lifecycle?.dispose();
+    _lifecycle = null;
     _ads = localAds;
     notifyListeners();
   }

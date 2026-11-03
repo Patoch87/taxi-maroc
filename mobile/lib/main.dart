@@ -50,6 +50,7 @@ Future<void> connectToServer() async {
   if (!live.enabled) return;
   if (await live.warmUp()) {
     final api = LiveApi();
+    adCatalog.keepFresh();
     await Future.wait([
       adCatalog.refresh(),
       api.config().then((c) => serverConfig.value = c).catchError((_) => serverConfig.value),

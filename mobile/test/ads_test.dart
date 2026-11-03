@@ -91,6 +91,32 @@ void main() {
       expect(riad.coupon, isFalse);
     });
 
+    test('annonceur ou adresse changés dans la console : le changement est affiché', () {
+      final ad = AdCatalog.fromServer({
+        'id': 'SOUK', 'emplacement': 'accueil', 'annonceur': 'Mode Anfa', 'titre': '-15 %', 'texte': 'x',
+        'titreCle': 'adSoukTitle', 'texteCle': 'adSoukText', 'bon': true, 'exempleFictif': true
+      }, base: 'http://serveur')!;
+      expect(ad.promo.brand, 'Mode Anfa');
+      expect(ad.promo.titleKey, 'adSoukTitle');
+    });
+
+    test('mise à jour toutes les 2 minutes : une pub modifiée remplace l\'ancienne', () async {
+      live.url = 'http://serveur';
+      live.enabled = true;
+      var titre = 'Avant';
+      final api = LiveApi(
+          client: MockClient((r) async => http.Response(
+              jsonEncode([
+                {'id': 'P1', 'emplacement': 'accueil', 'annonceur': 'Riad', 'titre': titre, 'texte': ''}
+              ]),
+              200)));
+      await adCatalog.refresh(api: api);
+      expect(adCatalog.forPlacement(AdPlacement.home)!.promo.titleKey, 'Avant');
+      titre = 'Après';
+      await adCatalog.refresh(api: api);
+      expect(adCatalog.forPlacement(AdPlacement.home)!.promo.titleKey, 'Après');
+    });
+
     test('serveur injoignable : le catalogue local reste', () async {
       live.url = 'http://serveur';
       live.enabled = true;
