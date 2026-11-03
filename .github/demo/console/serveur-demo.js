@@ -87,7 +87,7 @@ const piece = (titre, nom, couleur) =>
       ['cartePro', 'Carte professionnelle taxi', '#f2e6c4'], ['casier', 'Extrait de casier judiciaire', '#ece9e2'],
       ['vehicule', 'Photo du taxi', '#fbeaea'],
     ]) {
-      const fid = `f-${uuid()}`;
+      const fid = `chauffeur-${uuid()}`; // préfixe exigé par /admin/fichiers
       await store.putFichier(fid, 'image/svg+xml', piece(t, `${prenom} ${nom}`, c));
       pieces[p] = fid;
     }

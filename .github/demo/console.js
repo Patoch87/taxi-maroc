@@ -173,7 +173,9 @@ const TITRES = {
         await p.waitForTimeout(60);
       }
     };
+    // La légende précédente s'arrête avant de changer de module (sa voix ne déborde pas sur l'écran suivant).
     p.module = async (id) => {
+      p.r?.caption(null);
       await p.clickDoux(`nav a[data-m="${id}"]`);
       await p.waitForTimeout(1600);
     };
@@ -186,6 +188,7 @@ const TITRES = {
     await p.goto(`${base}/admin`);
     await p.waitForTimeout(1500);
     const r = await demarrer(context, p, dossier, { view: VIEW, dpr: DPR, curseur: true });
+    p.r = r;
     try {
       await SCENARIOS[nom](p, r);
       r.caption(null);
