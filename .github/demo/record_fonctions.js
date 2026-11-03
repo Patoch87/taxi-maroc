@@ -333,10 +333,8 @@ const SCENARIOS = {
       await o.expectScreen('date', 'Mois suivant', 10);
       await o.wait(1200);
       const demain = new Date(Date.now() + 86400000);
-      await o.page
-        .locator(`[role][aria-label^="${demain.getDate()}, "]`)
-        .first()
-        .click({ force: true });
+      const jour = demain.toLocaleDateString('fr-FR', { weekday: 'long' });
+      await o.tap(`${demain.getDate()}, ${jour}`);
       await o.wait(1200);
       await o.tap('OK');
       r.caption('… et l’heure');
@@ -382,13 +380,13 @@ const SCENARIOS = {
       await o.wait(1200);
       r.caption(null);
       r.skip(true);
-      await o.fill('Prénom', 'Salma', 0);
-      await o.fill('Nom', 'Bennani', 0);
-      await o.fill('Numéro de téléphone', '600112233', 0);
-      await o.tap('Recevoir le code par SMS');
-      await o.wait(800);
-      await o.fill('Code reçu par SMS', '1234', 0);
-      await o.expectScreen('vérifié', 'Numéro vérifié', 15);
+      // Retour au formulaire (déjà rempli) : on revérifie le numéro si besoin.
+      if (!(await o.present('Numéro vérifié'))) {
+        await o.tap('Recevoir le code par SMS');
+        await o.wait(800);
+        await o.fill('Code reçu par SMS', '1234', 0);
+        await o.expectScreen('vérifié', 'Numéro vérifié', 15);
+      }
       r.skip(false);
       r.caption('Compte créé : on peut commander');
       await o.tap('Créer un compte');
@@ -447,15 +445,11 @@ const SCENARIOS = {
   },
 
   'c2-course': {
+    modeChauffeur: true,
     titre: 'Une course, côté chauffeur',
     sousTitre: 'De la demande à la dépose du passager',
     fin: 'Plus de courses sur votre route',
     async joue(o, r) {
-      r.skip(true);
-      await o.tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
-      await o.tapFor('mode chauffeur', 'Mode chauffeur', 'Commencer le service', 15);
-      await o.wait(1500);
-      r.skip(false);
       r.caption('Le chauffeur choisit quand il travaille');
       await o.wait(3000);
       await o.tapFor('en ligne', 'Commencer le service', 'Disponible', 15);
@@ -531,15 +525,11 @@ const SCENARIOS = {
   },
 
   'c3-ma-destination': {
+    modeChauffeur: true,
     titre: '« Je rentre chez moi »',
     sousTitre: 'Seulement les passagers sur sa route',
     fin: 'Le trajet du retour devient payant',
     async joue(o, r) {
-      r.skip(true);
-      await o.tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
-      await o.tapFor('mode chauffeur', 'Mode chauffeur', 'Commencer le service', 15);
-      await o.wait(1500);
-      r.skip(false);
       r.caption('Fin de journée : le chauffeur rentre chez lui');
       await o.wait(3000);
       r.caption('« Ma destination » : chez moi, ou une autre adresse');
@@ -560,15 +550,11 @@ const SCENARIOS = {
   },
 
   'c4-gains': {
+    modeChauffeur: true,
     titre: 'Mes gains',
     sousTitre: 'Ce que Bab Taxi rapporte en plus, chaque semaine',
     fin: 'Bab Taxi travaille pour vous',
     async joue(o, r) {
-      r.skip(true);
-      await o.tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
-      await o.tapFor('mode chauffeur', 'Mode chauffeur', 'Commencer le service', 15);
-      await o.wait(1500);
-      r.skip(false);
       r.caption('Toujours sous les yeux : ce que Bab Taxi lui a rapporté cette semaine');
       await o.wait(3500);
       await o.tapFor('mes gains', 'cette semaine avec Bab Taxi', 'de plus grâce à Bab Taxi', 15);
@@ -598,7 +584,7 @@ const SCENARIOS = {
       await o.tapFor('mois', 'Mois', 'Ce mois-ci', 10);
       await o.wait(800);
       r.skip(false);
-      r.caption('Le bilan du mois, avec la prime qualité selon sa note');
+      r.caption('Le bilan du mois, et la prime qualité : meilleure est sa note, plus elle monte');
       await o.wait(5000);
       for (let i = 0; i < 4; i++) {
         await o.page.mouse.wheel(0, 120);
@@ -641,11 +627,19 @@ const SCENARIOS = {
     await page.waitForTimeout(5000);
     await page.evaluate(() => document.querySelector('flt-semantics-placeholder')?.click());
     await page.waitForTimeout(800);
+    // Vidéos chauffeur : passage en mode chauffeur avant l'enregistrement.
+    if (sc.modeChauffeur) {
+      const p0 = outils(page, { skip() {}, caption() {} }, out, nom);
+      await p0.expectScreen('accueil', 'Rechercher une destination', 60);
+      await p0.tapFor('menu', 'Ouvrir le menu de navigation', 'Mode chauffeur', 12);
+      await p0.tapFor('mode chauffeur', 'Mode chauffeur', 'Commencer le service', 15);
+      await page.waitForTimeout(1500);
+    }
     const r = await demarrer(context, page, dossier, { view: VIEW, dpr: DPR });
     const o = { ...outils(page, r, out, nom), page };
     const t0 = Date.now();
     try {
-      if (!sc.adresse) await o.expectScreen('accueil', 'Rechercher une destination', 60);
+      if (!sc.adresse && !sc.modeChauffeur) await o.expectScreen('accueil', 'Rechercher une destination', 60);
       await o.wait(800);
       await sc.joue(o, r);
       r.caption(null);

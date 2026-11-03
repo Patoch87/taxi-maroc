@@ -327,8 +327,11 @@ class _SosScreenState extends State<SosScreen> with WidgetsBindingObserver {
           if (widget.onShare != null) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
+              // Fond transparent : le thème donne un fond blanc aux boutons à contour (texte blanc invisible).
               style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white54)),
               onPressed: widget.onShare,
               icon: const Icon(Icons.share_location),
               label: Text(s.t('sosWarnContacts')),
