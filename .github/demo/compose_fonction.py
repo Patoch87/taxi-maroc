@@ -38,6 +38,23 @@ def cle_voix(texte):
     return hashlib.sha1(('v2|' + texte.strip()).encode()).hexdigest()[:16]
 
 
+def fin_parole(p):
+    """Fin réelle de la phrase : un petit bruit isolé après la dernière syllabe (souffle) est retiré."""
+    import array
+    import math
+    brut = subprocess.run(['ffmpeg', '-v', 'error', '-i', p, '-f', 's16le', '-ac', '1', '-ar', '16000', '-'],
+                          capture_output=True).stdout
+    a = array.array('h', brut)
+    w = 800  # 50 ms
+    e = [math.sqrt(sum(x * x for x in a[i:i + w]) / w) for i in range(0, len(a) - w + 1, w)]
+    n = len(e)
+    # Dans les 0,4 dernières secondes : un silence d'au moins 100 ms suivi d'un son = bruit de fin.
+    for i in range(max(1, n - 8), n - 1):
+        if e[i] < 80 and e[i + 1] < 80 and any(v > 150 for v in e[i + 2:]) and max(e[max(0, i - 6):i]) > 300:
+            return (i + 2) * 0.05
+    return len(a) / 16000
+
+
 def duree(p):
     r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', p],
                        capture_output=True, text=True)
@@ -82,7 +99,7 @@ for c in marks['captions']:
         p = os.path.join(A.voix, cle_voix(c['text']) + '.mp3')
         if os.path.exists(p):
             voix = p
-    caps.append(dict(texte=c['text'], i0=idx[0], i1=idx[-1], voix=voix, dv=duree(voix) if voix else 0))
+    caps.append(dict(texte=c['text'], i0=idx[0], i1=idx[-1], voix=voix, dv=fin_parole(voix) if voix else 0))
 
 debut = lambda i: sum(durs[:i])  # noqa: E731
 for c in caps:
@@ -222,9 +239,9 @@ if voix:
     for k, (_, t) in enumerate(voix):
         ms = int((base + t) * 1000)
         f = voix[k][0]
-        d = duree(f)
+        d = fin_parole(f) if any(f == c['voix'] for c in caps) else duree(f)
         # Fondus très courts aux bords : jamais de claquement à l'entrée ou à la sortie d'une phrase.
-        fc += (f';[{3 + k}:a]aresample=44100,afade=t=in:d=0.03,afade=t=out:st={max(0, d - 0.06):.3f}:d=0.06,'
+        fc += (f';[{3 + k}:a]aresample=44100,atrim=end={d:.3f},afade=t=in:d=0.03,afade=t=out:st={max(0, d - 0.06):.3f}:d=0.06,'
                f'adelay={ms}|{ms},apad[a{k}]')
     fc += ';' + ''.join(f'[a{k}]' for k in range(len(voix))) + f'amix=inputs={len(voix)}:normalize=0,atrim=duration={total - 1:.3f}[a]'
     carte_audio = ['-map', '[a]', '-c:a', 'aac', '-b:a', '160k']

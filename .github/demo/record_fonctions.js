@@ -470,11 +470,18 @@ const SCENARIOS = {
         await hold(4500, () => o.present('Accepter'));
         if (await o.present('Accepter')) {
           await o.tap('Accepter');
-          accepted = true;
+          // Course déjà prise par un autre chauffeur, ou appui perdu : on recommence avec la demande suivante.
+          for (let i = 0; i < 20 && !accepted; i++) {
+            accepted = await o.present('Prochains arrêts');
+            if (!accepted) await o.wait(250);
+          }
+          if (!accepted) {
+            if (await o.present('Refuser')) await o.tap('Refuser').catch(() => {});
+            r.cutSince(from);
+          }
         } else r.cutSince(from);
       }
       if (!accepted) throw new Error('aucune demande acceptée');
-      await o.expectScreen('prochains arrêts', 'Prochains arrêts', 10);
       r.caption('Le premier qui accepte a la course : le trajet vers le passager s’affiche');
       await hold(4000, async () => !(await o.present('Accepter')));
       r.caption(null);

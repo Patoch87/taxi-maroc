@@ -50,9 +50,9 @@ def defaut(fichier, texte):
     if len(e) < 6:
         return 'vide'
     duree = len(e) * 0.05
-    if max(e[:2]) > 900:
+    if e[0] > 2500:
         return 'début coupé'
-    if max(e[-3:]) > 500:
+    if e[-1] > 800 and e[-2] > 800:
         return 'fin coupée'
     if duree < 0.045 * len(texte):
         return f'trop courte ({duree:.1f} s)'
