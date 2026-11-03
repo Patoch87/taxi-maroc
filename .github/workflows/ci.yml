@@ -64,12 +64,21 @@ jobs:
       - name: Clé de signature
         env:
           BAB_KEYSTORE_B64: ${{ secrets.BAB_KEYSTORE_B64 }}
+          BAB_KEYSTORE_PASS: ${{ secrets.BAB_KEYSTORE_PASS }}
         run: |
-          if [ -n "$BAB_KEYSTORE_B64" ]; then
-            echo "$BAB_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/bab.jks"
+          if [ -z "$BAB_KEYSTORE_B64" ]; then
+            echo "::warning title=Signature::Pas de BAB_KEYSTORE_B64 : clé de debug (mise à jour impossible sans désinstaller)"; exit 0
+          fi
+          # Copier-coller depuis un téléphone : espaces, retours à la ligne ou guillemets autour sont retirés.
+          B64=$(printf '%s' "$BAB_KEYSTORE_B64" | tr -d ' \r\n\t"' )
+          echo "::notice title=Signature::Secret de ${#B64} caractères (attendu : 3512)"
+          if printf '%s' "$B64" | base64 -d > "$RUNNER_TEMP/bab.jks" 2>/dev/null \
+             && keytool -list -keystore "$RUNNER_TEMP/bab.jks" -storepass "$BAB_KEYSTORE_PASS" >/dev/null 2>&1; then
             echo "BAB_KEYSTORE=$RUNNER_TEMP/bab.jks" >> "$GITHUB_ENV"
             echo "::notice title=Signature::Clé Bab Taxi stable"
-          else echo "::warning title=Signature::Pas de BAB_KEYSTORE_B64 : clé de debug (mise à jour impossible sans désinstaller)"; fi
+          else
+            echo "::warning title=Signature::BAB_KEYSTORE_B64 ou BAB_KEYSTORE_PASS invalide : clé de debug pour cette version"
+          fi
       - name: Clé Google Maps
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
