@@ -155,14 +155,17 @@ const localAds = [
 /// Publicités affichées : celles du serveur (GET /ads) quand il répond, sinon le catalogue local.
 /// Le serveur choisit quelles publicités sont actives et leur ordre ; les textes traduits restent
 /// dans l'application.
+/// Captures pour le film de présentation : aucune publicité dans l'application (--dart-define=NO_ADS=true).
+const noAds = bool.fromEnvironment('NO_ADS');
+
 class AdCatalog extends ChangeNotifier {
-  List<Ad> _ads = localAds;
+  List<Ad> _ads = noAds ? const [] : localAds;
   List<Ad> get ads => _ads;
 
   Ad? forPlacement(AdPlacement p) => _ads.where((a) => a.placement == p).firstOrNull;
 
   Future<void> refresh({LiveApi? api}) async {
-    if (!live.enabled) return;
+    if (!live.enabled || noAds) return;
     try {
       final client = api ?? LiveApi();
       final list = await client.ads();
