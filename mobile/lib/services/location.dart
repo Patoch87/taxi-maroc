@@ -20,7 +20,14 @@ Future<LatLng> currentLatLng() async {
     var perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
     if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return casablancaCenter;
-    final p = await Geolocator.getCurrentPosition().timeout(const Duration(seconds: 8));
+    Position? p;
+    try {
+      p = await Geolocator.getCurrentPosition().timeout(const Duration(seconds: 8));
+    } catch (_) {
+      // Pas de position fraîche (intérieur, GPS lent) : la dernière connue vaut mieux que le centre-ville.
+      p = await Geolocator.getLastKnownPosition();
+    }
+    if (p == null) return casablancaCenter;
     final here = LatLng(p.latitude, p.longitude);
     if (!live.enabled && const Distance()(here, casablancaCenter) > 40000) return casablancaCenter;
     return here;

@@ -178,6 +178,9 @@ class _RiderHomeState extends State<RiderHome> {
     _ambientTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (!mounted || _step.index >= RiderStep.arriving.index) return;
       if (live.enabled) {
+        // Position pas encore trouvée (GPS lent, ou demande d'autorisation gênée par celle du micro au
+        // lancement du parcours vocal) : on réessaie, sinon la course partirait du centre de Casablanca.
+        if (widget.locate && !_hasFix && !_locating && _activeTick % 3 == 0) _locate();
         _refreshNearby();
         // Toutes les 6 s : une course commandée sur WhatsApp (même numéro que le compte) s'affiche ici.
         if (++_activeTick % 3 == 1) _checkActiveRide();
@@ -215,9 +218,22 @@ class _RiderHomeState extends State<RiderHome> {
     super.dispose();
   }
 
+  /// Vraie position GPS obtenue (et non le centre de Casablanca par défaut).
+  bool _hasFix = false;
+  bool _locating = false;
+
   Future<void> _locate() async {
-    final p = await currentLatLng();
+    _locating = true;
+    final LatLng p;
+    try {
+      p = await currentLatLng();
+    } finally {
+      _locating = false;
+    }
     if (!mounted) return;
+    if (p != casablancaCenter) _hasFix = true;
+    // Une course est déjà en cours : sa position de départ ne bouge plus.
+    if (_step.index >= RiderStep.dispatching.index) return;
     setState(() {
       _me = p;
       _ambient = ambientTaxis(p, _rnd);
@@ -965,6 +981,16 @@ class _RiderHomeState extends State<RiderHome> {
       _step = RiderStep.dispatching;
     });
     try {
+      // Position relue au moment de commander : la demande part de là où est vraiment le passager
+      // (le parcours vocal peut commander avant que le GPS ait répondu au lancement).
+      if (widget.locate) {
+        final here = await currentLatLng().timeout(const Duration(seconds: 10), onTimeout: () => _me);
+        if (here != casablancaCenter) {
+          _hasFix = true;
+          if (mounted && const Distance()(here, _me) > 50) setState(() => _me = here);
+        }
+      }
+      if (!mounted || _step != RiderStep.dispatching) return;
       final r = await _liveApi.request(
         from: _me,
         to: LatLng(_dest!.lat, _dest!.lng),
