@@ -162,17 +162,65 @@ class AdCatalog extends ChangeNotifier {
   Future<void> refresh({LiveApi? api}) async {
     if (!live.enabled) return;
     try {
-      final list = await (api ?? LiveApi()).ads();
+      final client = api ?? LiveApi();
+      final list = await client.ads();
       final active = <Ad>[
         for (final j in list)
-          if (j is Map && j['exempleFictif'] == true)
-            ...localAds.where((a) => a.id == j['id'] && a.placement.server == j['emplacement']),
+          if (j is Map<String, dynamic>)
+            if (fromServer(j, base: client.base) case final ad?) ad,
       ];
       _ads = active;
       notifyListeners();
     } catch (_) {
       // Serveur injoignable : le catalogue local reste affiché.
     }
+  }
+
+  /// Publicité reçue du serveur (gérée dans la console, module « Publicités »). Une pub d'exemple dont
+  /// le texte n'a pas changé garde ses traductions ; sinon le texte saisi dans la console est affiché tel quel.
+  @visibleForTesting
+  static Ad? fromServer(Map<String, dynamic> j, {required String base}) {
+    final placement = AdPlacement.values.where((p) => p.server == j['emplacement']).firstOrNull;
+    final id = j['id'];
+    if (placement == null || id is! String) return null;
+    final local = localAds.where((a) => a.id == id && a.placement == placement).firstOrNull;
+    final pos = j['position'];
+    final lat = pos is Map ? (pos['lat'] as num?)?.toDouble() : null;
+    final lng = pos is Map ? (pos['lng'] as num?)?.toDouble() : null;
+    final brand = (j['annonceur'] as String?)?.trim() ?? '';
+    final image = j['image'] as String?;
+    final link = j['lien'] as String?;
+    final translated = j['titreCle'] is String && j['texteCle'] is String;
+    if (local != null && translated && image == null && link == null && j['couleur'] == null) {
+      return local;
+    }
+    final hex = int.tryParse(((j['couleur'] as String?) ?? '').replaceFirst('#', ''), radix: 16);
+    return Ad(
+      placement: placement,
+      coupon: j['bon'] == true,
+      lat: lat,
+      lng: lng,
+      promo: Promo(
+        id: id,
+        brand: brand.isEmpty ? '?' : brand,
+        initials: _initials(brand),
+        // Sans traduction, le texte de la console est affiché tel quel (S.t rend la clé inconnue).
+        titleKey: translated ? j['titreCle'] as String : (j['titre'] as String? ?? ''),
+        detailKey: translated ? j['texteCle'] as String : (j['texte'] as String? ?? ''),
+        address: j['adresse'] as String? ?? '',
+        icon: local?.promo.icon ?? Icons.campaign_outlined,
+        color: hex == null ? (local?.promo.color ?? const Color(0xFF0F2A1E)) : Color(0xFF000000 | hex),
+        logoUrl: image == null ? null : (image.startsWith('http') ? image : '$base$image'),
+        link: link,
+        fictive: j['exempleFictif'] == true,
+      ),
+    );
+  }
+
+  static String _initials(String brand) {
+    final words = brand.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final s = words.map((w) => w[0]).take(2).join().toUpperCase();
+    return s.isEmpty ? '?' : s;
   }
 
   /// Statistiques de l'annonceur (vue, clic, bon), sans donnée personnelle ; rien en mode démo.

@@ -20,6 +20,8 @@ class Promo {
     required this.color,
     this.logoAsset,
     this.wideLogoAsset,
+    this.logoUrl,
+    this.link,
     this.partnerGift = false,
     this.fictive = false,
   });
@@ -45,6 +47,12 @@ class Promo {
 
   /// Logo complet (format large), affiché en tête du bon de réduction.
   final String? wideLogoAsset;
+
+  /// Logo envoyé dans la console d'administration (module « Publicités »), servi par le serveur.
+  final String? logoUrl;
+
+  /// Lien de l'offre, ouvert quand le passager touche une publicité sans bon de réduction.
+  final String? link;
 
   /// Cadeau gagné à un jeu pendant le trajet, offert par un partenaire fictif :
   /// mention « Offert par `partenaire` · exemple fictif » au lieu de « Publicité ».

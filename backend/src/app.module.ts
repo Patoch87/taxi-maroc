@@ -4,6 +4,7 @@ import { AccountsService } from './accounts/accounts.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 import { AdsController } from './ads/ads.controller';
+import { AdsService } from './ads/ads.service';
 import { StoreService } from './store/store.service';
 import { DriversController } from './drivers/drivers.controller';
 import { DriversService } from './drivers/drivers.service';
@@ -66,6 +67,6 @@ class HealthController {
 
 @Module({
   controllers: [HealthController, AccountsController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController, DriversController, AdminController],
-  providers: [StoreService, AccountsService, DriversService, RidesService, WhatsappService, AdminService],
+  providers: [StoreService, AdsService, AccountsService, DriversService, RidesService, WhatsappService, AdminService],
 })
 export class AppModule {}

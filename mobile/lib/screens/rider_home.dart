@@ -1265,7 +1265,12 @@ class _RiderHomeState extends State<RiderHome> {
   /// Toucher une publicité : bon de réduction avec QR code s'il y en a un.
   void _openAd(Ad ad) {
     adCatalog.track(ad, 'clic');
-    if (ad.coupon) showCouponSheet(context, Coupon(promo: ad.promo, tripId: _tripId, issuedAt: DateTime.now()));
+    final link = ad.promo.link;
+    if (ad.coupon) {
+      showCouponSheet(context, Coupon(promo: ad.promo, tripId: _tripId, issuedAt: DateTime.now()));
+    } else if (link != null && link.startsWith('https://')) {
+      launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication).ignore();
+    }
   }
 
   /// Carte en course : publicité avec QR code dans le panneau de suivi, passager à bord.
@@ -2430,7 +2435,10 @@ class _RiderHomeState extends State<RiderHome> {
         // Écran d'attente : une publicité (annonceur fictif) pendant la recherche d'un chauffeur.
         if (accepted == null && _ad(AdPlacement.waiting) != null) ...[
           const SizedBox(height: 10),
-          PromoCard(key: const ValueKey('waitingAd'), promo: _ad(AdPlacement.waiting)!.promo),
+          PromoCard(
+              key: const ValueKey('waitingAd'),
+              promo: _ad(AdPlacement.waiting)!.promo,
+              onTap: _ad(AdPlacement.waiting)!.promo.link == null ? null : () => _openAd(_ad(AdPlacement.waiting)!)),
         ],
         const SizedBox(height: 10),
         OutlinedButton(onPressed: _reset, child: Text(s.t('cancel'))),

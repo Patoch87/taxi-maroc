@@ -62,6 +62,35 @@ void main() {
       expect(adCatalog.forPlacement(AdPlacement.waiting), isNull);
     });
 
+    test('pubs gérées dans la console : texte saisi, logo, lien, couleur, mention réelle', () async {
+      live.url = 'http://serveur';
+      live.enabled = true;
+      final api = LiveApi(
+          client: MockClient((r) async => http.Response(
+              jsonEncode([
+                {
+                  'id': 'SOUK', 'emplacement': 'accueil', 'annonceur': 'Souk Mode', 'titre': '-15 %', 'texte': 'x',
+                  'titreCle': 'adSoukTitle', 'texteCle': 'adSoukText', 'bon': true, 'exempleFictif': true
+                },
+                {
+                  'id': 'P1A2B', 'emplacement': 'attente', 'annonceur': 'Riad Atlas', 'titre': '-20 % ce week-end',
+                  'texte': 'Sur réservation', 'bon': false, 'lien': 'https://riad.example.ma', 'couleur': '#006233',
+                  'image': '/ads/P1A2B/image?v=1', 'exempleFictif': false
+                },
+              ]),
+              200)));
+      await adCatalog.refresh(api: api);
+      expect(adCatalog.forPlacement(AdPlacement.home), localAds.first);
+      final riad = adCatalog.forPlacement(AdPlacement.waiting)!;
+      expect(riad.promo.titleKey, '-20 % ce week-end');
+      expect(riad.promo.initials, 'RA');
+      expect(riad.promo.link, 'https://riad.example.ma');
+      expect(riad.promo.logoUrl, 'http://serveur/ads/P1A2B/image?v=1');
+      expect(riad.promo.color, const Color(0xFF006233));
+      expect(riad.promo.fictive, isFalse);
+      expect(riad.coupon, isFalse);
+    });
+
     test('serveur injoignable : le catalogue local reste', () async {
       live.url = 'http://serveur';
       live.enabled = true;

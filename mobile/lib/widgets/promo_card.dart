@@ -71,7 +71,7 @@ class PromoCard extends StatelessWidget {
                   ),
                   if (onTap != null) ...[
                     const SizedBox(width: 6),
-                    const Icon(Icons.qr_code_2, color: AppColors.moroccoGreen),
+                    Icon(promo.link != null ? Icons.open_in_new : Icons.qr_code_2, color: AppColors.moroccoGreen),
                   ],
                 ]),
               ),
@@ -96,7 +96,8 @@ class BrandBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logo = promo.logoAsset;
-    if (logo == null) return _initials();
+    final url = promo.logoUrl;
+    if (logo == null && url == null) return _initials();
     return Container(
       width: size,
       height: size,
@@ -107,7 +108,9 @@ class BrandBadge extends StatelessWidget {
         border: Border.all(color: AppColors.line),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)],
       ),
-      child: Image.asset(logo, fit: BoxFit.contain, errorBuilder: (_, __, ___) => _initials()),
+      child: logo != null
+          ? Image.asset(logo, fit: BoxFit.contain, errorBuilder: (_, __, ___) => _initials())
+          : Image.network(url!, fit: BoxFit.contain, errorBuilder: (_, __, ___) => _initials()),
     );
   }
 

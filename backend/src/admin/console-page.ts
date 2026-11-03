@@ -75,6 +75,15 @@ tr.cliquable{cursor:pointer} tr.cliquable:hover td{background:#fbf8f1}
 .mk.demande{background:#2563eb;animation:pouls 1.6s infinite}
 .mk.sos{width:28px;height:28px;background:var(--rouge);animation:pouls 1s infinite}
 @keyframes pouls{0%{box-shadow:0 0 0 0 rgba(193,39,45,.5)}100%{box-shadow:0 0 0 14px rgba(193,39,45,0)}}
+.formPub label{display:block;font-weight:700;font-size:13px;margin:12px 0 4px}
+.formPub input,.formPub select,.formPub textarea{width:100%;box-sizing:border-box}
+.formPub input:not([type=checkbox]):not([type=color]):not([type=file]),.formPub select{border:1.5px solid var(--ligne);border-radius:10px;padding:9px 11px;font:inherit;background:#fff}
+.formPub input[type=color]{height:40px;border:1.5px solid var(--ligne);border-radius:10px;padding:2px}
+.formPub .deux{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.formPub .aide{font-size:12px;color:var(--gris);margin-top:3px}
+.apercuPub{display:flex;gap:10px;align-items:center;border:1.5px solid var(--ligne);border-radius:14px;padding:10px;margin-top:14px;background:#fff}
+.logoPub{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex:none;overflow:hidden;background:#0F2A1E}
+.logoPub img{width:100%;height:100%;object-fit:contain;background:#fff}
 #tiroir{position:fixed;inset:0 0 0 auto;width:min(560px,100%);background:#fff;transform:translateX(100%);visibility:hidden;transition:transform .2s,visibility .2s;z-index:2000;overflow:auto;padding:20px}
 #tiroir.ouvert{transform:none;visibility:visible;box-shadow:-10px 0 30px rgba(0,0,0,.15)}
 #voile{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;z-index:1999}
@@ -136,6 +145,7 @@ const MODULES = [
   ['passagers', 'Passagers', '👤'],
   ['courses', 'Courses', '🧾'],
   ['reporting', 'Reporting', '📈'],
+  ['publicites', 'Publicités', '📣'],
   ['plaintes', 'Plaintes & SOS', '🛡️'],
 ];
 const STATUTS = { en_attente: 'En attente', acceptee: 'Acceptée', a_bord: 'À bord', terminee: 'Terminée', annulee: 'Annulée', expiree: 'Sans taxi',
@@ -199,7 +209,7 @@ function route() {
   graphiques.forEach((g) => g.destroy()); graphiques = [];
   if (carteTR) { carteTR.retirer(); carteTR = null; premiereVue = true; }
   fermerTiroir();
-  const f = { tableau, 'temps-reel': tempsReel, chauffeurs, passagers, courses, reporting, plaintes }[m] || tableau;
+  const f = { tableau, 'temps-reel': tempsReel, chauffeurs, passagers, courses, reporting, publicites, plaintes }[m] || tableau;
   f().catch((e) => { document.getElementById('contenu').innerHTML = '<p class="vide">Erreur : ' + esc(e.message) + '</p>'; });
 }
 
@@ -540,6 +550,100 @@ async function plaintes() {
     const reponse = s.value === 'traitee' ? (prompt('Réponse ou suite donnée (facultatif) :') || undefined) : undefined;
     try { await poster('plaintes/' + encodeURIComponent(s.dataset.id), { statut: s.value, reponse }); plaintes(); } catch (e) { alert('Erreur : ' + e.message); }
   });
+}
+
+// ---------------- Publicités ----------------
+const EMPL = { accueil: 'Bannière d\'accueil', attente: 'Écran d\'attente (recherche du taxi)', course: 'Carte en course (QR code)', lieu: 'Lieu mis en avant (restaurants)', destination: 'Destination sponsorisée (recherche)', recu: 'Bon sur le reçu de fin de course' };
+const initiales = (a) => String(a || '?').split(/\s+/).map((m) => m[0] || '').join('').slice(0, 2).toUpperCase();
+const logoPub = (p) => '<div class="logoPub" style="background:' + esc(p.couleur || '#0F2A1E') + '">' + (p.image ? '<img src="' + esc(p.image) + '" alt="">' : esc(initiales(p.annonceur))) + '</div>';
+async function publicites() {
+  const liste = await api('publicites');
+  const enCours = liste.filter((p) => p.diffusee).length;
+  const etat = (p) => p.diffusee ? '<span class="tag t-valide">Diffusée</span>' : !p.actif ? '<span class="tag t-suspendu">En pause</span>' : '<span class="tag t-en_attente">Hors période</span>';
+  const periode = (p) => (p.debut || p.fin) ? (p.debut ? 'du ' + esc(p.debut) : 'jusqu\'au') + (p.fin ? ' au ' + esc(p.fin) : '') : 'Sans limite';
+  C().innerHTML = '<div class="enteteTR"><div><h2>Publicités</h2><p class="sous">' + liste.length + ' publicité(s) · ' + enCours + ' diffusée(s) en ce moment. Les changements arrivent dans l\'application à son prochain lancement.</p></div>' +
+    '<div class="outils"><button class="btn" id="nouvellePub">+ Nouvelle publicité</button></div></div>' +
+    '<div class="carte tableau"><table><tr><th></th><th>Annonceur et offre</th><th>Emplacement</th><th>Période</th><th>État</th><th>Vues</th><th>Clics</th><th>Taux</th><th>Bons</th></tr>' +
+    liste.map((p) => '<tr class="cliquable" data-id="' + esc(p.id) + '"><td>' + logoPub(p) + '</td><td><b>' + esc(p.annonceur) + '</b>' + (p.exempleFictif ? ' <span class="note">(exemple fictif)</span>' : '') + '<br>' + esc(p.titre) + '<br><span class="note">' + esc(p.texte || '') + '</span></td><td>' + esc(EMPL[p.emplacement] || p.emplacement) + '</td><td>' + periode(p) + '</td><td>' + etat(p) + '</td><td>' + nb(p.vue) + '</td><td>' + nb(p.clic) + '</td><td>' + p.ctr + ' %</td><td>' + nb(p.bons) + '</td></tr>').join('') +
+    '</table>' + (liste.length ? '' : '<p class="vide">Aucune publicité.</p>') + '</div>';
+  document.getElementById('nouvellePub').onclick = () => fichePub(null);
+  document.querySelectorAll('tr[data-id]').forEach((tr) => tr.onclick = () => fichePub(liste.find((p) => p.id === tr.dataset.id)));
+}
+
+function fichePub(p) {
+  const v = p || { emplacement: 'accueil', actif: true, bon: false, priorite: 50, couleur: '#006233', exempleFictif: false };
+  const opt = Object.keys(EMPL).map((k) => '<option value="' + k + '"' + (k === v.emplacement ? ' selected' : '') + '>' + EMPL[k] + '</option>').join('');
+  ouvrirTiroir('<h2>' + (p ? 'Modifier la publicité' : 'Nouvelle publicité') + '</h2>' +
+    (p ? '<p class="sous">' + nb(p.vue) + ' vues · ' + nb(p.clic) + ' clics (' + p.ctr + ' %) · ' + nb(p.bons) + ' bons</p>' : '') +
+    '<form class="formPub" id="formPub">' +
+    '<label>Emplacement dans l\'application</label><select name="emplacement">' + opt + '</select>' +
+    '<label>Annonceur *</label><input name="annonceur" maxlength="60" required value="' + esc(v.annonceur || '') + '">' +
+    '<label>Titre de l\'offre * <span class="note">(40 caractères conseillés)</span></label><input name="titre" maxlength="60" required value="' + esc(v.titre || '') + '">' +
+    '<label>Texte ou conditions</label><input name="texte" maxlength="120" value="' + esc(v.texte || '') + '">' +
+    '<label>Adresse du magasin</label><input name="adresse" maxlength="120" value="' + esc(v.adresse || '') + '">' +
+    '<label>Lien de l\'offre (https://…)</label><input name="lien" type="url" maxlength="300" placeholder="https://" value="' + esc(v.lien || '') + '"><div class="aide">Ouvert quand le passager touche la publicité (si elle n\'a pas de bon).</div>' +
+    '<label><input type="checkbox" name="bon" style="width:auto"' + (v.bon ? ' checked' : '') + '> Bon de réduction avec QR code</label>' +
+    '<div id="blocPosition"><div class="deux"><div><label>Latitude</label><input name="lat" inputmode="decimal" value="' + (v.position ? v.position.lat : '') + '"></div><div><label>Longitude</label><input name="lng" inputmode="decimal" value="' + (v.position ? v.position.lng : '') + '"></div></div><div class="aide">Obligatoire pour un lieu mis en avant ou une destination sponsorisée. Dans Google Maps : clic droit sur le lieu, puis cliquer sur les coordonnées pour les copier.</div></div>' +
+    '<div class="deux"><div><label>Début de diffusion</label><input name="debut" type="date" value="' + esc(v.debut || '') + '"></div><div><label>Fin de diffusion</label><input name="fin" type="date" value="' + esc(v.fin || '') + '"></div></div><div class="aide">Laisser vide pour diffuser sans limite.</div>' +
+    '<div class="deux"><div><label>Couleur du badge</label><input name="couleur" type="color" value="' + esc(v.couleur || '#006233') + '"></div><div><label>Ordre (0 = en premier)</label><input name="priorite" type="number" min="0" max="999" value="' + (v.priorite ?? 50) + '"></div></div>' +
+    '<label><input type="checkbox" name="actif" style="width:auto"' + (v.actif ? ' checked' : '') + '> Diffusée (décocher pour mettre en pause)</label>' +
+    '<label><input type="checkbox" name="exempleFictif" style="width:auto"' + (v.exempleFictif ? ' checked' : '') + '> Annonceur fictif (mention « exemple fictif » dans l\'application)</label>' +
+    '<div class="apercuPub" id="apercuPub"></div>' +
+    '<p class="erreur" id="erreurPub" style="color:var(--rouge)"></p>' +
+    '<div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" type="submit">Enregistrer</button>' +
+    (p ? '<button class="btn rouge" type="button" id="supprimerPub">Supprimer</button>' : '') + '</div></form>' +
+    (p ? '<h3 style="margin-top:22px">Logo de l\'annonceur</h3><p class="note">PNG, JPEG ou WebP, carré de préférence, 1 Mo au plus.</p>' +
+      '<input type="file" id="fichierLogo" accept="image/png,image/jpeg,image/webp"> ' + (p.image ? '<button class="btn sec" type="button" id="retirerLogo">Retirer le logo</button>' : '') +
+      '<p class="note" id="etatLogo"></p>' : '<p class="note">Le logo s\'ajoute après le premier enregistrement.</p>'));
+  const f = document.getElementById('formPub');
+  const apercu = () => {
+    const d = new FormData(f);
+    const empl = d.get('emplacement');
+    document.getElementById('blocPosition').style.display = (empl === 'lieu' || empl === 'destination') ? 'block' : 'none';
+    const tag = d.get('exempleFictif') ? 'Publicité · exemple fictif' : 'Publicité';
+    document.getElementById('apercuPub').innerHTML = logoPub({ annonceur: d.get('annonceur'), couleur: d.get('couleur'), image: p && p.image }) +
+      '<div style="flex:1"><span class="note" style="background:#efe5cf;border-radius:6px;padding:1px 6px;font-weight:700">' + tag + '</span><br><b>' + esc(d.get('titre') || 'Titre de l\'offre') + '</b><br><span class="note">' + esc(d.get('annonceur') || 'Annonceur') + ' · ' + esc(d.get('texte') || '') + '</span></div>' + (d.get('bon') ? '<span style="font-size:22px">▦</span>' : '');
+  };
+  f.oninput = apercu; f.onchange = apercu; apercu();
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const d = new FormData(f);
+    const lat = parseFloat(String(d.get('lat') || '').replace(',', '.')), lng = parseFloat(String(d.get('lng') || '').replace(',', '.'));
+    const corps = {
+      emplacement: d.get('emplacement'), annonceur: d.get('annonceur'), titre: d.get('titre'), texte: d.get('texte'),
+      adresse: d.get('adresse'), lien: d.get('lien'), bon: !!d.get('bon'), actif: !!d.get('actif'), exempleFictif: !!d.get('exempleFictif'),
+      debut: d.get('debut') || '', fin: d.get('fin') || '', couleur: d.get('couleur'), priorite: Number(d.get('priorite') || 50),
+      position: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
+    };
+    try {
+      const r = await poster(p ? 'publicites/' + encodeURIComponent(p.id) : 'publicites', corps);
+      await publicites();
+      if (!p) fichePub(Object.assign({ vue: 0, clic: 0, bons: 0, ctr: 0 }, r)); else fermerTiroir();
+    } catch (err) {
+      let m = err.message; try { m = JSON.parse(m).message || m; } catch (x) {}
+      document.getElementById('erreurPub').textContent = 'Erreur : ' + m;
+    }
+  };
+  if (p) {
+    document.getElementById('supprimerPub').onclick = async () => {
+      if (!confirm('Supprimer la publicité « ' + p.titre + ' » ? Elle ne sera plus diffusée.')) return;
+      await poster('publicites/' + encodeURIComponent(p.id) + '/supprimer', {});
+      fermerTiroir(); publicites();
+    };
+    const retirer = document.getElementById('retirerLogo');
+    if (retirer) retirer.onclick = async () => { await poster('publicites/' + encodeURIComponent(p.id) + '/image/retirer', {}); fermerTiroir(); publicites(); };
+    document.getElementById('fichierLogo').onchange = async (e) => {
+      const fichier = e.target.files[0]; if (!fichier) return;
+      const etat = document.getElementById('etatLogo');
+      if (fichier.size > 1000000) { etat.textContent = 'Image trop lourde (1 Mo au plus).'; return; }
+      etat.textContent = 'Envoi…';
+      const r = await fetch('/admin/api/publicites/' + encodeURIComponent(p.id) + '/image', { method: 'POST', headers: { 'x-cle-admin': CLE, 'content-type': fichier.type }, body: fichier });
+      if (!r.ok) { let m = await r.text(); try { m = JSON.parse(m).message || m; } catch (x) {} etat.textContent = 'Erreur : ' + m; return; }
+      const maj = await r.json();
+      await publicites();
+      fichePub(Object.assign({}, p, maj, { image: '/ads/' + encodeURIComponent(p.id) + '/image?v=' + Date.now() }));
+    };
+  }
 }
 
 function ouvrirTiroir(html) {

@@ -1,7 +1,8 @@
-import { Body, Controller, ForbiddenException, Get, Header, Headers, HttpCode, Param, Post, Query, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Header, Headers, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
-import { ServerResponse } from 'http';
+import { IncomingMessage, ServerResponse } from 'http';
+import { AdsService, SaisiePublicite } from '../ads/ads.service';
 import { DriversService } from '../drivers/drivers.service';
 import { CONSOLE } from './console-page';
 import { AdminService } from './admin.service';
@@ -27,6 +28,7 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly drivers: DriversService,
+    private readonly ads: AdsService,
   ) {}
 
   private verifier(entete?: string, query?: string) {
@@ -151,5 +153,63 @@ export class AdminController {
   ) {
     this.verifier(h, q);
     return this.admin.traiterPlainte(id, corps?.statut ?? '', corps?.reponse);
+  }
+
+  // ---------- Publicités ----------
+
+  @Get('api/publicites')
+  publicites(@Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    return this.ads.pourConsole();
+  }
+
+  @Post('api/publicites')
+  @HttpCode(201)
+  creerPublicite(@Body() corps: SaisiePublicite, @Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    return this.ads.creer(corps ?? {});
+  }
+
+  @Post('api/publicites/:id')
+  @HttpCode(200)
+  modifierPublicite(@Param('id') id: string, @Body() corps: SaisiePublicite, @Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    return this.ads.modifier(id, corps ?? {});
+  }
+
+  @Post('api/publicites/:id/supprimer')
+  @HttpCode(200)
+  supprimerPublicite(@Param('id') id: string, @Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    return this.ads.supprimer(id);
+  }
+
+  /** Logo de l'annonceur : corps brut image/png, image/jpeg ou image/webp (1 Mo au plus). */
+  @Post('api/publicites/:id/image')
+  @HttpCode(200)
+  async imagePublicite(@Param('id') id: string, @Req() req: IncomingMessage, @Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    const type = String(req.headers['content-type'] ?? '').split(';')[0].trim();
+    const donnees = await new Promise<Buffer>((ok, ko) => {
+      const parts: Buffer[] = [];
+      let taille = 0;
+      req.on('data', (c: Buffer) => {
+        taille += c.length;
+        if (taille > 1_000_000) {
+          ko(new BadRequestException('image trop lourde (1 Mo au plus)'));
+          req.destroy();
+        } else parts.push(c);
+      });
+      req.on('end', () => ok(Buffer.concat(parts)));
+      req.on('error', ko);
+    });
+    return this.ads.mettreImage(id, type, donnees);
+  }
+
+  @Post('api/publicites/:id/image/retirer')
+  @HttpCode(200)
+  retirerImagePublicite(@Param('id') id: string, @Headers('x-cle-admin') h?: string, @Query('cle') q?: string) {
+    this.verifier(h, q);
+    return this.ads.retirerImage(id);
   }
 }

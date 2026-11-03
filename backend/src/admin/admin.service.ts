@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { AccountsService, Compte } from '../accounts/accounts.service';
-import { PUBLICITES } from '../ads/ads';
+import { AdsService } from '../ads/ads.service';
 import { haversine } from '../domain/geo';
 import { DossierChauffeur, DriversService } from '../drivers/drivers.service';
 import { DemandeCourse, RidesService } from '../rides/rides.service';
@@ -43,6 +43,7 @@ export class AdminService {
     private readonly comptes: AccountsService,
     private readonly drivers: DriversService,
     private readonly rides: RidesService,
+    @Optional() private readonly ads?: AdsService,
   ) {}
 
   now = () => Date.now();
@@ -322,7 +323,6 @@ export class AdminService {
     const plaintes = this.plaintes().filter((p) => t - Date.parse(p.creeLe) <= j * JOUR);
     const motifs: Record<string, number> = {};
     for (const p of plaintes) motifs[p.motif] = (motifs[p.motif] ?? 0) + 1;
-    const stats = (id: string) => this.store.get<{ vue: number; clic: number; bon: number }>('pub_stats', id) ?? { vue: 0, clic: 0, bon: 0 };
     return {
       jours: j,
       parJour: [...parJour.values()],
@@ -331,10 +331,9 @@ export class AdminService {
       sources,
       topDestinations: [...destinations.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([nom, n]) => ({ nom, n })),
       plaintes: { total: plaintes.length, motifs },
-      publicites: PUBLICITES.map((p) => {
-        const s = stats(p.id);
-        return { id: p.id, annonceur: p.annonceur, titre: p.titre, emplacement: p.emplacement, ...s, ctr: s.vue ? Math.round((s.clic / s.vue) * 1000) / 10 : 0 };
-      }),
+      publicites: (this.ads?.pourConsole() ?? []).map((p) => ({
+        id: p.id, annonceur: p.annonceur, titre: p.titre, emplacement: p.emplacement, vue: p.vue, clic: p.clic, bon: p.bons, ctr: p.ctr,
+      })),
     };
   }
 
