@@ -565,4 +565,10 @@ const Map<String, String> ko = {
   'driverAppPromoHint': "Bab Taxi 기사용 앱 다운로드",
   'priceTo': "~",
   'rideFromWhatsapp': "WhatsApp으로 주문한 택시",
+  'haveAccount': "이미 계정이 있습니다: 로그인",
+  'loginTitle': "로그인",
+  'loginIntro': "Bab Taxi 계정의 전화번호를 입력한 다음 받은 코드를 입력하세요.",
+  'noAccountForPhone': "이 번호로 된 계정이 없습니다. 아래에서 계정을 만드세요.",
+  'newAccountInstead': "새 계정 만들기",
+  'welcomeBack': "다시 오신 것을 환영합니다,",
 };

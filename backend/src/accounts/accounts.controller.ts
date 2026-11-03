@@ -37,6 +37,15 @@ export class AccountsController {
   @Post('auth/verify')
   @HttpCode(200)
   async verifier(@Body() corps: { phone?: string; code?: string }) {
-    return { ok: await this.comptes.verifierCode(corps?.phone ?? '', corps?.code ?? '') };
+    const ok = await this.comptes.verifierCode(corps?.phone ?? '', corps?.code ?? '');
+    // Connexion à un compte existant (nouveau téléphone, application réinstallée) : le compte lié à ce
+    // numéro est rendu seulement après le bon code.
+    const c = ok ? this.comptes.parNumero(corps?.phone ?? '') : undefined;
+    return {
+      ok,
+      compte: c && !c.bloque
+        ? { id: c.id, telephone: c.telephone, prenom: c.prenom, nom: c.nom, email: c.email ?? '', nationalite: c.nationalite ?? '', langue: c.langue ?? '' }
+        : null,
+    };
   }
 }

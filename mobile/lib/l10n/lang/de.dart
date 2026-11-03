@@ -568,4 +568,10 @@ const Map<String, String> de = {
   'driverAppPromoHint': "Lade die App Bab Taxi Fahrer herunter",
   'priceTo': "bis",
   'rideFromWhatsapp': "Ihre über WhatsApp bestellte Fahrt",
+  'haveAccount': "Ich habe schon ein Konto: anmelden",
+  'loginTitle': "Anmelden",
+  'loginIntro': "Geben Sie die Nummer Ihres Bab-Taxi-Kontos ein, dann den erhaltenen Code.",
+  'noAccountForPhone': "Kein Konto mit dieser Nummer: Erstellen Sie unten Ihr Konto.",
+  'newAccountInstead': "Neues Konto erstellen",
+  'welcomeBack': "Willkommen zurück,",
 };

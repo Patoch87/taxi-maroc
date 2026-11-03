@@ -567,4 +567,10 @@ const Map<String, String> fa = {
   'driverAppPromoHint': "برنامه باب تاکسی راننده را دانلود کنید",
   'priceTo': "تا",
   'rideFromWhatsapp': "سفر شما از طریق واتساپ سفارش داده شد",
+  'haveAccount': "از قبل حساب دارم: ورود",
+  'loginTitle': "ورود",
+  'loginIntro': "شماره حساب باب تاکسی خود و سپس کد دریافتی را وارد کنید.",
+  'noAccountForPhone': "حسابی با این شماره وجود ندارد: حساب خود را در پایین بسازید.",
+  'newAccountInstead': "ایجاد حساب جدید",
+  'welcomeBack': "خوش برگشتید،",
 };

@@ -20,6 +20,9 @@ class PhoneCodeVerifier {
 
   bool get verified => _result == true;
 
+  /// Compte déjà lié au numéro, rendu par le serveur après le bon code (connexion à un compte existant).
+  Map<String, dynamic>? serverAccount;
+
   /// Code complet saisi mais refusé.
   bool get wrong => _result == false;
 
@@ -52,7 +55,10 @@ class PhoneCodeVerifier {
     _checked = v;
     if (!_server) return _result = v == c.testCode;
     try {
-      _result = await (_api ?? LiveApi()).checkCode(phone, v);
+      final r = await (_api ?? LiveApi()).verifyCode(phone, v);
+      _result = r['ok'] == true;
+      final c = r['compte'];
+      serverAccount = _result! && c is Map ? Map<String, dynamic>.from(c) : null;
     } catch (_) {
       _result = false;
     }

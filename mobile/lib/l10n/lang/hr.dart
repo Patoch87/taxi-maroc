@@ -568,4 +568,10 @@ const Map<String, String> hr = {
   'driverAppPromoHint': "Preuzmite aplikaciju Bab Taxi Vozač",
   'priceTo': "do",
   'rideFromWhatsapp': "Vaša vožnja naručena putem WhatsAppa",
+  'haveAccount': "Već imam račun: prijava",
+  'loginTitle': "Prijava",
+  'loginIntro': "Unesite broj svog Bab Taxi računa, zatim primljeni kod.",
+  'noAccountForPhone': "Nema računa s ovim brojem: izradite račun ispod.",
+  'newAccountInstead': "Izradi novi račun",
+  'welcomeBack': "Dobro došli natrag,",
 };

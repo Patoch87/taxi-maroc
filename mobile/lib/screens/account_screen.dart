@@ -160,10 +160,13 @@ class _DialPickerState extends State<_DialPicker> {
 
 /// Création du compte (premier lancement ou menu), et « Mon compte » pour le modifier.
 class AccountScreen extends StatefulWidget {
-  const AccountScreen({super.key, this.firstLaunch = false});
+  const AccountScreen({super.key, this.firstLaunch = false, this.codeApi});
 
   /// Premier lancement : bouton « Continuer en démo » pour passer l'inscription.
   final bool firstLaunch;
+
+  /// Serveur pour le code SMS (remplaçable dans les tests).
+  final LiveApi? codeApi;
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -187,7 +190,8 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _codeSent = false;
   bool _sending = false;
   bool _sendFailed = false;
-  final _verifier = PhoneCodeVerifier();
+  late final _verifier = PhoneCodeVerifier(api: widget.codeApi);
+
   /// Numéro auquel le code a été envoyé (un autre numéro demande un nouveau code).
   String? _codePhone;
   bool _nationalityMissing = false;
@@ -195,6 +199,10 @@ class _AccountScreenState extends State<AccountScreen> {
 
   /// Création du compte : connexion par empreinte ou visage proposée (activée après une vérification).
   bool _bio = true;
+
+  /// « J'ai déjà un compte » : seulement le numéro et le code, puis le compte du serveur est repris.
+  bool _login = false;
+  bool _noAccount = false;
 
   @override
   void dispose() {
@@ -248,6 +256,30 @@ class _AccountScreenState extends State<AccountScreen> {
     setState(() {});
     await _verifier.check(v);
     if (mounted) setState(() {});
+    // Comme Uber : numéro déjà connu, connexion automatique au compte (même depuis « Créer un compte »).
+    if (_existing == null && _verifier.verified && mounted && (_login || _verifier.serverAccount != null)) {
+      _finishLogin();
+    }
+  }
+
+  /// Connexion : le compte lié au numéro (rendu par le serveur après le bon code) est repris sur ce téléphone.
+  /// Même identifiant qu'avant : historique, dossier chauffeur et commande WhatsApp restent liés.
+  void _finishLogin() {
+    final a = Account.fromServer(_verifier.serverAccount);
+    if (a == null) {
+      // Numéro vérifié mais aucun compte : on passe à la création, numéro déjà vérifié.
+      setState(() {
+        _login = false;
+        _noAccount = true;
+      });
+      return;
+    }
+    accountStore.save(a);
+    final lang = _verifier.serverAccount?['langue'];
+    if (lang is String && S.supported.contains(lang) && lang != langNotifier.value) langNotifier.value = lang;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (!widget.firstLaunch && Navigator.canPop(context)) Navigator.pop(context);
+    messenger?.showSnackBar(SnackBar(content: Text('${s.t('welcomeBack')} ${a.firstName}')));
   }
 
   Future<void> _pickCountry() async {
@@ -353,7 +385,11 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _existing == null ? s.t('createAccount') : s.t('myAccount');
+    final title = _login
+        ? s.t('loginTitle')
+        : _existing == null
+            ? s.t('createAccount')
+            : s.t('myAccount');
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: !widget.firstLaunch,
@@ -365,10 +401,17 @@ class _AccountScreenState extends State<AccountScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
+            if (_noAccount)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(s.t('noAccountForPhone'),
+                    key: const ValueKey('noAccountForPhone'),
+                    style: const TextStyle(color: AppColors.taxiRed, fontWeight: FontWeight.w700)),
+              ),
             if (_existing == null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: Text(s.t('signUpIntro'), style: const TextStyle(color: AppColors.muted)),
+                child: Text(s.t(_login ? 'loginIntro' : 'signUpIntro'), style: const TextStyle(color: AppColors.muted)),
               )
             else
               Padding(
@@ -376,28 +419,30 @@ class _AccountScreenState extends State<AccountScreen> {
                 child: Text('${s.t('accountId')} : ${_existing.id}',
                     style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600)),
               ),
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                child: TextFormField(
-                  key: const ValueKey('firstName'),
-                  controller: _first,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: _deco(s.t('firstName')),
-                  validator: _required,
+            if (!_login) ...[
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(
+                  child: TextFormField(
+                    key: const ValueKey('firstName'),
+                    controller: _first,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: _deco(s.t('firstName')),
+                    validator: _required,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextFormField(
-                  key: const ValueKey('lastName'),
-                  controller: _last,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: _deco(s.t('lastName')),
-                  validator: _required,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    key: const ValueKey('lastName'),
+                    controller: _last,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: _deco(s.t('lastName')),
+                    validator: _required,
+                  ),
                 ),
-              ),
-            ]),
-            const SizedBox(height: 12),
+              ]),
+              const SizedBox(height: 12),
+            ],
             // Indicatif (drapeau + code, compact) à côté du numéro local.
             Directionality(
               textDirection: TextDirection.ltr,
@@ -487,75 +532,88 @@ class _AccountScreenState extends State<AccountScreen> {
               Text(s.t('phoneVerified'),
                   style: const TextStyle(color: AppColors.moroccoGreen, fontWeight: FontWeight.w700)),
             ],
-            const SizedBox(height: 12),
-            TextFormField(
-              key: const ValueKey('email'),
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: _deco(s.t('emailOptional')),
-              validator: (v) => validEmail(v ?? '') ? null : s.t('invalidEmail'),
-            ),
-            const SizedBox(height: 12),
-            // Nationalité (obligatoire) : liste avec recherche et drapeaux.
-            Semantics(
-              button: true,
-              label: '${s.t('nationality')} : ${_country?.name(s.lang) ?? s.t('chooseNationality')}',
-              excludeSemantics: true,
-              onTap: _pickCountry,
-              child: Material(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: BorderSide(color: _nationalityMissing ? AppColors.taxiRed : AppColors.line, width: 1.5),
+            if (!_login) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                key: const ValueKey('email'),
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _deco(s.t('emailOptional')),
+                validator: (v) => validEmail(v ?? '') ? null : s.t('invalidEmail'),
+              ),
+              const SizedBox(height: 12),
+              // Nationalité (obligatoire) : liste avec recherche et drapeaux.
+              Semantics(
+                button: true,
+                label: '${s.t('nationality')} : ${_country?.name(s.lang) ?? s.t('chooseNationality')}',
+                excludeSemantics: true,
+                onTap: _pickCountry,
+                child: Material(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(color: _nationalityMissing ? AppColors.taxiRed : AppColors.line, width: 1.5),
+                  ),
+                  child: ListTile(
+                    key: const ValueKey('nationality'),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    leading: Text(_country?.flag ?? '🌍', style: const TextStyle(fontSize: 26)),
+                    title: Text(s.t('nationality'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                    subtitle: Text(_country?.name(s.lang) ?? s.t('chooseNationality'),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                    trailing: const Icon(Icons.expand_more),
+                    onTap: _pickCountry,
+                  ),
                 ),
-                child: ListTile(
-                  key: const ValueKey('nationality'),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  leading: Text(_country?.flag ?? '🌍', style: const TextStyle(fontSize: 26)),
-                  title: Text(s.t('nationality'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-                  subtitle: Text(_country?.name(s.lang) ?? s.t('chooseNationality'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                  trailing: const Icon(Icons.expand_more),
-                  onTap: _pickCountry,
+              ),
+              if (_nationalityMissing)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                  child: Text(s.t('requiredField'), style: const TextStyle(color: AppColors.taxiRed, fontSize: 12)),
                 ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                // La clé suit la langue proposée : le champ se met à jour quand la nationalité change.
+                key: ValueKey('appLanguage-$_lang'),
+                initialValue: _lang,
+                isExpanded: true,
+                decoration: _deco(s.t('appLanguage')),
+                items: [
+                  for (final code in S.supported)
+                    DropdownMenuItem(value: code, child: Text('${S.flags[code]}  ${S.names[code]}')),
+                ],
+                onChanged: (v) => setState(() {
+                  _lang = v ?? _lang;
+                  _langTouched = true;
+                }),
               ),
-            ),
-            if (_nationalityMissing)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-                child: Text(s.t('requiredField'), style: const TextStyle(color: AppColors.taxiRed, fontSize: 12)),
-              ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              // La clé suit la langue proposée : le champ se met à jour quand la nationalité change.
-              key: ValueKey('appLanguage-$_lang'),
-              initialValue: _lang,
-              isExpanded: true,
-              decoration: _deco(s.t('appLanguage')),
-              items: [
-                for (final code in S.supported)
-                  DropdownMenuItem(value: code, child: Text('${S.flags[code]}  ${S.names[code]}')),
-              ],
-              onChanged: (v) => setState(() {
-                _lang = v ?? _lang;
-                _langTouched = true;
-              }),
-            ),
-            const SizedBox(height: 12),
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.privacy_tip_outlined, size: 18, color: AppColors.moroccoGreen),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(s.t('privacyNationality'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-              ),
-            ]),
-            _bioSwitch(),
+              const SizedBox(height: 12),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.privacy_tip_outlined, size: 18, color: AppColors.moroccoGreen),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(s.t('privacyNationality'), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                ),
+              ]),
+              _bioSwitch(),
+            ],
             const SizedBox(height: 16),
-            FilledButton(
-              key: const ValueKey('saveAccount'),
-              onPressed: _submit,
-              child: Text(_existing == null ? s.t('createAccount') : s.t('saveAccount')),
-            ),
+            if (!_login)
+              FilledButton(
+                key: const ValueKey('saveAccount'),
+                onPressed: _submit,
+                child: Text(_existing == null ? s.t('createAccount') : s.t('saveAccount')),
+              ),
+            // Premier lancement : se connecter au compte existant (nouveau téléphone, application réinstallée).
+            if (_existing == null)
+              TextButton(
+                key: const ValueKey('loginToggle'),
+                onPressed: () => setState(() {
+                  _login = !_login;
+                  _noAccount = false;
+                }),
+                child: Text(s.t(_login ? 'newAccountInstead' : 'haveAccount')),
+              ),
             // Application de déploiement : compte obligatoire (numéro vérifié, commande WhatsApp liée au compte).
             if (widget.firstLaunch && !isProduction)
               TextButton(onPressed: accountStore.skip, child: Text(s.t('continueDemo'))),

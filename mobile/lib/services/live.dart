@@ -292,8 +292,11 @@ class LiveApi {
   Future<SmsCode> sendCode(String phone) async =>
       SmsCode.fromJson(await _send('POST', '/auth/code', {'phone': phone}) as Map<String, dynamic>);
 
-  Future<bool> checkCode(String phone, String code) async =>
-      ((await _send('POST', '/auth/verify', {'phone': phone, 'code': code}) as Map)['ok']) == true;
+  Future<bool> checkCode(String phone, String code) async => (await verifyCode(phone, code))['ok'] == true;
+
+  /// Vérifie le code ; avec le bon code, rend aussi le compte déjà lié à ce numéro (« compte », ou null).
+  Future<Map<String, dynamic>> verifyCode(String phone, String code) async =>
+      Map<String, dynamic>.from(await _send('POST', '/auth/verify', {'phone': phone, 'code': code}) as Map);
 
   Future<bool> ping() async {
     try {

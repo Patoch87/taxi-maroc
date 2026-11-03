@@ -31,6 +31,16 @@ describe('Comptes et code SMS', () => {
     expect(compte.body).toEqual({ id: 'UVERIF', verifie: true });
   });
 
+  it('connexion à un compte existant : le compte est rendu seulement après le bon code', async () => {
+    await http().post('/accounts').send({ id: 'UCONN1', phone: '+212 661234500', firstName: 'Salma', lastName: 'B', nationality: 'MA', lang: 'fr' }).expect(201);
+    const faux = await http().post('/auth/verify').send({ phone: '0661234500', code: '0000' }).expect(200);
+    expect(faux.body).toEqual({ ok: false, compte: null });
+    const bon = await http().post('/auth/verify').send({ phone: '0661234500', code: '1234' }).expect(200);
+    expect(bon.body.compte).toMatchObject({ id: 'UCONN1', telephone: '212661234500', prenom: 'Salma', nom: 'B', nationalite: 'MA' });
+    const inconnu = await http().post('/auth/verify').send({ phone: '0661234599', code: '1234' }).expect(200);
+    expect(inconnu.body).toEqual({ ok: true, compte: null });
+  });
+
   it('limite le nombre de codes demandés par numéro', async () => {
     for (let i = 0; i < 5; i++) await http().post('/auth/code').send({ phone: '0699999999' }).expect(200);
     await http().post('/auth/code').send({ phone: '0699999999' }).expect(429);

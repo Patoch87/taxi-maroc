@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'dial_codes.dart';
+
 /// Pays proposés pour la nationalité : code ISO, noms en français, arabe et anglais,
 /// et langue de l'application proposée par défaut.
 class Country {
@@ -121,6 +123,30 @@ class Account {
         'nationality': nationality,
         'phoneCountry': phoneCountry,
       };
+
+  /// Compte rendu par le serveur à la connexion (numéro au format WhatsApp : « 212612345678 »).
+  static Account? fromServer(Map<String, dynamic>? j) {
+    if (j == null) return null;
+    final id = j['id'], tel = j['telephone'];
+    if (id is! String || tel is! String || tel.isEmpty) return null;
+    // Indicatif le plus long qui correspond au début du numéro (Maroc d'abord à longueur égale).
+    DialCode? dial;
+    for (final d in dialCodes) {
+      if (tel.startsWith(d.dial) && (dial == null || d.dial.length > dial.dial.length)) dial = d;
+    }
+    final d = dial ?? dialCodes.first;
+    final rest = tel.startsWith(d.dial) ? tel.substring(d.dial.length) : tel;
+    final nat = j['nationalite'];
+    return Account(
+      id: id,
+      firstName: (j['prenom'] as String?) ?? '',
+      lastName: (j['nom'] as String?) ?? '',
+      phone: '${d.code} $rest',
+      phoneCountry: d.iso,
+      email: (j['email'] as String?) ?? '',
+      nationality: nat is String && nat.isNotEmpty ? nat : d.iso,
+    );
+  }
 
   static Account? fromJson(Map<String, dynamic> j) {
     final id = j['id'], first = j['firstName'], last = j['lastName'], phone = j['phone'], nat = j['nationality'];

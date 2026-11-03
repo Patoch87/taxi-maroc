@@ -1,8 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:taxi_maroc/main.dart';
+import 'package:taxi_maroc/screens/account_screen.dart';
 import 'package:taxi_maroc/services/account.dart';
 import 'package:taxi_maroc/services/live.dart';
 import 'package:taxi_maroc/services/phone_code.dart';
@@ -96,5 +99,97 @@ void main() {
     serverConfig.value = ServerConfig.fromJson({'whatsapp': null, 'carte': true});
     expect(cardPaymentAvailable, isTrue);
     expect(whatsappOrderLink('x'), isNull);
+  });
+
+  test('compte rendu par le serveur : numéro, indicatif et nationalité', () {
+    final a = Account.fromServer(
+        {'id': 'UAB12C', 'telephone': '212612345678', 'prenom': 'Salma', 'nom': 'B', 'nationalite': 'MA'})!;
+    expect(a.phone, '+212 612345678');
+    expect(a.phoneCountry, 'MA');
+    expect(a.firstName, 'Salma');
+    final f =
+        Account.fromServer({'id': 'UFR', 'telephone': '33612345678', 'prenom': 'Paul', 'nom': 'D', 'nationalite': ''})!;
+    expect(f.phone, '+33 612345678');
+    expect(f.nationality, 'FR');
+    expect(Account.fromServer(null), isNull);
+  });
+
+  testWidgets("« J'ai déjà un compte » : numéro, code, puis le compte du serveur est repris", (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    accountStore.reset();
+    langNotifier.value = 'fr';
+    serverOn();
+    final api = LiveApi(
+      client: MockClient((r) async {
+        if (r.url.path == '/auth/code') {
+          return http.Response(jsonEncode({'mode': 'test', 'longueur': 4, 'codeTest': '1234'}), 200);
+        }
+        final b = jsonDecode(r.body) as Map;
+        final ok = b['code'] == '1234';
+        final connu = (b['phone'] as String).replaceAll(' ', '').contains('612345678');
+        return http.Response(
+            jsonEncode({
+              'ok': ok,
+              'compte': ok && connu
+                  ? {
+                      'id': 'UAB12C',
+                      'telephone': '212612345678',
+                      'prenom': 'Salma',
+                      'nom': 'B',
+                      'nationalite': 'MA',
+                      'langue': 'fr'
+                    }
+                  : null,
+            }),
+            200);
+      }),
+    );
+    Future<void> settle() async {
+      for (var i = 0; i < 5; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+    }
+
+    Future<void> login(String number) async {
+      await tester.pumpWidget(MaterialApp(home: AccountScreen(key: UniqueKey(), firstLaunch: true, codeApi: api)));
+      await tester.tap(find.byKey(const ValueKey('loginToggle')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('firstName')), findsNothing);
+      expect(find.text('Se connecter'), findsWidgets);
+      await tester.enterText(find.byKey(const ValueKey('phone')), number);
+      await tester.pump();
+      await tester.tap(find.text('Recevoir le code par SMS'));
+      await settle();
+      await tester.enterText(find.byKey(const ValueKey('smsCode')), '1234');
+      await settle();
+    }
+
+    await login('612 345 678');
+    expect(accountStore.account?.id, 'UAB12C');
+    expect(accountStore.account?.phone, '+212 612345678');
+
+    // Depuis « Créer un compte », un numéro connu connecte aussi directement (comme Uber).
+    accountStore.reset();
+    await tester.pumpWidget(MaterialApp(home: AccountScreen(key: UniqueKey(), firstLaunch: true, codeApi: api)));
+    await tester.enterText(find.byKey(const ValueKey('phone')), '612 345 678');
+    await tester.pump();
+    await tester.ensureVisible(find.text('Recevoir le code par SMS'));
+    await tester.tap(find.text('Recevoir le code par SMS'));
+    await settle();
+    await tester.enterText(find.byKey(const ValueKey('smsCode')), '1234');
+    await settle();
+    expect(accountStore.account?.id, 'UAB12C');
+
+    // Numéro sans compte : passage à la création, numéro déjà vérifié.
+    accountStore.reset();
+    await login('612 345 699');
+    expect(accountStore.account, isNull);
+    expect(find.byKey(const ValueKey('noAccountForPhone')), findsOneWidget);
+    expect(find.byKey(const ValueKey('firstName')), findsOneWidget);
+    expect(find.text('Numéro vérifié'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 }
