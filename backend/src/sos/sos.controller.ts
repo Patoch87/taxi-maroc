@@ -235,16 +235,18 @@ small{color:#5b6b63}a{color:#006233}
 <script>
 const cle = new URLSearchParams(location.search).get('cle') || '';
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
-let dernier = '';
+// null au départ : sinon une liste vide au premier chargement n'était jamais affichée (« Chargement… » sans fin).
+let dernier = null;
 async function charger(){
   const r = await fetch('/sos?cle=' + encodeURIComponent(cle));
+  if (!r.ok) { document.getElementById('m').innerHTML = '<p>Erreur ' + r.status + ' : clé du centre de sécurité incorrecte ou serveur indisponible.</p>'; dernier = null; return; }
   const liste = await r.json();
   // La page n'est redessinée que si une alerte a changé (sinon la vidéo en cours s'arrêterait).
   const cleVue = liste.map(a => a.id + a.statut + a.segments + (a.derniere ? a.derniere.a : '')).join('|');
   if (cleVue === dernier) return;
   dernier = cleVue;
   const m = document.getElementById('m');
-  if (!liste.length) { m.innerHTML = '<p>Aucune alerte.</p>'; return; }
+  if (!liste.length) { m.innerHTML = '<div class="a"><b>Aucune alerte SOS pour le moment.</b><br><small>Quand un passager appuie sur SOS, l’alerte apparaît ici en quelques secondes avec sa position et la vidéo. La page se met à jour toute seule.</small></div>'; return; }
   m.innerHTML = liste.map(a => {
     const p = a.derniere;
     const carte = p ? '<a target="_blank" href="https://www.google.com/maps?q=' + p.lat + ',' + p.lng + '">Position ' + p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) + '</a> <small>(' + new Date(p.a).toLocaleTimeString('fr-FR') + ')</small>' : 'Position inconnue';
