@@ -1,0 +1,97 @@
+name: Démos par fonctionnalité
+
+# Une courte vidéo par fonctionnalité majeure : passager (8), chauffeur (4), console de commande (2).
+# Application web avec la vraie carte Google Maps, serveur Bab Taxi local rempli de données fictives,
+# voix du narrateur des films (ElevenLabs) si le secret ELEVENLABS_API_KEY est là.
+# Les vidéos sont publiées sur la branche « demo-fonctions-videos » (avec les voix, réutilisées au passage suivant).
+on:
+  push:
+    branches: [demo-fonctions]
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Scénarios à refaire, séparés par des espaces (vide = tous)"
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: demo-fonctions
+  cancel-in-progress: true
+
+jobs:
+  demos:
+    runs-on: ubuntu-24.04
+    environment: MAPS_API_KEY
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+      - name: Applications web (passager démo et chauffeur) avec Google Maps
+        working-directory: mobile
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: |
+          flutter pub get
+          OPTS="--dart-define=MAPS_API_KEY=$MAPS_API_KEY --dart-define=WEB_GOOGLE_MAPS=true --dart-define=NO_ADS=true --dart-define=FILM=true"
+          flutter build web $OPTS --dart-define=BAB_APP=chauffeur
+          mv build/web ../web-chauffeur
+          flutter build web $OPTS
+          mv build/web ../web-demo
+          for d in ../web-demo ../web-chauffeur; do
+            sed -i "s|</head>|<script src=\"https://maps.googleapis.com/maps/api/js?key=$MAPS_API_KEY\"></script></head>|" $d/index.html
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Navigateur, polices et ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-color-emoji fonts-noto-core fonts-noto-extra ffmpeg
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Serveur Bab Taxi de démonstration (données fictives)
+        working-directory: backend
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          npm ci
+          npm run build
+          PORT=3300 BAB_ADMIN_TOKEN=demo nohup node ../.github/demo/console/serveur-demo.js > ../serveur-demo.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3300/health && break; sleep 1; done
+          cat ../serveur-demo.log
+      - name: Vidéos et voix déjà faites (branche des vidéos)
+        run: |
+          mkdir -p out/voix
+          if git fetch -q --depth 1 origin demo-fonctions-videos; then
+            git archive FETCH_HEAD | tar -x -C out 2>/dev/null || true
+            rm -f out/echec*.png
+          fi
+          ls out/voix | wc -l
+      - name: Enregistrement et montage
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          NODE_PATH: ${{ github.workspace }}/node_modules
+        run: |
+          (cd web-demo && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          (cd web-chauffeur && python3 -m http.server 8766 >/dev/null 2>&1 &)
+          sleep 2
+          bash .github/demo/fonctions.sh http://localhost:8765/ http://localhost:8766/ http://localhost:3300 out ${{ github.event.inputs.scenarios }}
+          tail -20 serveur-demo.log
+      - name: Publier sur la branche demo-fonctions-videos
+        run: |
+          rm -rf out/brut
+          cd out
+          git init -q -b demo-fonctions-videos
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Démos par fonctionnalité du commit $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" demo-fonctions-videos

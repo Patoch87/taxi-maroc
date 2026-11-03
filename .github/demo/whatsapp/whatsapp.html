@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WhatsApp · Bab Taxi</title>
+<style>
+/* Écran WhatsApp (Android) pour la vidéo de démonstration : la conversation est remplie par whatsapp.js
+   avec les vraies réponses du serveur Bab Taxi (/whatsapp/demo/...). */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:Roboto,"Noto Sans",system-ui,sans-serif;color:#111b21;overflow:hidden}
+body{display:flex;flex-direction:column;background:#efeae2}
+header{background:#008069;color:#fff;height:62px;display:flex;align-items:center;gap:10px;padding:0 10px 0 6px;flex:none}
+header .ret{font-size:24px;width:26px;text-align:center}
+.av{width:40px;height:40px;border-radius:50%;background:#F3EAD7;display:grid;place-items:center;flex:none}
+header .nom{font-size:17px;font-weight:500;display:flex;align-items:center;gap:5px}
+header .etat{font-size:12.5px;opacity:.9}
+header .ic{margin-left:auto;display:flex;gap:20px;font-size:20px}
+#fil{flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:8px 9px 6px;gap:3px;
+ background-color:#efeae2;background-image:radial-gradient(rgba(0,0,0,.035) 1.2px,transparent 1.3px);background-size:18px 18px}
+.l{display:flex;flex-direction:column;animation:entre .22s ease-out}
+.l.moi{align-items:flex-end}
+@keyframes entre{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.b{max-width:84%;background:#fff;border-radius:9px;padding:6px 8px 7px;box-shadow:0 1px .5px rgba(11,20,26,.13);position:relative;font-size:15.2px;line-height:1.36}
+.moi .b{background:#d9fdd3}
+.h{font-size:11px;color:#667781;float:right;margin:6px 0 -4px 10px}
+.vu{color:#53bdeb;font-size:12px}
+.chip{align-self:center;background:#fff;color:#54656f;font-size:12.5px;border-radius:7px;padding:5px 11px;margin:6px 0;box-shadow:0 1px .5px rgba(11,20,26,.13)}
+.boutons{max-width:84%;width:84%;display:flex;flex-direction:column;gap:3px;margin-top:3px}
+.bt{background:#fff;border-radius:9px;text-align:center;color:#027eb5;font-weight:500;font-size:15px;padding:10px;box-shadow:0 1px .5px rgba(11,20,26,.13)}
+.bt.lien:before{content:"↗ "} .bt.pos:before{content:"📍 "}
+.b.avecBt{border-bottom-left-radius:9px}
+.vn{display:flex;align-items:center;gap:8px;min-width:250px;padding:7px 8px 8px}
+.vn .pl{width:30px;height:30px;display:grid;place-items:center;color:#54656f;font-size:22px}
+.vn .on{flex:1;height:28px;display:flex;align-items:center;gap:2px;position:relative}
+.vn .on i{display:block;width:3px;border-radius:2px;background:#b4bcc1}
+.vn .on i.lu{background:#4a9b7f}
+.moi .vn .on i.lu{background:#00a884}
+.vn .du{position:absolute;left:0;bottom:-15px;font-size:11px;color:#667781}
+.vn .ph{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;background:#F3EAD7;position:relative}
+.vn .ph .mic{position:absolute;right:-3px;bottom:-2px;font-size:13px;color:#00a884}
+.transcr{font-size:12.5px;color:#54656f;font-style:italic;margin-top:3px;max-width:250px}
+.loc{padding:3px;width:250px}
+.loc .carte{height:120px;border-radius:7px;overflow:hidden;position:relative;background:#e8eedf}
+.loc .lt{padding:5px 5px 2px;font-size:14px}
+.loc .lt span{color:#667781;font-size:12.5px}
+.ecrit{align-self:flex-start;background:#fff;border-radius:9px;padding:9px 13px;display:none;gap:4px;box-shadow:0 1px .5px rgba(11,20,26,.13)}
+.ecrit.on{display:flex}
+.ecrit i{width:7px;height:7px;border-radius:50%;background:#8696a0;animation:pt 1s infinite}
+.ecrit i:nth-child(2){animation-delay:.15s}.ecrit i:nth-child(3){animation-delay:.3s}
+@keyframes pt{50%{opacity:.3;transform:translateY(-2px)}}
+footer{flex:none;display:flex;align-items:center;gap:6px;padding:6px 6px 8px;background:transparent}
+.saisie{flex:1;background:#fff;border-radius:24px;height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;color:#8696a0;font-size:16px}
+.saisie .txt{flex:1;color:#111b21;white-space:nowrap;overflow:hidden}
+.saisie .txt:empty:before{content:"Message";color:#8696a0}
+.saisie.rec{color:#111b21}
+.saisie .rec{display:none;align-items:center;gap:8px;flex:1}
+.saisie.rec .rec{display:flex}.saisie.rec .txt,.saisie.rec .ic2{display:none}
+.saisie .rec b{width:10px;height:10px;border-radius:50%;background:#ea0038;animation:pt 1s infinite}
+.micro{width:48px;height:48px;border-radius:50%;background:#00a884;color:#fff;display:grid;place-items:center;font-size:22px;flex:none;transition:transform .15s}
+.micro.rec{transform:scale(1.25)}
+</style>
+</head>
+<body>
+<header>
+  <span class="ret">←</span>
+  <div class="av"><svg viewBox="0 0 100 100" width="30" height="30"><path d="M22 94 V52 C22 22 36 10 50 10 C64 10 78 22 78 52 V94 Z" fill="#C1272D"/><path d="M31 94 V54 C31 31 40 21 50 21 C60 21 69 31 69 54 V94 Z" fill="#F3EAD7"/><path d="M44 94 L48.5 40 H51.5 L56 94 Z" fill="#0F2A1E"/><rect x="44" y="2" width="12" height="12" fill="#006233" transform="rotate(45 50 8)"/></svg></div>
+  <div><div class="nom">Bab Taxi <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 1l2.6 2.2 3.4-.4.9 3.3 3 1.7-1.3 3.2 1.3 3.2-3 1.7-.9 3.3-3.4-.4L12 23l-2.6-2.2-3.4.4-.9-3.3-3-1.7L3.4 13 2.1 9.8l3-1.7.9-3.3 3.4.4z" fill="#25d366"/><path d="M8 12.2l2.7 2.6L16.3 9" fill="none" stroke="#fff" stroke-width="2"/></svg></div>
+  <div class="etat" id="etat">Compte professionnel</div></div>
+  <div class="ic"><span>📹</span><span>📞</span><span>⋮</span></div>
+</header>
+<div id="fil"><div class="chip">AUJOURD'HUI</div><div class="ecrit" id="ecrit"><i></i><i></i><i></i></div></div>
+<footer>
+  <div class="saisie" id="saisie"><span class="ic2">🙂</span><span class="txt" id="txt"></span><span class="rec"><b></b><span id="chrono">0:00</span><span style="margin-left:auto;color:#8696a0">◀ Glisser pour annuler</span></span><span class="ic2">📎</span><span class="ic2">📷</span></div>
+  <div class="micro" id="micro" aria-label="Micro">🎤</div>
+</footer>
+<script>
+const fil = document.getElementById('fil');
+const ecrit = document.getElementById('ecrit');
+let heure = 0;
+const h = () => { const m = 17 + Math.floor(heure / 4); heure++; return '20:' + String(m).padStart(2, '0'); };
+const esc = (s) => String(s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const onde = (n) => Array.from({ length: n }, (_, k) => '<i style="height:' + (5 + Math.round(20 * Math.abs(Math.sin(k * 0.73 + (k % 5)) * (0.45 + ((k * 37) % 11) / 20)))) + 'px"></i>').join('');
+const mmss = (d) => Math.floor(d / 60) + ':' + String(Math.round(d % 60)).padStart(2, '0');
+const LOGO = document.querySelector('.av').innerHTML.replace('width="30" height="30"', 'width="30" height="30"');
+function ligne(moi, html) {
+  const l = document.createElement('div');
+  l.className = 'l' + (moi ? ' moi' : '');
+  l.innerHTML = html;
+  fil.insertBefore(l, ecrit);
+  return l;
+}
+window.wa = {
+  ecrit(on) { ecrit.classList.toggle('on', !!on); document.getElementById('etat').textContent = on ? "en train d'écrire…" : 'en ligne'; fil.appendChild(ecrit); },
+  texte(moi, texte, opts = {}) {
+    let html = '<div class="b">' + esc(texte).replace(/\n/g, '<br>') + '<span class="h">' + h() + (moi ? ' <span class="vu">✓✓</span>' : '') + '</span></div>';
+    const bts = [];
+    if (opts.demandePosition) bts.push('<div class="bt pos" data-bt="position">Envoyer la position</div>');
+    for (const b of opts.boutons || []) bts.push('<div class="bt" data-bt="' + esc(b.id) + '">' + esc(b.titre) + '</div>');
+    if (opts.lien) bts.push('<div class="bt lien" data-bt="lien">' + esc(opts.lien.libelle) + '</div>');
+    if (bts.length) html += '<div class="boutons">' + bts.join('') + '</div>';
+    return ligne(moi, html);
+  },
+  vocal(moi, duree, transcription) {
+    const id = 'v' + Math.random().toString(36).slice(2, 8);
+    const ph = '<div class="ph">' + (moi ? '<span style="font-size:22px">👩</span>' : LOGO) + '<span class="mic">🎤</span></div>';
+    const html = '<div class="b vn" id="' + id + '">' + (moi ? '' : ph) + '<div class="pl">▶</div><div class="on">' + onde(32) + '<span class="du">' + mmss(duree) + '</span></div>' + (moi ? ph : '') +
+      '<span class="h" style="position:absolute;right:8px;bottom:4px">' + h() + (moi ? ' <span class="vu">✓✓</span>' : '') + '</span></div>' +
+      (transcription ? '<div class="transcr">« ' + esc(transcription) + ' »</div>' : '');
+    ligne(moi, html);
+    return id;
+  },
+  lire(id, duree) {
+    const el = document.getElementById(id);
+    const barres = [...el.querySelectorAll('.on i')];
+    el.querySelector('.pl').textContent = '❚❚';
+    const t0 = performance.now();
+    const pas = () => {
+      const f = Math.min(1, (performance.now() - t0) / (duree * 1000));
+      barres.forEach((b, k) => b.classList.toggle('lu', k / barres.length < f));
+      el.querySelector('.du').textContent = mmss(f * duree);
+      if (f < 1) requestAnimationFrame(pas);
+      else { el.querySelector('.pl').textContent = '▶'; el.querySelector('.du').textContent = mmss(duree); }
+    };
+    pas();
+  },
+  position(nom, adresse) {
+    return ligne(true, '<div class="b loc"><div class="carte"><svg viewBox="0 0 300 120" width="100%" height="120" preserveAspectRatio="xMidYMid slice"><rect width="300" height="120" fill="#E8EEDF"/>' +
+      '<path d="M-10 30 L320 58 M-10 92 L320 80 M60 -10 L90 140 M180 -10 L170 140 M240 -10 L262 140" stroke="#fff" stroke-width="11"/><path d="M-10 30 L320 58 M60 -10 L90 140" stroke="#F6D77A" stroke-width="4"/>' +
+      '<rect x="196" y="88" width="46" height="26" rx="4" fill="#D7DCCB"/><circle cx="150" cy="60" r="20" fill="rgba(26,115,232,.18)"/><circle cx="150" cy="60" r="8" fill="#1a73e8" stroke="#fff" stroke-width="3"/></svg></div>' +
+      '<div class="lt"><b>Position actuelle</b><br><span>' + esc(nom) + ' · ' + esc(adresse) + '</span><span class="h">' + h() + ' <span class="vu">✓✓</span></span></div></div>');
+  },
+  chip(t) { const c = document.createElement('div'); c.className = 'chip'; c.textContent = t; fil.insertBefore(c, ecrit); },
+  saisir(t) { document.getElementById('txt').textContent = t; },
+  enregistre(on) { document.getElementById('saisie').classList.toggle('rec', on); document.getElementById('micro').classList.toggle('rec', on); document.getElementById('micro').textContent = on ? '🎤' : (document.getElementById('txt').textContent ? '➤' : '🎤'); },
+  chrono(s) { document.getElementById('chrono').textContent = mmss(s); },
+  envoiVisible(on) { document.getElementById('micro').textContent = on ? '➤' : '🎤'; },
+};
+</script>
+</body>
+</html>
