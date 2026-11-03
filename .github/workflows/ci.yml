@@ -60,21 +60,34 @@ jobs:
       # (variable de dépôt API_URL, sinon Render) ; le mode démo reste dans le menu.
       # Clé Google Maps facultative (secret MAPS_API_KEY) : sans elle, l'APK garde la carte OpenStreetMap.
       # Indique (sans la montrer) si la clé est présente : annotation lisible sur l'exécution.
+      # Clé de signature Android stable (secret BAB_KEYSTORE_B64 = fichier .jks en base64, mot de passe BAB_KEYSTORE_PASS).
+      - name: Clé de signature
+        env:
+          BAB_KEYSTORE_B64: ${{ secrets.BAB_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$BAB_KEYSTORE_B64" ]; then
+            echo "$BAB_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/bab.jks"
+            echo "BAB_KEYSTORE=$RUNNER_TEMP/bab.jks" >> "$GITHUB_ENV"
+            echo "::notice title=Signature::Clé Bab Taxi stable"
+          else echo "::warning title=Signature::Pas de BAB_KEYSTORE_B64 : clé de debug (mise à jour impossible sans désinstaller)"; fi
       - name: Clé Google Maps
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+          BAB_KEYSTORE_PASS: ${{ secrets.BAB_KEYSTORE_PASS }}
         run: |
           if [ -n "$MAPS_API_KEY" ]; then echo "::notice title=Google Maps::Clé présente (${#MAPS_API_KEY} caractères)"
           else echo "::warning title=Google Maps::Aucune clé MAPS_API_KEY : carte OpenStreetMap"; fi
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL"
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+          BAB_KEYSTORE_PASS: ${{ secrets.BAB_KEYSTORE_PASS }}
           API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/taxi-maroc.apk
       # « Bab Taxi Chauffeur » : application des chauffeurs (inscription, dossier validé par Bab Taxi, courses).
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY" --dart-define=API_URL="$API_URL" --dart-define=BAB_APP=chauffeur
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+          BAB_KEYSTORE_PASS: ${{ secrets.BAB_KEYSTORE_PASS }}
           API_URL: ${{ vars.API_URL || 'https://bab-taxi-eu.onrender.com' }}
           BAB_APP: chauffeur
       - run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/bab-taxi-chauffeur.apk
@@ -83,6 +96,7 @@ jobs:
       - run: flutter build apk --release --dart-define=MAPS_API_KEY="$MAPS_API_KEY"
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY || vars.MAPS_API_KEY }}
+          BAB_KEYSTORE_PASS: ${{ secrets.BAB_KEYSTORE_PASS }}
           BAB_DEMO: oui
       - run: |
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/bab-taxi-demo.apk

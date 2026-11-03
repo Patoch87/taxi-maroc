@@ -142,6 +142,9 @@ describe('Agent WhatsApp', () => {
     const page = await http().get(`/ouvrir?c=${conv.courseId}`).expect(200);
     expect(page.text).toContain('intent://');
     expect(page.text).toContain('ma.taxi.taxi_maroc');
+    const liens = await http().get('/.well-known/assetlinks.json').expect(200);
+    expect(liens.body[0].target).toMatchObject({ package_name: 'ma.taxi.taxi_maroc' });
+    expect(liens.body[0].target.sha256_cert_fingerprints[0]).toMatch(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
   });
 
   it('darija : le bouton « Envoyer ma position » est proposé comme en français', async () => {

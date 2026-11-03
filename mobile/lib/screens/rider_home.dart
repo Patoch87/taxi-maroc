@@ -175,6 +175,13 @@ class _RiderHomeState extends State<RiderHome> {
         if (mounted) _startVoiceJourney(once: false);
       });
     }
+    // Ouverture depuis le bouton « Suivre mon taxi » de WhatsApp : la course s'affiche dès que le serveur répond
+    // et dès que l'application revient au premier plan, sans attendre le tour suivant.
+    live.addListener(_onLive);
+    _lifecycle = AppLifecycleListener(onResume: () {
+      if (live.enabled) _checkActiveRide();
+    });
+    if (live.enabled && !live.connecting) WidgetsBinding.instance.addPostFrameCallback((_) => _checkActiveRide());
     _ambientTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (!mounted || _step.index >= RiderStep.arriving.index) return;
       if (live.enabled) {
@@ -182,8 +189,9 @@ class _RiderHomeState extends State<RiderHome> {
         // lancement du parcours vocal) : on réessaie, sinon la course partirait du centre de Casablanca.
         if (widget.locate && !_hasFix && !_locating && _activeTick % 3 == 0) _locate();
         _refreshNearby();
-        // Toutes les 6 s : une course commandée sur WhatsApp (même numéro que le compte) s'affiche ici.
-        if (++_activeTick % 3 == 1) _checkActiveRide();
+        // Toutes les 2 s : une course commandée sur WhatsApp (même numéro que le compte) s'affiche ici.
+        ++_activeTick;
+        _checkActiveRide();
         return;
       }
       setState(() {
@@ -199,10 +207,18 @@ class _RiderHomeState extends State<RiderHome> {
     if (mounted) setState(() {});
   }
 
+  AppLifecycleListener? _lifecycle;
+
+  void _onLive() {
+    if (mounted && live.enabled && !live.connecting) _checkActiveRide();
+  }
+
   @override
   void dispose() {
     settings.removeListener(_onSettings);
     adCatalog.removeListener(_onSettings);
+    live.removeListener(_onLive);
+    _lifecycle?.dispose();
     _comment.dispose();
     _ambientTimer?.cancel();
     _adTimer?.cancel();
@@ -949,9 +965,9 @@ class _RiderHomeState extends State<RiderHome> {
       final pickup = r.pickup!, drop = r.drop!;
       final place = Place(r.destinationName.isEmpty ? 'Destination' : r.destinationName, drop.latitude,
           drop.longitude, const []);
-      final route = await fetchRoute(pickup, drop);
-      if (!mounted || _liveRideId != null || (_step != RiderStep.idle && _step != RiderStep.choosing)) return;
-      final routeM = routeLengthM(route);
+      // Affichage immédiat avec une ligne droite ; le vrai trajet (calculé en ligne) la remplace juste après.
+      final route = [pickup, drop];
+      final routeM = routeLengthM(route) * 1.3;
       final options = rideOptions(destination: place, routeM: routeM, passengers: _party);
       _liveRideId = r.id;
       setState(() {
@@ -978,6 +994,15 @@ class _RiderHomeState extends State<RiderHome> {
         ));
       }
       _fit(route);
+      final rideId = r.id;
+      fetchRoute(pickup, drop).then((real) {
+        if (!mounted || _liveRideId != rideId || real.length < 2) return;
+        setState(() {
+          _route = real;
+          _routeM = routeLengthM(real);
+        });
+        _fit(real);
+      }).catchError((_) {});
       final taxi = r.taxi;
       if (taxi != null) _liveTaxiPos = taxi.position;
       if (r.status == LiveStatus.accepted && taxi != null) {

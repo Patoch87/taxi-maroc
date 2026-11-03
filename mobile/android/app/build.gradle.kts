@@ -44,11 +44,24 @@ android {
         }
     }
 
+    // Clé de signature stable (secret GitHub BAB_KEYSTORE_B64, décodé par la CI dans BAB_KEYSTORE) : chaque
+    // nouvelle version s'installe par-dessus l'ancienne, et le bouton « Suivre mon taxi » de WhatsApp ouvre
+    // l'application directement (App Links, /.well-known/assetlinks.json du serveur). Sans le secret : clé de debug.
+    val babKeystore = System.getenv("BAB_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (babKeystore != null) {
+            create("bab") {
+                storeFile = babKeystore
+                storePassword = System.getenv("BAB_KEYSTORE_PASS")
+                keyAlias = System.getenv("BAB_KEY_ALIAS") ?: "babtaxi"
+                keyPassword = System.getenv("BAB_KEY_PASS") ?: System.getenv("BAB_KEYSTORE_PASS")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (babKeystore != null) "bab" else "debug")
         }
     }
 }
