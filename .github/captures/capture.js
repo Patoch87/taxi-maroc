@@ -64,6 +64,8 @@ const { chromium } = require('playwright');
   let keepSignUp = false;
   // Accélère la démo jusqu'à ×4 (×1 → ×2 → ×3 → ×4).
   const fast = async () => {
+    // Captures du film (FILM=true) : pas de bouton, la démo est déjà en ×4.
+    if (!(await target('Accélérer').count())) return;
     for (let i = 0; i < 3; i++) {
       await tap('Accélérer');
       await page.waitForTimeout(300);

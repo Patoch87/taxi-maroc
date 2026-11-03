@@ -127,7 +127,7 @@ class _RiderHomeState extends State<RiderHome> {
   List<double> _cum = [];
   Duration _legDuration = Duration.zero;
   Duration _elapsed = Duration.zero;
-  int _speed = 1;
+  int _speed = filmCapture ? 4 : 1;
   Timer? _moveTimer;
 
   /// Démo : le chauffeur démarre la course quelques secondes après l'arrivée du taxi.
@@ -1175,7 +1175,7 @@ class _RiderHomeState extends State<RiderHome> {
       _cum = cum;
       _legDuration = duration;
       _elapsed = Duration.zero;
-      _speed = 1;
+      _speed = filmCapture ? 4 : 1;
       _step = step;
     });
     const tick = Duration(milliseconds: 250);
@@ -2633,7 +2633,7 @@ class _RiderHomeState extends State<RiderHome> {
               TextButton(onPressed: _reset, child: Text(s.t('cancel'), style: const TextStyle(color: AppColors.muted))),
             const Spacer(),
             // Démo : la vitesse (×1 à ×4) reste toujours lisible dans sa pastille, même si le libellé est coupé.
-            if (!live.enabled)
+            if (!live.enabled && !filmCapture)
               Flexible(
                 child: Semantics(
                   button: true,
@@ -3179,7 +3179,7 @@ class _RiderHomeState extends State<RiderHome> {
           countdownLabel: _step == RiderStep.onTrip ? '${s.t('arrivalAt')} ${_clock(_arrivalTime)}' : null,
           note: _step == RiderStep.arrived ? s.t('waitDriverStart') : null,
           onSos: _sos,
-          onFastForward: _step == RiderStep.arrived ? null : _nextSpeed,
+          onFastForward: _step == RiderStep.arrived || filmCapture ? null : _nextSpeed,
           speed: _speed,
           // Mode senior : pas de publicité pendant la course, sauf si le passager la demande.
           extra: _promo == null

@@ -9,28 +9,28 @@ import 'promos.dart';
 /// fictif (exemples de démonstration), enregistré dans « Mes offres ». Une partie par jeu et par course.
 enum TripGame { scratch, wheel, quiz }
 
-/// Cadeaux des partenaires fictifs de la démo.
-const cafeAtlasGift = Promo(
-  id: 'ATLAS',
-  brand: 'Café Atlas',
-  initials: 'CA',
-  titleKey: 'giftCafeAtlas',
+/// Cadeaux des partenaires fictifs de la démo (marques inventées, tourisme au Maroc).
+const riadTeaGift = Promo(
+  id: 'KSARBAHJA',
+  brand: 'Riad Ksar Bahja',
+  initials: 'KB',
+  titleKey: 'giftRiadTea',
   detailKey: 'giftDetail',
-  address: 'Café Atlas, Boulevard d\'Anfa, Casablanca (exemple fictif)',
-  icon: Icons.coffee_outlined,
-  color: Color(0xFF6D4C41),
+  address: 'Riad Ksar Bahja, médina de Marrakech (exemple fictif)',
+  icon: Icons.emoji_food_beverage_outlined,
+  color: Color(0xFF8D3B2A),
   partnerGift: true,
 );
 
-const soukModeGift = Promo(
-  id: 'SOUKMODE',
-  brand: 'Souk Mode',
-  initials: 'SM',
-  titleKey: 'giftSoukMode',
+const desertNightGift = Promo(
+  id: 'SAHARALUNE',
+  brand: 'Sahara Lune',
+  initials: 'SL',
+  titleKey: 'giftDesertNight',
   detailKey: 'giftDetail',
-  address: 'Souk Mode, Maârif, Casablanca (exemple fictif)',
-  icon: Icons.shopping_bag_outlined,
-  color: Color(0xFF00897B),
+  address: 'Sahara Lune, excursions Merzouga (exemple fictif)',
+  icon: Icons.nightlight_round,
+  color: Color(0xFFC8742A),
   partnerGift: true,
 );
 
@@ -46,7 +46,7 @@ const sharedRideGift = Promo(
   partnerGift: true,
 );
 
-const tripGifts = [cafeAtlasGift, soukModeGift, sharedRideGift];
+const tripGifts = [riadTeaGift, desertNightGift, sharedRideGift];
 
 /// Parties déjà jouées : identifiant de la course → jeux joués.
 final _played = <String, Set<TripGame>>{};
