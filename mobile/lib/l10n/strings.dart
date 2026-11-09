@@ -895,6 +895,228 @@ class S {
       'بالعربية، غير ملي يكون الطاكسي خاوي',
       'Read in Arabic, only when the taxi is empty'
     ],
+    'helpButton': [
+      "Panne ou accident",
+      "عطل أو حادث",
+      "خسارة ولا كسيدة",
+      "Breakdown or accident"
+    ],
+    'helpButtonDesc': [
+      "Appeler les taxis Bab Taxi proches",
+      "طلب مساعدة سيارات Bab Taxi القريبة",
+      "عيط للطاكسيات ديال Bab Taxi لي قراب",
+      "Call nearby Bab Taxi drivers"
+    ],
+    'helpTitle': [
+      "Que se passe-t-il ?",
+      "ماذا حدث؟",
+      "آش وقع؟",
+      "What happened?"
+    ],
+    'helpBreakdown': [
+      "Panne",
+      "عطل",
+      "خسارة",
+      "Breakdown"
+    ],
+    'helpBreakdownDesc': [
+      "Le taxi ne peut plus rouler",
+      "سيارة الأجرة لا تستطيع السير",
+      "الطاكسي ما بقاش كيمشي",
+      "The taxi cannot drive any more"
+    ],
+    'helpAccident': [
+      "Accident",
+      "حادث سير",
+      "كسيدة",
+      "Accident"
+    ],
+    'helpAccidentDesc': [
+      "Accident de la circulation",
+      "حادثة سير",
+      "كسيدة ف الطريق",
+      "Traffic accident"
+    ],
+    'helpInjured': [
+      "Il y a des blessés",
+      "يوجد جرحى",
+      "كاين لي تجرح",
+      "Someone is injured"
+    ],
+    'helpInjuredHint': [
+      "Appelez d'abord les secours, puis vos collègues.",
+      "اتصل أولاً بالإسعاف ثم بزملائك.",
+      "عيط للإسعاف هو الأول، من بعد لصحابك.",
+      "Call emergency services first, then your colleagues."
+    ],
+    'helpAmbulance': [
+      "Ambulance · 15",
+      "الإسعاف · 15",
+      "لابيلانص · 15",
+      "Ambulance · 15"
+    ],
+    'helpPolice': [
+      "Police · 19",
+      "الشرطة · 19",
+      "البوليس · 19",
+      "Police · 19"
+    ],
+    'helpGendarmerie': [
+      "Gendarmerie · 177",
+      "الدرك · 177",
+      "الجادارمي · 177",
+      "Gendarmerie · 177"
+    ],
+    'helpRidersHint': [
+      "passager(s) avec vous : un collègue peut les reprendre, au même prix.",
+      "راكب معك: يمكن لزميل أن يكمل بهم الرحلة بنفس الثمن.",
+      "راكب معاك: صاحبك يقدر يكمل بيهم بنفس الثمن.",
+      "passenger(s) with you: a colleague can take them on, same fare."
+    ],
+    'helpSend': [
+      "Appeler les taxis proches",
+      "نداء سيارات الأجرة القريبة",
+      "عيط للطاكسيات لي قراب",
+      "Call nearby taxis"
+    ],
+    'helpSent': [
+      "Appel envoyé",
+      "تم إرسال النداء",
+      "تصيفط النداء",
+      "Call sent"
+    ],
+    'helpNotified': [
+      "chauffeurs Bab Taxi prévenus autour de vous",
+      "سائقين من Bab Taxi تم إخبارهم حولك",
+      "شيفورات ديال Bab Taxi تعلمو حداك",
+      "Bab Taxi drivers alerted around you"
+    ],
+    'helpNobody': [
+      "Aucun chauffeur en ligne près de vous pour le moment",
+      "لا يوجد سائق متصل قربك حالياً",
+      "ما كاين حتى شيفور قريب دابا",
+      "No driver online near you right now"
+    ],
+    'helpWaiting': [
+      "En attente de réponse…",
+      "في انتظار الرد…",
+      "كنتسناو الجواب…",
+      "Waiting for an answer…"
+    ],
+    'helpComing': [
+      "arrive pour vous aider",
+      "قادم لمساعدتك",
+      "جاي يعاونك",
+      "is coming to help"
+    ],
+    'helpTakesRiders': [
+      "reprend vos passagers",
+      "سيكمل الرحلة بركابك",
+      "غادي يدي الركاب ديالك",
+      "is taking your passengers"
+    ],
+    'helpSolved': [
+      "Problème réglé",
+      "تم حل المشكل",
+      "المشكل تحل",
+      "Problem solved"
+    ],
+    'helpIncoming': [
+      "Un collègue a besoin d'aide",
+      "زميل يحتاج إلى مساعدة",
+      "واحد صاحبك محتاج المعاونة",
+      "A colleague needs help"
+    ],
+    'helpRidersToTake': [
+      "passager(s) à reprendre",
+      "راكب للتكفل به",
+      "راكب خاصو يتدّى",
+      "passenger(s) to take on"
+    ],
+    'helpGo': [
+      "J'arrive",
+      "أنا قادم",
+      "أنا جاي",
+      "I'm coming"
+    ],
+    'helpTake': [
+      "Je prends les passagers",
+      "سأتكفل بالركاب",
+      "أنا نديهم",
+      "I'll take the passengers"
+    ],
+    'helpNotPossible': [
+      "Pas possible",
+      "غير ممكن",
+      "ما نقدرش",
+      "Not possible"
+    ],
+    'helpGoingTo': [
+      "Vous allez aider",
+      "أنت في الطريق لمساعدة",
+      "نتا ماشي تعاون",
+      "You're going to help"
+    ],
+    'helpRoute': [
+      "Itinéraire",
+      "الطريق",
+      "الطريق",
+      "Directions"
+    ],
+    'helpCantCome': [
+      "Je ne peux plus",
+      "لم أعد أستطيع",
+      "ما بقيتش نقدر",
+      "I can't any more"
+    ],
+    'helpTakenByOther': [
+      "Un autre chauffeur reprend déjà les passagers",
+      "سائق آخر يتكفل بالركاب",
+      "شيفور آخر ديجا داهم",
+      "Another driver is already taking the passengers"
+    ],
+    'helpClosedBy': [
+      "a réglé son problème. Merci pour l'entraide !",
+      "حل مشكلته. شكراً على التضامن!",
+      "تحل المشكل ديالو. شكرا على المعاونة!",
+      "has solved the problem. Thanks for helping!"
+    ],
+    'helpRidersAdded': [
+      "Passagers repris : allez les chercher au taxi en panne",
+      "تم التكفل بالركاب: اذهب إليهم عند سيارة الأجرة المعطلة",
+      "الركاب ولاو عندك: سير جيبهم من الطاكسي لي خسر",
+      "Passengers taken on: pick them up at the broken-down taxi"
+    ],
+    'helpNoRequests': [
+      "Pas de nouvelle course tant que l’appel est en cours",
+      "لا طلبات جديدة أثناء النداء",
+      "ما كاينش كورسات جداد حتى يسالي النداء",
+      "No new rides while the call is open"
+    ],
+    'helpDemoIncoming': [
+      "Recevoir l'appel d'un collègue (démo)",
+      "استقبال نداء زميل (عرض)",
+      "استقبل نداء ديال صاحبك (ديمو)",
+      "Receive a colleague's call (demo)"
+    ],
+    'relayBreakdown': [
+      "Votre taxi est tombé en panne",
+      "تعطلت سيارة الأجرة",
+      "الطاكسي ديالك خسر",
+      "Your taxi has broken down"
+    ],
+    'relayAccident': [
+      "Votre taxi a eu un accident",
+      "تعرضت سيارة الأجرة لحادث",
+      "الطاكسي ديالك دار كسيدة",
+      "Your taxi has had an accident"
+    ],
+    'relayNewTaxi': [
+      "Un autre taxi Bab Taxi vient vous chercher, au même prix",
+      "سيارة أجرة أخرى من Bab Taxi قادمة إليك بنفس الثمن",
+      "طاكسي آخر ديال Bab Taxi جاي عندك بنفس الثمن",
+      "Another Bab Taxi is coming for you, same fare"
+    ],
     'hazardLights': [
       'Allumez vos feux de détresse',
       'شغّل أضواء التنبيه',

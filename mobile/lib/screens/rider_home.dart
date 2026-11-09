@@ -117,6 +117,8 @@ class _RiderHomeState extends State<RiderHome> {
   final _liveApi = LiveApi();
   String? _liveRideId;
   LatLng? _liveTaxiPos;
+  /// Test réel : taxi qui a accepté la course (un autre peut le remplacer après une panne ou un accident).
+  String? _liveTaxiId;
   List<LiveTaxi> _liveTaxis = [];
   Timer? _livePoll;
   bool _nearbyBusy = false;
@@ -1008,6 +1010,7 @@ class _RiderHomeState extends State<RiderHome> {
       if (r.status == LiveStatus.accepted && taxi != null) {
         await _liveAccepted(taxi);
       } else if (r.status == LiveStatus.onBoard && taxi != null) {
+        _liveTaxiId = taxi.id;
         setState(() => _driver = _liveDriver(taxi));
         _liveStartTrip();
       }
@@ -1087,7 +1090,14 @@ class _RiderHomeState extends State<RiderHome> {
     }
     if (!mounted || _liveRideId != id) return;
     final taxi = r.taxi;
-    if (taxi != null) _liveTaxiPos = taxi.position;
+    // Panne ou accident : un autre taxi Bab Taxi reprend la course, au même prix.
+    if (taxi != null && r.relayReason != null && _liveTaxiId != null && taxi.id != _liveTaxiId) {
+      return _liveRelayed(taxi, r);
+    }
+    if (taxi != null) {
+      _liveTaxiPos = taxi.position;
+      _liveTaxiId ??= taxi.id;
+    }
     switch (r.status) {
       case LiveStatus.waiting:
         return;
@@ -1115,7 +1125,42 @@ class _RiderHomeState extends State<RiderHome> {
     if (_collapsed && _inTrip && pos != null) _moveCamera(pos, null);
   }
 
+  /// Le premier taxi est en panne ou accidenté : un collègue vient chercher le passager (au taxi en panne
+  /// s'il était déjà à bord), au même prix. Message à l'écran et à voix haute, puis suivi du nouveau taxi.
+  Future<void> _liveRelayed(LiveTaxi taxi, LiveRide r) async {
+    _liveTaxiId = taxi.id;
+    _liveTaxiPos = taxi.position;
+    final driver = _liveDriver(taxi);
+    final wasOnTrip = _step == RiderStep.onTrip;
+    setState(() {
+      _driver = driver;
+      if (wasOnTrip && r.pickup != null) _me = r.pickup!;
+    });
+    final msg = '${s.t(r.relayReason == 'accident' ? 'relayAccident' : 'relayBreakdown')}. ${s.t('relayNewTaxi')} : ${driver.name}';
+    HapticFeedback.heavyImpact();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      key: const ValueKey('relaySnack'),
+      duration: const Duration(seconds: 10),
+      backgroundColor: AppColors.ink,
+      content: Row(children: [
+        const Icon(Icons.local_taxi, color: Color(0xFFFFB300)),
+        const SizedBox(width: 10),
+        Expanded(child: Text(msg, style: const TextStyle(fontWeight: FontWeight.w700))),
+      ]),
+    ));
+    _say(msg);
+    final path = await fetchRoute(taxi.position, _me);
+    if (!mounted || _liveTaxiId != taxi.id) return;
+    _moveTimer?.cancel();
+    setState(() {
+      _setPath(path);
+      _step = RiderStep.arriving;
+    });
+    _fit([...path, _me]);
+  }
+
   Future<void> _liveAccepted(LiveTaxi taxi) async {
+    _liveTaxiId = taxi.id;
     final driver = _liveDriver(taxi);
     setState(() {
       for (final c in _candidates) {
@@ -1154,6 +1199,7 @@ class _RiderHomeState extends State<RiderHome> {
     if (cancel && id != null) _liveApi.cancel(id).ignore();
     _liveRideId = null;
     _liveTaxiPos = null;
+    _liveTaxiId = null;
   }
 
   /// Distance qui reste au taxi sur son trajet (test réel).

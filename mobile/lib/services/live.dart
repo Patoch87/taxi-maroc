@@ -189,9 +189,12 @@ LiveStatus _status(String s) => switch (s) {
 class LiveRide {
   LiveRide(this.id, this.status, this.proposedTo, this.taxi,
       {this.pickup, this.drop, this.destinationName = '', this.fare = 0, this.alone = false, this.premium = false,
-      this.whatsapp = false});
+      this.whatsapp = false,
+      this.relayFrom,
+      this.relayReason});
   factory LiveRide.fromJson(Map<String, dynamic> j) {
     final d = j['demande'] as Map<String, dynamic>?;
+    final relay = j['relais'] as Map<String, dynamic>?;
     return LiveRide(
       j['id'] as String,
       _status(j['statut'] as String),
@@ -204,8 +207,15 @@ class LiveRide {
       alone: d?['mode'] == 'seul',
       premium: d?['categorie'] == 'premium',
       whatsapp: d?['source'] == 'whatsapp',
+      relayFrom: relay == null ? null : (relay['deNom'] as String? ?? ''),
+      relayReason: relay?['motif'] as String?,
     );
   }
+
+  /// Course reprise par un autre taxi après une panne ou un accident du premier : nom du premier chauffeur
+  /// et motif (« panne » ou « accident ») ; null sinon.
+  final String? relayFrom;
+  final String? relayReason;
   final String id;
   final LiveStatus status;
   final List<String> proposedTo;
@@ -410,6 +420,133 @@ class LiveApi {
 }
 
 class LiveConflict implements Exception {}
+
+/// Réponse d'un collègue à un appel à l'aide (panne ou accident).
+class HelpReply {
+  HelpReply(this.taxiId, this.name, this.takesRiders, {this.plate = ''});
+  factory HelpReply.fromJson(Map<String, dynamic> j) => HelpReply(
+      j['taxiId'] as String, j['nom'] as String? ?? 'Chauffeur', j['action'] == 'reprend',
+      plate: j['plaque'] as String? ?? '');
+  final String taxiId;
+  final String name;
+  final String plate;
+
+  /// Il reprend les passagers (sinon il vient seulement aider).
+  final bool takesRiders;
+}
+
+/// Appel à l'aide d'un chauffeur Bab Taxi en panne ou accidenté, envoyé aux chauffeurs proches.
+class HelpAlert {
+  HelpAlert({
+    required this.id,
+    required this.taxiId,
+    required this.name,
+    required this.accident,
+    required this.position,
+    this.plate = '',
+    this.injured = false,
+    this.open = true,
+    this.riders = 0,
+    this.destinations = const [],
+    this.notified = 0,
+    this.replies = const [],
+    this.takenBy,
+    this.takenRides = const [],
+    this.distanceM,
+  });
+  factory HelpAlert.fromJson(Map<String, dynamic> j) => HelpAlert(
+        id: j['id'] as String,
+        taxiId: j['taxiId'] as String,
+        name: j['nom'] as String? ?? 'Chauffeur',
+        plate: j['plaque'] as String? ?? '',
+        accident: j['motif'] == 'accident',
+        injured: j['blesses'] == true,
+        position: _ll(j['position']),
+        open: j['statut'] != 'terminee',
+        riders: (j['passagers'] as num?)?.toInt() ?? 0,
+        destinations: (j['destinations'] as List?)?.whereType<String>().toList() ?? const [],
+        notified: (j['prevenus'] as num?)?.toInt() ?? 0,
+        replies: [for (final r in (j['reponses'] as List? ?? const [])) HelpReply.fromJson(r as Map<String, dynamic>)],
+        takenBy: j['reprisePar'] as String?,
+        takenRides: (j['coursesReprises'] as List?)?.whereType<String>().toList() ?? const [],
+        distanceM: (j['distanceM'] as num?)?.toDouble(),
+      );
+  final String id;
+  final String taxiId;
+  final String name;
+  final String plate;
+  final bool accident;
+  final bool injured;
+  final LatLng position;
+  final bool open;
+
+  /// Passagers de l'application à reprendre (places) et leurs destinations.
+  final int riders;
+  final List<String> destinations;
+
+  /// Chauffeurs en ligne prévenus (moins de 5 km).
+  final int notified;
+  final List<HelpReply> replies;
+
+  /// Taxi qui reprend les passagers, et les courses qu'il a reprises.
+  final String? takenBy;
+  final List<String> takenRides;
+
+  /// Distance entre le chauffeur qui reçoit l'appel et le taxi en panne.
+  final double? distanceM;
+
+  HelpAlert copyWith({List<HelpReply>? replies, String? takenBy, bool? open}) => HelpAlert(
+        id: id,
+        taxiId: taxiId,
+        name: name,
+        plate: plate,
+        accident: accident,
+        injured: injured,
+        position: position,
+        open: open ?? this.open,
+        riders: riders,
+        destinations: destinations,
+        notified: notified,
+        replies: replies ?? this.replies,
+        takenBy: takenBy ?? this.takenBy,
+        takenRides: takenRides,
+        distanceM: distanceM,
+      );
+}
+
+/// Entraide entre chauffeurs : appels du serveur (test réel).
+extension HelpApi on LiveApi {
+  /// Le chauffeur en panne ou accidenté appelle les taxis Bab Taxi proches (un seul appel ouvert à la fois).
+  Future<HelpAlert> callForHelp({required LatLng position, required bool accident, bool injured = false}) async =>
+      HelpAlert.fromJson(await _send('POST', '/assistance', {
+        'taxiId': live.deviceId,
+        'motif': accident ? 'accident' : 'panne',
+        'position': _pt(position),
+        'blesses': injured,
+        'nom': live.displayName('Chauffeur'),
+      }) as Map<String, dynamic>);
+
+  Future<HelpAlert> helpAlert(String id) async =>
+      HelpAlert.fromJson(await _send('GET', '/assistance/$id') as Map<String, dynamic>);
+
+  /// Appels ouverts autour du chauffeur (moins de 5 km), du plus proche au plus loin.
+  Future<List<HelpAlert>> nearbyHelp(LatLng p) async {
+    final r = await _send('GET', '/assistance/proches?taxiId=${Uri.encodeQueryComponent(live.deviceId)}'
+        '&lat=${p.latitude}&lng=${p.longitude}') as List;
+    return [for (final a in r) HelpAlert.fromJson(a as Map<String, dynamic>)];
+  }
+
+  /// « J'arrive » ou « Je prends les passagers » : renvoie les courses reprises (vide pour « J'arrive »).
+  /// [LiveConflict] si un autre chauffeur reprend déjà les passagers ou si l'appel est fermé.
+  Future<List<LiveOffer>> answerHelp(String id, {required bool takeRiders}) async {
+    final r = await _send('POST', '/assistance/$id/reponse',
+        {'taxiId': live.deviceId, 'action': takeRiders ? 'reprend' : 'arrive'}) as Map<String, dynamic>;
+    return [for (final c in (r['courses'] as List? ?? const [])) LiveOffer.fromJson(c as Map<String, dynamic>)];
+  }
+
+  Future<void> withdrawHelp(String id) => _send('POST', '/assistance/$id/retrait', {'taxiId': live.deviceId});
+  Future<void> endHelp(String id) => _send('POST', '/assistance/$id/fin', {'taxiId': live.deviceId});
+}
 
 List<LatLng> _thin(List<LatLng> pts, int max) {
   if (pts.length <= max) return pts;

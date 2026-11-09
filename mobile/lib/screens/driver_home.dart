@@ -31,6 +31,7 @@ import '../services/voice.dart';
 import '../theme.dart';
 import '../widgets/google_taxi_map.dart';
 import '../widgets/map_parts.dart';
+import '../widgets/roadside_help.dart';
 
 /// Demande d'un passager qui se trouve sur la route du chauffeur.
 class _Request {
@@ -156,6 +157,8 @@ class _DriverHomeState extends State<DriverHome> {
     super.initState();
     _notifications.onAction = _onNotificationAction;
     _notifications.init();
+    // Test réel : appels à l'aide des collègues proches (et suivi de son propre appel) toutes les 4 s.
+    if (live.enabled) _helpTimer = Timer.periodic(const Duration(seconds: 4), (_) => _pollHelp());
     currentLatLng().then((p) {
       if (!mounted) return;
       setState(() => _me = p);
@@ -168,6 +171,10 @@ class _DriverHomeState extends State<DriverHome> {
     _tick?.cancel();
     _stopLive();
     _hazardTimer?.cancel();
+    _helpTimer?.cancel();
+    for (final t in _helpDemoTimers) {
+      t.cancel();
+    }
     _chime.cancel();
     if (_notifications.onAction == _onNotificationAction) _notifications.onAction = null;
     _notifications.cancel(DriverNotifications.requestId);
@@ -283,6 +290,9 @@ class _DriverHomeState extends State<DriverHome> {
 
   void _onTick() {
     if (!mounted || _route.length < 2) return;
+    // En panne ou accidenté : le taxi est arrêté, pas de nouvelle demande.
+    if (_myHelp != null) return;
+    _demoHelpArrival();
     // Avancer le taxi d'une distance fixe le long de la route.
     // Le taxi ralentit en approchant d'un passager à prendre (démo : environ 5 s pour les 50 derniers mètres).
     final nextPickup = _shift.riders
@@ -810,7 +820,7 @@ class _DriverHomeState extends State<DriverHome> {
   bool _offerBusy = false;
 
   Future<void> _pollOffers() async {
-    if (_offerBusy || !_liveOn) return;
+    if (_offerBusy || !_liveOn || _myHelp != null) return;
     _offerBusy = true;
     try {
       final offers = await _liveApi.offers(live.deviceId);
@@ -927,6 +937,360 @@ class _DriverHomeState extends State<DriverHome> {
       ));
   }
 
+
+  // ---------------------------------------------------------------- Panne ou accident (entraide)
+
+  /// Appel à l'aide envoyé par ce chauffeur (panne ou accident), encore ouvert.
+  HelpAlert? _myHelp;
+
+  /// Appel d'un collègue proche, affiché à la place du panneau.
+  HelpAlert? _incomingHelp;
+
+  /// Collègue que ce chauffeur va aider (« J'arrive » ou passagers repris).
+  HelpAlert? _helping;
+  final _seenHelp = <String>{};
+  Timer? _helpTimer;
+  bool _helpBusy = false;
+
+  /// Démo : réponses simulées des collègues, et point de la route où attend le collègue en panne.
+  final _helpDemoTimers = <Timer>[];
+  final _demoHelpIdx = <String, int>{};
+
+  HelpAlert? get _helpTarget => _helping ?? _incomingHelp;
+
+  int get _ridersSeats => _shift.riders.fold(0, (n, r) => n + r.seats);
+
+  Widget _helpButton() => OutlinedButton.icon(
+        key: const ValueKey('helpButton'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.taxiRed,
+          side: const BorderSide(color: AppColors.taxiRed, width: 1.5),
+          minimumSize: const Size(0, 46),
+        ),
+        onPressed: _myHelp == null ? _askForHelp : null,
+        icon: const Icon(Icons.car_crash_outlined),
+        label: Text(s.t('helpButton'), style: const TextStyle(fontWeight: FontWeight.w800)),
+      );
+
+  /// « Panne ou accident » : choix, secours, puis appel aux taxis Bab Taxi à moins de 5 km.
+  Future<void> _askForHelp() async {
+    if (_myHelp != null) return;
+    final choice = await showRoadsideHelpSheet(context, riders: _ridersSeats);
+    if (choice == null || !mounted) return;
+    // Plus de nouvelle demande tant que l'appel est ouvert.
+    if (_request != null) _decline();
+    _incomingHelp = null;
+    if (live.enabled) {
+      try {
+        final here = _liveOn ? _me : await currentLatLng();
+        final a = await _liveApi.callForHelp(position: here, accident: choice.accident, injured: choice.injured);
+        if (!mounted) return;
+        setState(() => _myHelp = a);
+      } catch (_) {
+        if (mounted) _toast(Icons.wifi_off, s.t('liveUnreachable'));
+        return;
+      }
+    } else {
+      setState(() => _myHelp = HelpAlert(
+            id: 'demo-mine',
+            taxiId: 'demo',
+            name: '',
+            accident: choice.accident,
+            injured: choice.injured,
+            position: _taxi,
+            riders: _ridersSeats,
+            notified: 4 + _rnd.nextInt(5),
+          ));
+      _runDemoHelp();
+    }
+    HapticFeedback.heavyImpact();
+  }
+
+  /// Démo : un collègue arrive au bout de 3 s ; un autre reprend les passagers au bout de 6 s.
+  void _runDemoHelp() {
+    void reply(Duration after, HelpReply r) => _helpDemoTimers.add(Timer(after, () {
+          final a = _myHelp;
+          if (!mounted || a == null) return;
+          if (r.takesRiders && _shift.riders.isEmpty) return;
+          _updateMyHelp(a.copyWith(replies: [...a.replies, r], takenBy: r.takesRiders ? r.taxiId : null));
+          if (r.takesRiders) {
+            setState(() {
+              _shift.riders.clear();
+              _guideRider = null;
+            });
+            _hideHazard();
+          }
+        }));
+    reply(const Duration(seconds: 3), HelpReply('demo-y', 'Youssef', false, plate: '41237 | أ | 6'));
+    reply(const Duration(seconds: 6), HelpReply('demo-k', 'Karim', true, plate: '18560 | ب | 6'));
+  }
+
+  /// Nouvelles réponses des collègues : message et vibration ; passagers repris : ils quittent ce taxi.
+  void _updateMyHelp(HelpAlert a) {
+    final old = _myHelp;
+    for (final r in a.replies) {
+      if (old != null && old.replies.any((o) => o.taxiId == r.taxiId && o.takesRiders == r.takesRiders)) continue;
+      HapticFeedback.mediumImpact();
+      _toast(r.takesRiders ? Icons.people_alt : Icons.local_taxi,
+          '${r.name} ${s.t(r.takesRiders ? 'helpTakesRiders' : 'helpComing')}');
+    }
+    _handOver(a.takenRides);
+    setState(() => _myHelp = a);
+  }
+
+  /// Test réel : courses reprises par un collègue. Elles ne sont plus à ce taxi (ni gain ni dépose ici).
+  void _handOver(List<String> rideIds) {
+    if (rideIds.isEmpty) return;
+    for (final e in _liveIds.entries.toList()) {
+      if (!rideIds.contains(e.value)) continue;
+      final r = e.key;
+      _shift.riders.remove(r);
+      _liveIds.remove(r);
+      _atPickup.remove(r);
+      _pickupPoints.remove(r);
+      _dropPoints.remove(r);
+      if (_guideRider == r) _guideRider = null;
+      if (_hazardFor == r) _hideHazard();
+    }
+  }
+
+  /// « Problème réglé » : l'appel est fermé, les demandes reprennent.
+  void _solveHelp() {
+    final a = _myHelp;
+    if (a == null) return;
+    for (final t in _helpDemoTimers) {
+      t.cancel();
+    }
+    _helpDemoTimers.clear();
+    setState(() => _myHelp = null);
+    if (live.enabled) _liveApi.endHelp(a.id).ignore();
+    _lastRequest = DateTime.now();
+  }
+
+  Future<void> _pollHelp() async {
+    if (_helpBusy || !live.enabled) return;
+    _helpBusy = true;
+    try {
+      final mine = _myHelp;
+      if (mine != null) {
+        final a = await _liveApi.helpAlert(mine.id);
+        if (mounted && _myHelp?.id == mine.id) _updateMyHelp(a);
+        return;
+      }
+      final going = _helping;
+      if (going != null) {
+        final a = await _liveApi.helpAlert(going.id);
+        if (!mounted || _helping?.id != going.id) return;
+        if (!a.open) {
+          _helpClosed(a);
+        } else {
+          setState(() => _helping = a);
+        }
+        return;
+      }
+      if (!_liveOn) return;
+      final list = await _liveApi.nearbyHelp(_me);
+      if (!mounted || !_liveOn || _myHelp != null) return;
+      final shown = _incomingHelp;
+      if (shown != null) {
+        // Toujours ouvert ? (fermé : la carte disparaît ; passagers repris par un autre : le bouton aussi.)
+        setState(() => _incomingHelp = list.where((a) => a.id == shown.id).firstOrNull);
+        return;
+      }
+      final next = list.where((a) => !_seenHelp.contains(a.id)).firstOrNull;
+      if (next != null) _showIncomingHelp(next);
+    } catch (_) {
+      // Réseau coupé : nouvel essai dans 4 secondes.
+    } finally {
+      _helpBusy = false;
+    }
+  }
+
+  void _showIncomingHelp(HelpAlert a) {
+    _seenHelp.add(a.id);
+    setState(() => _incomingHelp = a);
+    _chime.alert(a,
+        enabled: settings.requestSound,
+        voice: settings.requestVoice,
+        empty: _shift.onBoard == 0,
+        speakText: helpAnnouncementAr);
+    HapticFeedback.heavyImpact();
+    _notifications.showHelp(
+        title: s.t('helpIncoming'),
+        body: [a.name, s.t(a.accident ? 'helpAccident' : 'helpBreakdown'), helpDistance(a.distanceM)]
+            .where((x) => x.isNotEmpty)
+            .join(' · '));
+  }
+
+  /// « J'arrive » : le chauffeur va aider son collègue (bandeau en haut, itinéraire).
+  Future<void> _helpGo() async {
+    final a = _incomingHelp;
+    if (a == null) return;
+    _chime.cancel();
+    setState(() {
+      _incomingHelp = null;
+      _helping = a;
+    });
+    if (!live.enabled) return;
+    try {
+      await _liveApi.answerHelp(a.id, takeRiders: false);
+    } on LiveConflict {
+      if (mounted) _helpClosed(a);
+    } catch (_) {
+      // Réseau coupé : le collègue ne le voit pas encore, le bandeau reste.
+    }
+  }
+
+  /// « Je prends les passagers » : leurs courses passent sur ce taxi ; ils attendent au taxi en panne.
+  Future<void> _helpTake() async {
+    final a = _incomingHelp;
+    if (a == null) return;
+    _chime.cancel();
+    setState(() => _incomingHelp = null);
+    if (live.enabled) {
+      try {
+        final rides = await _liveApi.answerHelp(a.id, takeRiders: true);
+        if (!mounted) return;
+        await _adoptLiveRiders(rides);
+      } on LiveConflict {
+        if (mounted) _toast(Icons.info_outline, s.t('helpTakenByOther'));
+        return;
+      } catch (_) {
+        if (mounted) _toast(Icons.wifi_off, s.t('liveUnreachable'));
+        return;
+      }
+    } else {
+      _adoptDemoRiders(a);
+    }
+    if (!mounted) return;
+    setState(() => _helping = a);
+    HapticFeedback.mediumImpact();
+    _toast(Icons.people_alt, s.t('helpRidersAdded'));
+  }
+
+  void _helpDismiss() {
+    _chime.cancel();
+    setState(() => _incomingHelp = null);
+  }
+
+  /// Test réel : courses reprises, comme des courses acceptées (prise en charge au taxi en panne).
+  Future<void> _adoptLiveRiders(List<LiveOffer> rides) async {
+    for (final o in rides) {
+      if (!_shift.canAccept(o.seats)) continue;
+      if (_route.length < 2 || _previewRoute) {
+        final toPickup = await fetchRoute(_me, o.pickup);
+        final toDrop = await fetchRoute(o.pickup, o.drop);
+        if (!mounted) return;
+        _route = [...toPickup, ...toDrop.skip(1)];
+        _pos = 0;
+        _previewRoute = false;
+      }
+      final pickupIdx = _nearestIndex(o.pickup, from: _pos);
+      final dropIdx = min(_route.length - 1, max(pickupIdx + 1, _nearestIndex(o.drop, from: pickupIdx)));
+      final r = ShiftRider(
+          name: o.riderName,
+          pickupIdx: pickupIdx,
+          dropIdx: dropIdx,
+          fare: o.fare,
+          seats: o.seats,
+          destination: o.destinationName);
+      setState(() {
+        _shift.accept(r);
+        _liveIds[r] = o.id;
+        _pickupPoints[r] = o.pickup;
+        _dropPoints[r] = o.drop;
+        _checkPickups();
+      });
+    }
+    _publish();
+  }
+
+  /// Démo : les passagers du collègue attendent à son taxi, sur la route ; ils vont plus loin sur la route.
+  void _adoptDemoRiders(HelpAlert a) {
+    final at = max<int>(_pos + 3, _demoHelpIdx[a.id] ?? _pos + 10);
+    if (at >= _route.length - 3) return;
+    final names = ['Nadia', 'Rachid', 'Samira'];
+    setState(() {
+      for (var i = 0; i < a.riders && _shift.canAccept(1); i++) {
+        final drop = min<int>(_route.length - 1, at + max<int>(5, ((_route.length - 1 - at) * (0.5 + 0.2 * i)).round()));
+        final km = routeLengthM(_route.sublist(at, drop + 1)) / 1000;
+        _shift.accept(ShiftRider(
+          name: names[i % names.length],
+          pickupIdx: at,
+          dropIdx: drop,
+          fare: Demo.petitTaxiPrice(routeKm: km, seul: false, premium: false),
+          rating: 5,
+          destination: _nearestPlaceName(_route[drop]),
+        ));
+      }
+    });
+  }
+
+  /// Démo (menu) : un collègue tombe en panne un peu plus loin sur la route, avec 2 passagers.
+  void _demoIncomingHelp() {
+    if (!_online) _goOnline();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted || _myHelp != null) return;
+      final remaining = _route.length - 1 - _pos;
+      if (remaining < 30) return;
+      final idx = _pos + max<int>(10, (remaining * .25).round());
+      final dropAt = min<int>(_route.length - 1, idx + (remaining * .5).round());
+      final a = HelpAlert(
+        id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
+        taxiId: 'demo-h',
+        name: 'Hamid',
+        plate: '28451 | ب | 6',
+        accident: false,
+        position: _route[idx],
+        riders: min<int>(2, max<int>(1, _shift.freeSeats)),
+        destinations: [_nearestPlaceName(_route[dropAt])].where((n) => n.isNotEmpty).toList(),
+        notified: 5,
+        distanceM: _exactMetersTo(idx),
+      );
+      _demoHelpIdx[a.id] = idx;
+      if (_request != null) _decline();
+      _showIncomingHelp(a);
+    });
+  }
+
+  /// Démo : arrivé auprès du collègue, il le remercie et l'appel se ferme.
+  void _demoHelpArrival() {
+    final h = _helping;
+    if (h == null || live.enabled) return;
+    final idx = _demoHelpIdx[h.id];
+    if (idx != null && _pos >= idx) _helpClosed(h);
+  }
+
+  void _helpClosed(HelpAlert a) {
+    setState(() => _helping = null);
+    _toast(Icons.volunteer_activism, '${a.name} ${s.t('helpClosedBy')}');
+  }
+
+  double? _helpDistanceM(HelpAlert a) {
+    if (!live.enabled) {
+      final idx = _demoHelpIdx[a.id];
+      return idx == null ? null : _exactMetersTo(idx);
+    }
+    return const Distance()(_me, a.position);
+  }
+
+  Future<void> _routeToHelp(HelpAlert a) async {
+    final app = settings.navApp == NavApp.waze ? NavApp.waze : NavApp.googleMaps;
+    final result = await openNavigation(app, a.position);
+    if (!mounted) return;
+    if (result == NavOpenResult.store) _toast(Icons.download, '${navAppName(app)} : ${s.t('navNotInstalled')}');
+    if (result == NavOpenResult.web) _toast(Icons.public, s.t('navWebFallback'));
+    if (result == NavOpenResult.failed) _toast(Icons.error_outline, s.t('navFailed'));
+  }
+
+  /// « Je ne peux plus » : le collègue ne le compte plus parmi ceux qui arrivent.
+  void _cancelHelping() {
+    final a = _helping;
+    if (a == null) return;
+    setState(() => _helping = null);
+    if (live.enabled) _liveApi.withdrawHelp(a.id).ignore();
+  }
+
   // ---------------------------------------------------------------- Carte
 
   Widget _buildMap() {
@@ -947,6 +1311,8 @@ class _DriverHomeState extends State<DriverHome> {
                 'pick-${r.name}', _route[r.pickupIdx], '${s.t('pickUp')} ${r.name}', gm.BitmapDescriptor.hueGreen,
                 style: PinStyle.pickup),
           if (req != null) GooglePin('req-${req.name}', _route[req.pickupIdx], req.name, gm.BitmapDescriptor.hueYellow),
+          if (_helpTarget case final h?)
+            GooglePin('help-${h.id}', h.position, '${s.t('helpIncoming')} · ${h.name}', gm.BitmapDescriptor.hueOrange),
         ],
         onCreated: (c) {
           _gmap = c;
@@ -980,6 +1346,22 @@ class _DriverHomeState extends State<DriverHome> {
           for (final r in _shift.riders) stopMarker(_route[min(r.dropIdx, _route.length - 1)], destination: true),
           for (final r in pending) _riderPin(_route[r.pickupIdx], r.name, AppColors.moroccoGreen),
           if (req != null) _riderPin(_route[req.pickupIdx], req.name, const Color(0xFFF5B301)),
+          if (_helpTarget case final h?)
+            Marker(
+              point: h.position,
+              width: 46,
+              height: 46,
+              child: Container(
+                key: const ValueKey('helpMarker'),
+                decoration: BoxDecoration(
+                  color: helpOrange,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.ink, width: 3),
+                  boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 8)],
+                ),
+                child: Icon(h.accident ? Icons.car_crash : Icons.car_repair, color: AppColors.ink),
+              ),
+            ),
           Marker(
             point: _taxi,
             width: 52,
@@ -1896,6 +2278,8 @@ class _DriverHomeState extends State<DriverHome> {
         _seatCounter(),
         const Divider(height: 14, color: AppColors.line),
         _stops(),
+        const SizedBox(height: 8),
+        _helpButton(),
       ]);
 
   @override
@@ -1929,6 +2313,7 @@ class _DriverHomeState extends State<DriverHome> {
                 onChanged: (v) => settings.requestVoice = v,
               ),
             ),
+            const Divider(),
             const Divider(),
             // Ce que Bab Taxi rapporte en plus, comparé à avant.
             ListTile(
@@ -1978,6 +2363,28 @@ class _DriverHomeState extends State<DriverHome> {
                 ]),
               ),
             ),
+            const Divider(),
+            // Panne ou accident : appeler les taxis Bab Taxi proches.
+            ListTile(
+              key: const ValueKey('helpDrawer'),
+              leading: const Icon(Icons.car_crash_outlined, color: AppColors.taxiRed),
+              title: Text(s.t('helpButton'), style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(s.t('helpButtonDesc'), style: const TextStyle(color: AppColors.muted)),
+              onTap: () {
+                Navigator.pop(context);
+                _askForHelp();
+              },
+            ),
+            if (!live.enabled)
+              ListTile(
+                key: const ValueKey('helpDemoIncoming'),
+                leading: const Icon(Icons.campaign_outlined, color: Color(0xFFB37800)),
+                title: Text(s.t('helpDemoIncoming')),
+                onTap: () {
+                  Navigator.pop(context);
+                  _demoIncomingHelp();
+                },
+              ),
           ]),
         ),
       ),
@@ -1988,6 +2395,13 @@ class _DriverHomeState extends State<DriverHome> {
           if (_online && _hazardFor == null) _earningsCard(),
           if (_online && _guideRider != null) _guideBanner(),
           if (_hazardFor != null) _hazardBanner(),
+          if (_helping case final h?)
+            HelpGoingBanner(
+              alert: h,
+              distanceM: _helpDistanceM(h),
+              onRoute: () => _routeToHelp(h),
+              onCancel: _cancelHelping,
+            ),
         ]),
         Align(
           alignment: Alignment.bottomCenter,
@@ -1995,7 +2409,21 @@ class _DriverHomeState extends State<DriverHome> {
             // Une demande remplace le panneau le temps de la réponse : la carte reste visible au maximum.
             // « Démarrer la course » reste visible, même quand une nouvelle demande arrive.
             if (_online) ..._readyToStart.map(_startRideCard),
-            if (_request != null)
+            if (_myHelp case final h?)
+              Flexible(child: SingleChildScrollView(child: HelpCallCard(alert: h, onSolved: _solveHelp)))
+            else if (_incomingHelp case final h?)
+              Flexible(
+                child: SingleChildScrollView(
+                  child: HelpAlertCard(
+                    alert: h,
+                    canTakeRiders: h.riders > 0 && _shift.freeSeats >= h.riders,
+                    onGo: _helpGo,
+                    onTake: _helpTake,
+                    onDismiss: _helpDismiss,
+                  ),
+                ),
+              )
+            else if (_request != null)
               _requestCard()
             else
               Flexible(child: BottomPanel(child: _online ? _onlinePanel() : _offlinePanel())),

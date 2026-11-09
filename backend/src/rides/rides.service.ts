@@ -25,6 +25,11 @@ export interface DemandeCourse {
   annuleeParConsole?: boolean;
   /** Dernier changement de destination demandé par le passager. */
   destinationModifieeLe?: string;
+  /**
+   * Course reprise par un autre taxi Bab Taxi après une panne ou un accident du premier : le passager
+   * voit le nouveau taxi arriver, le nouveau chauffeur démarre la course à son tour.
+   */
+  relais?: { deTaxi: string; deNom?: string; motif: 'panne' | 'accident'; le: string; etaitABord: boolean; alerteId: string };
 }
 
 /** Taxi en ligne vu par la console d'administration. */
@@ -237,6 +242,37 @@ export class RidesService {
     if (statut === 'a_bord') d.aBordLe = this.iso();
     else d.termineeLe = this.iso();
     return this.garder(d);
+  }
+
+  /** Taxi en ligne (position envoyée depuis moins de 90 s). */
+  taxi(id: string): TaxiSuivi | undefined {
+    const t = this.taxis.get(id);
+    return t && t.majLe >= this.now() - TAXI_HORS_LIGNE_MS ? t : undefined;
+  }
+
+  /**
+   * Panne ou accident : les courses du taxi [deTaxi] (acceptées ou passager à bord) passent au taxi [versTaxi].
+   * Un passager déjà à bord attend au point de la panne ([point]) ; un passager pas encore pris attend toujours
+   * à son point de départ. Le prix annoncé ne change pas : le passager ne paie pas deux fois.
+   */
+  transferer(deTaxi: string, versTaxi: string, point: Point, motif: 'panne' | 'accident', alerteId: string, deNom?: string): DemandeCourse[] {
+    this.reprendre();
+    const faites: DemandeCourse[] = [];
+    for (const d of this.demandes.values()) {
+      if (d.accepteePar !== deTaxi || (d.statut !== 'acceptee' && d.statut !== 'a_bord')) continue;
+      const etaitABord = d.statut === 'a_bord';
+      d.relais = { deTaxi, deNom, motif, le: this.iso(), etaitABord, alerteId };
+      d.accepteePar = versTaxi;
+      d.statut = 'acceptee';
+      if (etaitABord) d.demande = { ...d.demande, depart: point };
+      faites.push(this.garder(d));
+    }
+    return faites;
+  }
+
+  /** Places prises par les courses en cours d'un taxi (passagers à reprendre en cas de panne). */
+  coursesEnCours(taxiId: string): DemandeCourse[] {
+    return this.ridesOf(taxiId);
   }
 
   cancel(id: string): DemandeCourse {

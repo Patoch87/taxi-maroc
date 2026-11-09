@@ -22,6 +22,7 @@ class DriverNotifications with WidgetsBindingObserver {
 
   static const requestId = 1;
   static const hazardId = 2;
+  static const helpId = 3;
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
@@ -79,6 +80,9 @@ class DriverNotifications with WidgetsBindingObserver {
       ]);
 
   Future<void> showHazard({required String title, required String body}) => _show(hazardId, title, body);
+
+  /// Un collègue proche est en panne ou accidenté.
+  Future<void> showHelp({required String title, required String body}) => _show(helpId, title, body);
 
   Future<void> _show(int id, String title, String body,
       {String? payload, List<AndroidNotificationAction>? actions}) async {

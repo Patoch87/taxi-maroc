@@ -73,6 +73,7 @@ tr.cliquable{cursor:pointer} tr.cliquable:hover td{background:#fbf8f1}
 .mk{width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .mk.grand{border-radius:6px}
 .mk.demande{background:#2563eb;animation:pouls 1.6s infinite}
+.mk.panne{width:26px;height:26px;background:#ffb300;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #0f2a1e}
 .mk.sos{width:28px;height:28px;background:var(--rouge);animation:pouls 1s infinite}
 @keyframes pouls{0%{box-shadow:0 0 0 0 rgba(193,39,45,.5)}100%{box-shadow:0 0 0 14px rgba(193,39,45,0)}}
 .formPub label{display:block;font-weight:700;font-size:13px;margin:12px 0 4px}
@@ -226,7 +227,8 @@ async function tableau() {
       (r.sosEnDirect ? '<div class="carte" style="background:var(--rouge2)"><b style="color:var(--rouge)">🚨 ' + r.sosEnDirect + ' alerte(s) SOS en direct.</b> ' + (sos ? '<a href="' + sos + '" target="_blank">Ouvrir le centre de sécurité</a>' : '') + '</div>' : '') +
       '<h3>Maintenant</h3><div class="tuiles">' +
       tuile(r.taxis.enLigne, 'taxis en ligne', 'ok') + tuile(r.taxis.libres, 'taxis libres') + tuile(r.taxis.occupes, 'taxis avec passagers') +
-      tuile(r.courses.enCours, 'courses en cours') + tuile(r.sosEnDirect, 'SOS en direct', r.sosEnDirect ? 'alerte' : '') + '</div>' +
+      tuile(r.courses.enCours, 'courses en cours') + tuile(r.sosEnDirect, 'SOS en direct', r.sosEnDirect ? 'alerte' : '') +
+      tuile(r.pannesEnCours || 0, 'taxis en panne ou accident', r.pannesEnCours ? 'alerte' : '') + '</div>' +
       '<h3>Aujourd\'hui</h3><div class="tuiles">' +
       tuile(r.courses.aujourdhui, 'demandes de course') + tuile(r.courses.termineesAujourdhui, 'courses terminées', 'ok') +
       tuile(r.courses.annuleesAujourdhui, 'annulées par le passager') + tuile(r.courses.sansTaxiAujourdhui, 'sans taxi disponible', r.courses.sansTaxiAujourdhui ? 'alerte' : '') +
@@ -381,6 +383,13 @@ async function tempsReel() {
         points.push([a.position.lat, a.position.lng]);
         carte.marqueur([a.position.lat, a.position.lng], '<div class="mk sos"></div>', 28,
           '<b style="color:#c1272d">SOS en direct</b><br>' + esc(a.nom || '') + (sos ? '<br><a href="' + sos + '" target="_blank">Centre de sécurité</a>' : ''), 9);
+      }
+      for (const a of (r.assistances || [])) {
+        points.push([a.position.lat, a.position.lng]);
+        carte.marqueur([a.position.lat, a.position.lng], '<div class="mk panne"></div>', 26,
+          '<b>' + (a.motif === 'accident' ? 'Accident' : 'Panne') + (a.blesses ? ' · blessés signalés' : '') + '</b><br>' + esc(a.nom) + ' · ' + esc(a.plaque) +
+          '<br>depuis ' + Math.round(a.depuisS / 60) + ' min · ' + a.passagers + ' passager(s)<br>' + a.viennent + ' collègue(s) en route' +
+          (a.reprisPar ? '<br>Passagers repris par ' + esc(a.reprisPar) : ''), 8);
       }
       if (premiereVue && points.length) { carte.cadrer(points); premiereVue = false; }
       const n = (e) => r.taxis.filter((t) => t.etat === e).length;

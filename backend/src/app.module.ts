@@ -5,6 +5,8 @@ import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 import { AdsController } from './ads/ads.controller';
 import { AdsService } from './ads/ads.service';
+import { AssistanceController } from './assistance/assistance.controller';
+import { AssistanceService } from './assistance/assistance.service';
 import { StoreService } from './store/store.service';
 import { DriversController } from './drivers/drivers.controller';
 import { DriversService } from './drivers/drivers.service';
@@ -47,6 +49,10 @@ class HealthController {
         'POST /complaints',
         'GET /ads',
         'POST /ads/:id/events',
+        'POST /assistance',
+        'GET /assistance/proches',
+        'GET /assistance/:id',
+        'POST /assistance/:id/(reponse|retrait|fin)',
         'POST /sos',
         'POST /sos/:id/(position|segments|end)',
         'GET /sos/centre?cle=…',
@@ -66,7 +72,7 @@ class HealthController {
 }
 
 @Module({
-  controllers: [HealthController, AccountsController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController, DriversController, AdminController],
-  providers: [StoreService, AdsService, AccountsService, DriversService, RidesService, WhatsappService, AdminService],
+  controllers: [HealthController, AccountsController, FaresController, RidesController, ComplaintsController, AdsController, SosController, WhatsappController, DriversController, AdminController, AssistanceController],
+  providers: [StoreService, AdsService, AccountsService, DriversService, RidesService, WhatsappService, AdminService, AssistanceService],
 })
 export class AppModule {}

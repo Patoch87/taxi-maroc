@@ -5,6 +5,7 @@ import { haversine } from '../domain/geo';
 import { DossierChauffeur, DriversService } from '../drivers/drivers.service';
 import { DemandeCourse, RidesService } from '../rides/rides.service';
 import { alertesSos } from '../sos/sos.controller';
+import { AssistanceService } from '../assistance/assistance.service';
 import { StoreService } from '../store/store.service';
 
 interface Plainte {
@@ -44,6 +45,7 @@ export class AdminService {
     private readonly drivers: DriversService,
     private readonly rides: RidesService,
     @Optional() private readonly ads?: AdsService,
+    @Optional() private readonly assistance?: AssistanceService,
   ) {}
 
   now = () => Date.now();
@@ -115,6 +117,8 @@ export class AdminService {
       },
       plaintesOuvertes: this.plaintes().filter((p) => p.statut !== 'traitee').length,
       sosEnDirect: [...alertesSos.values()].filter((a) => a.statut === 'en_direct').length,
+      // Chauffeurs en panne ou accidentés qui ont appelé leurs collègues.
+      pannesEnCours: this.assistance?.ouvertes().length ?? 0,
     };
   }
 
@@ -171,6 +175,18 @@ export class AdminService {
       sos: [...alertesSos.values()]
         .filter((a) => a.statut === 'en_direct')
         .map((a) => ({ id: a.id, nom: a.nom, taxiId: a.taxiId, position: a.positions.at(-1), depuis: a.creeLe })),
+      assistances: (this.assistance?.ouvertes() ?? []).map((a) => ({
+        id: a.id,
+        nom: a.nom ?? 'Chauffeur',
+        plaque: a.plaque ?? '',
+        motif: a.motif,
+        blesses: a.blesses,
+        position: a.position,
+        depuisS: Math.round((t - Date.parse(a.creeLe)) / 1000),
+        passagers: a.passagers,
+        viennent: a.reponses.length,
+        reprisPar: a.reponses.find((x) => x.taxiId === a.reprisePar)?.nom ?? (a.reprisePar ? 'un collègue' : null),
+      })),
     };
   }
 
