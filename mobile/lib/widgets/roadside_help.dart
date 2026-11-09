@@ -362,7 +362,7 @@ class HelpAlertCard extends StatelessWidget {
                     side: const BorderSide(color: Colors.white24),
                     minimumSize: const Size(0, 50)),
                 onPressed: onDismiss,
-                child: Text(s.t('helpNotPossible')),
+                child: FittedBox(child: Text(s.t('helpNotPossible'), maxLines: 1)),
               ),
             ),
             const SizedBox(width: 10),
