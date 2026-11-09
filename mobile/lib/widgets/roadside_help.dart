@@ -82,16 +82,20 @@ class _HelpSheetState extends State<_HelpSheet> {
         child: OutlinedButton(
           key: ValueKey('call-$number'),
           style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.white,
             foregroundColor: AppColors.taxiRed,
             side: const BorderSide(color: AppColors.taxiRed, width: 1.5),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
             minimumSize: const Size(0, 56),
           ),
           onPressed: () => _call(number),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon, size: 22),
             const SizedBox(height: 2),
-            FittedBox(child: Text(s.t(key), style: const TextStyle(fontWeight: FontWeight.w800))),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: FittedBox(child: Text(s.t(key), style: const TextStyle(fontWeight: FontWeight.w800))),
+            ),
           ]),
         ),
       );
@@ -353,6 +357,7 @@ class HelpAlertCard extends StatelessWidget {
               child: OutlinedButton(
                 key: const ValueKey('helpDismiss'),
                 style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
                     foregroundColor: Colors.white70,
                     side: const BorderSide(color: Colors.white24),
                     minimumSize: const Size(0, 50)),

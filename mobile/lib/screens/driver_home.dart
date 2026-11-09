@@ -1208,7 +1208,7 @@ class _DriverHomeState extends State<DriverHome> {
   /// Démo : les passagers du collègue attendent à son taxi, sur la route ; ils vont plus loin sur la route.
   void _adoptDemoRiders(HelpAlert a) {
     final at = max<int>(_pos + 3, _demoHelpIdx[a.id] ?? _pos + 10);
-    if (at >= _route.length - 3) return;
+    if (at >= _route.length - 6) return;
     final names = ['Nadia', 'Rachid', 'Samira'];
     setState(() {
       for (var i = 0; i < a.riders && _shift.canAccept(1); i++) {
@@ -1232,22 +1232,24 @@ class _DriverHomeState extends State<DriverHome> {
     Future<void>.delayed(const Duration(milliseconds: 300), () {
       if (!mounted || _myHelp != null) return;
       final remaining = _route.length - 1 - _pos;
-      if (remaining < 30) return;
+      // Sur la route, un peu plus loin ; route trop courte : à environ 800 m.
+      final onRoute = remaining >= 30;
       final idx = _pos + max<int>(10, (remaining * .25).round());
-      final dropAt = min<int>(_route.length - 1, idx + (remaining * .5).round());
+      final dropAt = onRoute ? min<int>(_route.length - 1, idx + (remaining * .5).round()) : 0;
+      final at = onRoute ? _route[idx] : LatLng(_taxi.latitude + .006, _taxi.longitude + .004);
       final a = HelpAlert(
         id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
         taxiId: 'demo-h',
         name: 'Hamid',
         plate: '28451 | ب | 6',
         accident: false,
-        position: _route[idx],
+        position: at,
         riders: min<int>(2, max<int>(1, _shift.freeSeats)),
-        destinations: [_nearestPlaceName(_route[dropAt])].where((n) => n.isNotEmpty).toList(),
+        destinations: onRoute ? [_nearestPlaceName(_route[dropAt])].where((n) => n.isNotEmpty).toList() : ['Maârif'],
         notified: 5,
-        distanceM: _exactMetersTo(idx),
+        distanceM: onRoute ? _exactMetersTo(idx) : const Distance()(_taxi, at),
       );
-      _demoHelpIdx[a.id] = idx;
+      if (onRoute) _demoHelpIdx[a.id] = idx;
       if (_request != null) _decline();
       _showIncomingHelp(a);
     });
@@ -1269,7 +1271,7 @@ class _DriverHomeState extends State<DriverHome> {
   double? _helpDistanceM(HelpAlert a) {
     if (!live.enabled) {
       final idx = _demoHelpIdx[a.id];
-      return idx == null ? null : _exactMetersTo(idx);
+      return idx == null ? const Distance()(_taxi, a.position) : _exactMetersTo(idx);
     }
     return const Distance()(_me, a.position);
   }
